@@ -1,6 +1,4 @@
 [submodule "FreeRTOS/Source"]
 	path = FreeRTOS/Source
-	url = https://github.com/FreeRTOS/FreeRTOS-Kernel.git
-[submodule "FreeRTOS-Plus/Test/CMock"]
-	path = FreeRTOS-Plus/Test/CMock
-	url = https://github.com/ThrowTheSwitch/CMock
+	url = https://rcar-env.dgn.renesas.com/gitlab/linuxbsp_yocto/freertos/FreeRTOS-Kernel.git
+	branch = freertos_kernel_V11.1.0_rcar_gen5
