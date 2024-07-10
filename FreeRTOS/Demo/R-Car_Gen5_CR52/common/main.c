@@ -46,7 +46,7 @@
 #include "task.h"
 
 #include "interrupts.h"
-#include "register.h"
+#include "stdio.h"
 
 /* Set mainCREATE_SIMPLE_BLINKY_DEMO_ONLY to one to run the simple blinky demo,
 or 0 to run the more comprehensive test and demo application. */

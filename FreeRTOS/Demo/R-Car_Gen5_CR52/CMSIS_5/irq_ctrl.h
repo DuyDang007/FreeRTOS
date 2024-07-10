@@ -1,11 +1,11 @@
 /**************************************************************************//**
  * @file     irq_ctrl.h
  * @brief    Interrupt Controller API header file
- * @version  V1.0.0
- * @date     23. June 2017
+ * @version  V1.1.0
+ * @date     03. March 2020
  ******************************************************************************/
 /*
- * Copyright (c) 2017 ARM Limited. All rights reserved.
+ * Copyright (c) 2017-2020 ARM Limited. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -78,11 +78,32 @@ typedef int32_t IRQn_ID_t;
 #define IRQ_MODE_CPU_6              (0x40UL << IRQ_MODE_CPU_Pos)      ///< CPU: interrupt targets CPU 6
 #define IRQ_MODE_CPU_7              (0x80UL << IRQ_MODE_CPU_Pos)      ///< CPU: interrupt targets CPU 7
 
+// Encoding in some early GIC implementations
+#define IRQ_MODE_MODEL_Pos          (13U)
+#define IRQ_MODE_MODEL_Msk          (0x1UL << IRQ_MODE_MODEL_Pos)
+#define IRQ_MODE_MODEL_NN           (0x0UL << IRQ_MODE_MODEL_Pos)     ///< Corresponding interrupt is handled using the N-N model
+#define IRQ_MODE_MODEL_1N           (0x1UL << IRQ_MODE_MODEL_Pos)     ///< Corresponding interrupt is handled using the 1-N model
+
 #define IRQ_MODE_ERROR              (0x80000000UL)                    ///< Bit indicating mode value error
 
 /* Interrupt priority bit-masks */
 #define IRQ_PRIORITY_Msk            (0x0000FFFFUL)                    ///< Interrupt priority value bit-mask
 #define IRQ_PRIORITY_ERROR          (0x80000000UL)                    ///< Bit indicating priority value error
+
+/// Initialize interrupt controller.
+/// \return 0 on success, -1 on error.
+int32_t IRQ_Initialize (void);
+
+/// Register interrupt handler.
+/// \param[in]     irqn          interrupt ID number
+/// \param[in]     handler       interrupt handler function address
+/// \return 0 on success, -1 on error.
+int32_t IRQ_SetHandler (IRQn_ID_t irqn, IRQHandler_t handler);
+
+/// Get the registered interrupt handler.
+/// \param[in]     irqn          interrupt ID number
+/// \return registered interrupt handler function address.
+IRQHandler_t IRQ_GetHandler (IRQn_ID_t irqn);
 
 /// Enable interrupt.
 /// \param[in]     irqn          interrupt ID number
@@ -94,11 +115,16 @@ int32_t IRQ_Enable (IRQn_ID_t irqn);
 /// \return 0 on success, -1 on error.
 int32_t IRQ_Disable (IRQn_ID_t irqn);
 
+/// Get interrupt enable state.
+/// \param[in]     irqn          interrupt ID number
+/// \return 0 - interrupt is disabled, 1 - interrupt is enabled.
+uint32_t IRQ_GetEnableState (IRQn_ID_t irqn);
+
 /// Configure interrupt request mode.
 /// \param[in]     irqn          interrupt ID number
 /// \param[in]     mode          mode configuration
 /// \return 0 on success, -1 on error.
-int32_t IRQ_SetMode (GICDistributor_Type *GICDistributor, IRQn_ID_t irqn, uint32_t mode);
+int32_t IRQ_SetMode (IRQn_ID_t irqn, uint32_t mode);
 
 /// Get interrupt mode configuration.
 /// \param[in]     irqn          interrupt ID number
@@ -107,6 +133,60 @@ uint32_t IRQ_GetMode (IRQn_ID_t irqn);
 
 /// Get ID number of current interrupt request (IRQ).
 /// \return interrupt ID number.
-IRQn_ID_t IRQ_GetActiveIRQ (GICDistributor_Type *GICDistributor, GICInterface_Type *GICInterface);
+IRQn_ID_t IRQ_GetActiveIRQ (void);
+
+/// Get ID number of current fast interrupt request (FIQ).
+/// \return interrupt ID number.
+IRQn_ID_t IRQ_GetActiveFIQ (void);
+
+/// Signal end of interrupt processing.
+/// \param[in]     irqn          interrupt ID number
+/// \return 0 on success, -1 on error.
+int32_t IRQ_EndOfInterrupt (IRQn_ID_t irqn);
+
+/// Set interrupt pending flag.
+/// \param[in]     irqn          interrupt ID number
+/// \return 0 on success, -1 on error.
+int32_t IRQ_SetPending (IRQn_ID_t irqn);
+
+/// Get interrupt pending flag.
+/// \param[in]     irqn          interrupt ID number
+/// \return 0 - interrupt is not pending, 1 - interrupt is pending.
+uint32_t IRQ_GetPending (IRQn_ID_t irqn);
+
+/// Clear interrupt pending flag.
+/// \param[in]     irqn          interrupt ID number
+/// \return 0 on success, -1 on error.
+int32_t IRQ_ClearPending (IRQn_ID_t irqn);
+
+/// Set interrupt priority value.
+/// \param[in]     irqn          interrupt ID number
+/// \param[in]     priority      interrupt priority value
+/// \return 0 on success, -1 on error.
+int32_t IRQ_SetPriority (IRQn_ID_t irqn, uint32_t priority);
+
+/// Get interrupt priority.
+/// \param[in]     irqn          interrupt ID number
+/// \return current interrupt priority value with optional IRQ_PRIORITY_ERROR bit set.
+uint32_t IRQ_GetPriority (IRQn_ID_t irqn);
+
+/// Set priority masking threshold.
+/// \param[in]     priority      priority masking threshold value
+/// \return 0 on success, -1 on error.
+int32_t IRQ_SetPriorityMask (uint32_t priority);
+
+/// Get priority masking threshold
+/// \return current priority masking threshold value with optional IRQ_PRIORITY_ERROR bit set.
+uint32_t IRQ_GetPriorityMask (void);
+
+/// Set priority grouping field split point
+/// \param[in]     bits          number of MSB bits included in the group priority field comparison
+/// \return 0 on success, -1 on error.
+int32_t IRQ_SetPriorityGroupBits (uint32_t bits);
+
+/// Get priority grouping field split point
+/// \return current number of MSB bits included in the group priority field comparison with
+///         optional IRQ_PRIORITY_ERROR bit set.
+uint32_t IRQ_GetPriorityGroupBits (void);
 
 #endif  // IRQ_CTRL_H_

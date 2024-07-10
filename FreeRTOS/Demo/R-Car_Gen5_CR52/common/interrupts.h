@@ -11,8 +11,12 @@
 #ifndef __INTERRUPTS_H_
 #define __INTERRUPTS_H_
 
-#include "cmsis_rcar_gen3.h"
+#define __FPU_PRESENT             1
+
+#include "core_cr52.h"
 #include "irq_ctrl.h"
+
+#define R_OS_BSP_GENERIC_ARM_TIMER_IRQNUM 30
 
 typedef void (*IrqHandlerFn)(void *data);
 

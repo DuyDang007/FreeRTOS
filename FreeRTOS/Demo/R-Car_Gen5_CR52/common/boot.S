@@ -70,7 +70,6 @@
 
 
 _reset:
-
 	/* Check if we are starting in HYP mode */
 	mrs r0, cpsr
 	and r0, r0, #MODE_MASK
@@ -98,25 +97,6 @@ _reset:
 	eret
 
 EL1_Reset_Handler:
-//#if 1 //defined(CONFIG_VFP_FEATURE_REGS_S64_D32)
-//	fmdrr d16, r1, r1
-//	fmdrr d17, r1, r1
-//	fmdrr d18, r1, r1
-//	fmdrr d19, r1, r1
-//	fmdrr d20, r1, r1
-//	fmdrr d21, r1, r1
-//	fmdrr d22, r1, r1
-//	fmdrr d23, r1, r1
-//	fmdrr d24, r1, r1
-//	fmdrr d25, r1, r1
-//	fmdrr d26, r1, r1
-//	fmdrr d27, r1, r1
-//	fmdrr d28, r1, r1
-//	fmdrr d29, r1, r1
-//	fmdrr d30, r1, r1
-//	fmdrr d31, r1, r1
-//#endif /* CONFIG_VFP_FEATURE_REGS_S64_D32 */
-
 	/* Common and SVC mode registers */
 	mov r0,  #0
 	mov r1,  #0
@@ -243,57 +223,9 @@ EL1_Reset_Handler:
 
 	bl 	SystemInit		/* Initialize caches, MPU, etc */
 
-//	bl	_start
 	bl	main
 
-//.Ldone:	b	.Ldone			/* Should never get here */
-
+.Ldone:	b	.Ldone			/* Should never get here */
 
 /* Called by newlib crt0 _start after it has set up the stacks */
-//software_init_hook:
-//	/* Initialise stack pointers, registers are banked so we have to read PSR each time */
-//
-//	mrs	r0, cpsr		/* Original PSR value */
-//	bic	r0 ,r0, #MODE_MASK	/* Clear the mode bits */
-//	orr	r0 ,r0, #ARM_MODE_IRQ	/* Set mode bits */
-//	msr	cpsr_c, r0		/* Change the mode */
-//	ldr	sp, =__irq_stack
-//	mov 	r14, #0
-//
-//	mrs	r0, cpsr		/* Original PSR value */
-//	bic	r0 ,r0, #MODE_MASK	/* Clear the mode bits */
-//	orr	r0 ,r0, #ARM_MODE_SVC	/* Set mode bits */
-//	msr	cpsr_c, r0		/* Change the mode */
-//	ldr	sp, =__supervisor_stack
-//	mov 	r14, #0
-//
-//	mrs	r0, cpsr		/* Original PSR value */
-//	bic	r0 ,r0, #MODE_MASK	/* Clear the mode bits */
-//	orr	r0 ,r0, #ARM_MODE_ABT	/* Set mode bits */
-//	msr	cpsr_c, r0		/* Change the mode */
-//	ldr	sp, =__abort_stack
-//	mov 	r14, #0
-//
-//	mrs	r0, cpsr		/* Original PSR value */
-//	bic	r0 ,r0, #MODE_MASK	/* Clear the mode bits */
-//	orr	r0 ,r0, #ARM_MODE_FIQ	/* Set mode bits */
-//	msr	cpsr_c, r0		/* Change the mode */
-//	ldr	sp, =__fiq_stack
-//	mov 	r14, #0
-//
-//	mrs	r0, cpsr		/* Original PSR value */
-//	bic	r0 ,r0, #MODE_MASK	/* Clear the mode bits */
-//	orr	r0 ,r0, #ARM_MODE_UND	/* Set mode bits */
-//	msr	cpsr_c, r0		/* Change the mode */
-//	ldr	sp, =__undef_stack
-//	mov 	r14, #0
-//
-//	mrs	r0, cpsr		/* Original PSR value */
-//	bic	r0 ,r0, #MODE_MASK	/* Clear the mode bits */
-//	orr	r0 ,r0, #ARM_MODE_SYS	/* Set mode bits */
-//	msr	cpsr_c, r0		/* Change the mode */
-//	ldr	sp, =__stack
-//
-//	mov	pc, lr
-//
-//.end
+software_init_hook:

@@ -8,35 +8,38 @@ ARFLAGS = rcs
 OBJCOPY = arm-none-eabi-objcopy
 
 SOURCE_C_LIST = ./Blinky/main_blinky.c \
-		./common/main.c \
 	        ./common/FreeRTOS_tick_config.c \
 	        ./common/system_rcar_gen5.c \
-		./common/interrupts.c \
-		./common/heap_useNewlib.c \
-		./CMSIS/irq_ctrl_gic.c \
-		../../Source/portable/GCC/ARM_CR52/port.c \
+            ./common/interrupts.c \
+            ./common/heap_useNewlib.c \
+            ./CMSIS_5/irq_ctrl_gic.c \
+            ./drivers/gic/gicv3_basic.c \
+            ../../Source/portable/GCC/ARM_CR52/port.c \
 	        ../../Source/queue.c \
 	        ../../Source/tasks.c \
 	        ../../Source/list.c \
 	        ../../Source/timers.c \
+            ./common/main.c \
 
 SOURCE_ASM_LIST = ./common/boot.S \
-		  ./common/asm_vectors.S \
-		  ../../Source/portable/GCC/ARM_CR52/portASM.S \
+                ./common/asm_vectors.S \
+                ./drivers/gic/gicv3_cpuif.S
 
 OBJ_LIST = $(SOURCE_C_LIST:.c=.o) $(SOURCE_ASM_LIST:.S=.o)
 
-MAIN_SOURCE = ./common/main.c
+#MAIN_SOURCE = ./common/main.c
 	      
 
-MAIN_OBJ = $(SOURCE_C_LIST:.c=.o) 
+#MAIN_OBJ = $(SOURCE_C_LIST:.c=.o) 
 
 LDFILE = ./common/lscript.ld
 
-CFLAGS = -ffreestanding -std=gnu99  -mfpu=vfpv3-d16 -mcpu=cortex-r52 -mtune=cortex-r52 \
+CFLAGS = -ffreestanding -std=gnu99  -mfpu=neon-fp-armv8 -mcpu=cortex-r52 -mtune=cortex-r52  -lnosys --specs=nosys.specs -Wl,-Map=${OUTPUT_DIR}/${PROJ_NAME}.map -MD   -T ${LDFILE} \
                 -mfloat-abi=hard \
                 -DmainCREATE_SIMPLE_BLINKY_DEMO_ONLY \
-                -I./CMSIS \
+                -I./				     \
+                -I./CMSIS_5/CMSIS/Core_R/Include/ \
+                -I./CMSIS_5 \
                 -I./common \
                 -I../../Source/include \
                 -I../../Source/portable/GCC/ARM_CR52 \
@@ -45,28 +48,27 @@ CFLAGS = -ffreestanding -std=gnu99  -mfpu=vfpv3-d16 -mcpu=cortex-r52 -mtune=cort
                 -I../../../FreeRTOS-Plus/Source/FreeRTOS-Plus-Trace/Include \
                 -I../../../FreeRTOS-Plus/Source/FreeRTOS-Plus-Trace/config \
 
-AFLAGS = -mfpu=vfpv3-d16 -mcpu=cortex-r52 -mtune=cortex-r52 -mfloat-abi=hard  \
+AFLAGS = -mfpu=neon-fp-armv8 --specs=nosys.specs -mcpu=cortex-r52 -mtune=cortex-r52 -mfloat-abi=hard  \
                 -I./common
 
-LDFLAGS = -no-warn-rwx-segments   -T ${LDFILE} \
-                -Map ${OUTPUT_DIR}/${PROJ_NAME}.map \
+#LDFLAGS = -T ${LDFILE}
 
-LIBGCC=${shell ${CC} -mcpu=cortex-r52 -mtune=cortex-r52 -mfloat-abi=hard -print-libgcc-file-name}
-LIBC=${shell ${CC} -mcpu=cortex-r52 -mtune=cortex-r52 -mfloat-abi=hard -print-file-name=libc.a}
+#LIBGCC=${shell ${CC} -mcpu=cortex-r52 -mtune=cortex-r52 -mfloat-abi=hard -print-libgcc-file-name}
+#LIBC=${shell ${CC} -mcpu=cortex-r52 -mtune=cortex-r52 -mfloat-abi=hard -print-file-name=libc.a}
 
-all: create lib target
+all: create target
 
 create:
 	@echo CREATE ${OUTPUT_DIR} folder
 	@mkdir -p ${OUTPUT_DIR}
 
-lib: ${OBJ_LIST}
-	@echo LD ${PROJ_NAME}.a
-	@${AR} ${ARFLAGS} ${OUTPUT_DIR}/${PROJ_NAME}.a ${OBJ_LIST}
+#lib: ${OBJ_LIST}
+#	@echo LD ${PROJ_NAME}.a
+#	@${AR} ${ARFLAGS} ${OUTPUT_DIR}/${PROJ_NAME}.a ${OBJ_LIST}
 
-target: ${MAIN_OBJ}
+target: ${OBJ_LIST}
 	@echo CC $<
-	@${LD} ${LDFLAGS} ${MAIN_OBJ} ${OUTPUT_DIR}/${PROJ_NAME}.a ${LIBC} ${LIBGCC}  -o ${OUTPUT_DIR}/${PROJ_NAME}.elf 
+	@${CC} ${CFLAGS} ${OBJ_LIST}  ${LIBC} ${LIBGCC}  -o ${OUTPUT_DIR}/${PROJ_NAME}.elf 
 	$(OBJCOPY) -O binary "$(OUTPUT_DIR)/$(PROJ_NAME).elf" "$(OUTPUT_DIR)/$(PROJ_NAME).bin"
 
 %.o: %.c

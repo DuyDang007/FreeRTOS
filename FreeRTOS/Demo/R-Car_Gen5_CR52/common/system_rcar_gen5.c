@@ -7,8 +7,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include "cmsis_rcar_gen3.h"
-#include "register.h"
+#include "cmsis_rcar_gen5.h"
 
 extern const unsigned int __bss_start__;
 extern const unsigned int __bss_end__;
@@ -24,6 +23,7 @@ extern int main(void);
 
 static void Init_MPU(void)
 {
+#if 0 // Fix me: Enable for CR52
 	int region = 0;
 	uint32_t attributes;
 	uint32_t nr_regions = ARM_MPU_GetNrRegions();
@@ -75,6 +75,7 @@ static void Init_MPU(void)
 		ARM_MPU_ClrRegion(region++);
 
 	ARM_MPU_Enable();
+#endif
 }
 
 __STATIC_INLINE void bss_init(unsigned int* section_begin, unsigned int* section_end)
@@ -84,6 +85,27 @@ __STATIC_INLINE void bss_init(unsigned int* section_begin, unsigned int* section
   unsigned int *p = section_begin;
   while (p < section_end)
     *p++ = 0;
+}
+
+static void FPU_Enable()
+{
+#define BSP_CPCAR_CP_ENABLE             (0x00F00000)
+#define BSP_FPEXC_EN_ENABLE             (0x40000000)
+    uint32_t apacr;
+    uint32_t fpexc;
+
+    /* Enables cp10 and cp11 accessing */
+    apacr  = __get_CPACR();
+    apacr |= BSP_CPCAR_CP_ENABLE;
+    __set_CPACR(apacr);
+    __ISB();
+
+    /* Enables the FPU */
+    fpexc  = __get_FPEXC();
+    fpexc |= BSP_FPEXC_EN_ENABLE;
+    __set_FPEXC(fpexc);
+    __ISB();
+
 }
 
 void SystemInit(void)
@@ -100,9 +122,9 @@ void SystemInit(void)
 //	__ISB();
 //
 //	/* Enable Floating point hardware */
-//#if (defined(__FPU_USED) && (__FPU_USED == 1U))
-//	__FPU_Enable();
-//#endif
+#if (defined(__FPU_USED) && (__FPU_USED == 1U))
+    FPU_Enable();
+#endif
 //
 //	/*
 //	 * Do not use global variables because this function is called before
@@ -128,7 +150,7 @@ void SystemInit(void)
 //	/* Enable BAREN */
 //	writel((uint32_t)&_Reset | BIT(4), CR7BAR);
 //
-//	Init_MPU();
+	Init_MPU();
 //
 //	L1C_EnableCaches();
 //	L1C_EnableBTAC();

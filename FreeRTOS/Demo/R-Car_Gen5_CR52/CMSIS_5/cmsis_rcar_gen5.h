@@ -1,5 +1,5 @@
 /**************************************************************************//**
- * @file     cmsis_rcar_gen3.h
+ * @file     cmsis_rcar_gen5.h
  * @brief    CMSIS for Cortex-R7 on Renesas R-Car Gen3 devices
  ******************************************************************************/
 /*
@@ -27,8 +27,8 @@
  * We also want to program the MPU, whihc is a bit similar to Cortex-M devices,
  * so we have modified CMSIS code to do this.
  */
-#ifndef __CMSIS_RCAR_GEN3_H
-#define __CMSIS_RCAR_GEN3_H
+#ifndef __CMSIS_RCAR_GEN5_H
+#define __CMSIS_RCAR_GEN5_H
 
 /* FPU */
 #define __FPU_PRESENT           1
@@ -38,14 +38,14 @@
 
 /* GIC */
 #define __GIC_PRESENT           1
-#define GIC_DISTRIBUTOR_BASE	0xF1110000U
-#define GIC_INTERFACE_BASE	0xF1120000U
-#define IRQ_GIC_LINE_COUNT	511
+//#define GIC_DISTRIBUTOR_BASE	0xF0000000U
+#define CR52_GICD_ADDR          ((void *)0xF0000000U)
+#define CR52_GICR_ADDR          ((void *)0xF0100000U)
+#define CR52_CPU_ID             0
 /* Not going to list all the interrupts */
 typedef	unsigned int IRQn_Type;
 
-#include "core_ca.h"
-#include "core_cr7.h"
+#include "core_cr52.h"
 
-#endif /* __CMSIS_RCAR_GEN3_H */
+#endif /* __CMSIS_RCAR_GEN5_H */
 

@@ -32,7 +32,7 @@ undefined_handler:
 svc_handler:
     MCR     p15, 0, R0, c7, c5, 6       /* BPIALL */
     DSB
-    b  FreeRTOS_SWI_Handler
+    b  SVC_Handler
 
 prefetch_handler:
     b  prefetch_handler
@@ -44,9 +44,7 @@ reserved_handler:
     b  reserved_handler
 
 irq_handler:
-    MCR     p15, 0, R0, c7, c5, 6       /* BPIALL */
-    DSB
-    b  FreeRTOS_IRQ_Handler
+    b IRQ_Handler
 
 fiq_handler:
     b  fiq_handler
