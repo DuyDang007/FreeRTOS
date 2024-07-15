@@ -54,6 +54,7 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "semphr.h"
+#include <stdio.h>
 
 /* Priorities at which the tasks are created. */
 #define mainQUEUE_RECEIVE_TASK_PRIORITY		( tskIDLE_PRIORITY + 2 )
@@ -134,6 +135,8 @@ const unsigned long ulValueToSend = 100UL;
 
 	for( ;; )
 	{
+		printf("prvQueueSendTask ...\n");
+
 		/* Place this task in the blocked state until it is time to run again. */
 		vTaskDelayUntil( &xNextWakeTime, mainQUEUE_SEND_FREQUENCY_MS );
 
@@ -156,6 +159,7 @@ const unsigned long ulExpectedValue = 100UL;
 
 	for( ;; )
 	{
+		printf("prvQueueReceiveTask ...\n");
 		/* Wait until something arrives in the queue - this task will block
 		indefinitely provided INCLUDE_vTaskSuspend is set to 1 in
 		FreeRTOSConfig.h. */

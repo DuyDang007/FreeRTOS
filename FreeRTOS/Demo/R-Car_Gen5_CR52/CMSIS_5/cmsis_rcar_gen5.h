@@ -42,10 +42,76 @@
 #define CR52_GICD_ADDR          ((void *)0xF0000000U)
 #define CR52_GICR_ADDR          ((void *)0xF0100000U)
 #define CR52_CPU_ID             0
+
+#define BIT(nr)                   (1UL << (nr))
 /* Not going to list all the interrupts */
 typedef	unsigned int IRQn_Type;
 
 #include "core_cr52.h"
+
+typedef uintptr_t mem_addr_t;
+
+static void barrier_dmem_fence_full() {
+    // Todo
+}
+
+__STATIC_FORCEINLINE uint8_t sys_read8(mem_addr_t addr)
+{
+	uint8_t val;
+
+	__asm__ volatile("ldrb %0, [%1]" : "=r" (val) : "r" (addr));
+
+	barrier_dmem_fence_full();
+	return val;
+}
+
+__STATIC_FORCEINLINE void sys_write8(uint8_t data, mem_addr_t addr)
+{
+	barrier_dmem_fence_full();
+	__asm__ volatile("strb %0, [%1]" : : "r" (data), "r" (addr));
+}
+
+__STATIC_FORCEINLINE uint16_t sys_read16(mem_addr_t addr)
+{
+	uint16_t val;
+
+	__asm__ volatile("ldrh %0, [%1]" : "=r" (val) : "r" (addr));
+
+	barrier_dmem_fence_full();
+	return val;
+}
+
+__STATIC_FORCEINLINE void sys_write16(uint16_t data, mem_addr_t addr)
+{
+	barrier_dmem_fence_full();
+	__asm__ volatile("strh %0, [%1]" : : "r" (data), "r" (addr));
+}
+
+__STATIC_FORCEINLINE uint32_t sys_read32(mem_addr_t addr)
+{
+	uint32_t val;
+
+	__asm__ volatile("ldr %0, [%1]" : "=r" (val) : "r" (addr));
+
+	barrier_dmem_fence_full();
+	return val;
+}
+
+__STATIC_FORCEINLINE void sys_write32(uint32_t data, mem_addr_t addr)
+{
+	barrier_dmem_fence_full();
+	__asm__ volatile("str %0, [%1]" : : "r" (data), "r" (addr));
+}
+
+__STATIC_FORCEINLINE uint64_t sys_read64(mem_addr_t addr)
+{
+	uint64_t val;
+
+	__asm__ volatile("ldrd %Q0, %R0, [%1]" : "=r" (val) : "r" (addr));
+
+	barrier_dmem_fence_full();
+	return val;
+}
 
 #endif /* __CMSIS_RCAR_GEN5_H */
 

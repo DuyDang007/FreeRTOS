@@ -12,8 +12,10 @@ SOURCE_C_LIST = ./Blinky/main_blinky.c \
 	        ./common/system_rcar_gen5.c \
             ./common/interrupts.c \
             ./common/heap_useNewlib.c \
+            ./common/dummy.c \
             ./CMSIS_5/irq_ctrl_gic.c \
             ./drivers/gic/gicv3_basic.c \
+            ./drivers/serial/serial.c \
             ../../Source/portable/GCC/ARM_CR52/port.c \
 	        ../../Source/queue.c \
 	        ../../Source/tasks.c \
@@ -23,7 +25,8 @@ SOURCE_C_LIST = ./Blinky/main_blinky.c \
 
 SOURCE_ASM_LIST = ./common/boot.S \
                 ./common/asm_vectors.S \
-                ./drivers/gic/gicv3_cpuif.S
+                ./drivers/gic/gicv3_cpuif.S \
+                ./drivers/serial/scif.S \
 
 OBJ_LIST = $(SOURCE_C_LIST:.c=.o) $(SOURCE_ASM_LIST:.S=.o)
 
@@ -34,7 +37,8 @@ OBJ_LIST = $(SOURCE_C_LIST:.c=.o) $(SOURCE_ASM_LIST:.S=.o)
 
 LDFILE = ./common/lscript.ld
 
-CFLAGS = -ffreestanding -std=gnu99  -mfpu=neon-fp-armv8 -mcpu=cortex-r52 -mtune=cortex-r52  -lnosys --specs=nosys.specs -Wl,-Map=${OUTPUT_DIR}/${PROJ_NAME}.map -MD   -T ${LDFILE} \
+CFLAGS = -ffreestanding -std=gnu99  -mfpu=neon-fp-armv8 -mcpu=cortex-r52 -mtune=cortex-r52  -lnosys --specs=nosys.specs \
+                -Wl,-Map=${OUTPUT_DIR}/${PROJ_NAME}.map -T ${LDFILE} -Wl,--no-warn-rwx-segments \
                 -mfloat-abi=hard \
                 -DmainCREATE_SIMPLE_BLINKY_DEMO_ONLY \
                 -I./				     \
@@ -49,12 +53,8 @@ CFLAGS = -ffreestanding -std=gnu99  -mfpu=neon-fp-armv8 -mcpu=cortex-r52 -mtune=
                 -I../../../FreeRTOS-Plus/Source/FreeRTOS-Plus-Trace/config \
 
 AFLAGS = -mfpu=neon-fp-armv8 --specs=nosys.specs -mcpu=cortex-r52 -mtune=cortex-r52 -mfloat-abi=hard  \
+                -I./        \
                 -I./common
-
-#LDFLAGS = -T ${LDFILE}
-
-#LIBGCC=${shell ${CC} -mcpu=cortex-r52 -mtune=cortex-r52 -mfloat-abi=hard -print-libgcc-file-name}
-#LIBC=${shell ${CC} -mcpu=cortex-r52 -mtune=cortex-r52 -mfloat-abi=hard -print-file-name=libc.a}
 
 all: create target
 

@@ -39,7 +39,6 @@ void Irq_Setup(void)
 
     // Get the ID of the Redistributor connected to this PE
     rd = getRedistID(affinity);
-    rd = 0; // Todo: Remove hardcode
     // Mark this core as being active
     wakeUpRedist(rd);
 
@@ -90,7 +89,6 @@ void Irq_Enable(unsigned int id)
 
     affinity = 0;
     rd = getRedistID(affinity);
-    rd = 0; // Todo: remove hardcode
     setIntGroup(id, rd, GICV3_GROUP1_NON_SECURE);
     enableInt(id, rd);
 }

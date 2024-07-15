@@ -20,7 +20,7 @@ ENTRY(_Reset)
 
 SECTIONS
 {
-.text : {
+.text (READONLY): {
    *(.isr_vector)
    *(.vectors)
    *(.boot)
@@ -137,14 +137,14 @@ SECTIONS
    __exidx_end = .;
 } > ddr_base_addr
 
-.preinit_array : {
+.preinit_array (READONLY): {
    __preinit_array_start = .;
    KEEP (*(SORT(.preinit_array.*)))
    KEEP (*(.preinit_array))
    __preinit_array_end = .;
 } > ddr_base_addr
 
-.init_array : {
+.init_array (READONLY): {
    __init_array_start = .;
    KEEP (*(SORT(.init_array.*)))
    KEEP (*(.init_array))
@@ -152,7 +152,7 @@ SECTIONS
 } > ddr_base_addr
 
 
-.fini_array : {
+.fini_array (READONLY): {
    __fini_array_start = .;
    KEEP (*(SORT(.fini_array.*)))
    KEEP (*(.fini_array))

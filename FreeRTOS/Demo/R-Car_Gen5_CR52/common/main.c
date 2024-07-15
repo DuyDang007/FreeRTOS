@@ -200,7 +200,7 @@ int printf_raw(const char *format, ...);
 void vMainAssertCalled( const char *pcFileName, uint32_t ulLineNumber )
 {
 	/* Don't use printf as it uses FreeRTOS resources */
-	//printf_raw("ASSERT!  Line %d of file %s\n", ulLineNumber, pcFileName);
+	printf_raw("ASSERT!  Line %d of file %s\n", ulLineNumber, pcFileName);
 	taskENTER_CRITICAL();
 	for( ;; );
 }
@@ -208,40 +208,4 @@ void vMainAssertCalled( const char *pcFileName, uint32_t ulLineNumber )
 void vDeleteCallingTask( void )
 {
      vTaskDelete( NULL );
-}
-
-//Dummy for these function when using newlib
-__attribute__((weak)) int _close(int fd)
-{
-//  (void)fd;
-  return (0);
-}
-__attribute__((weak)) int
-_write (int fd, char* buf, int nbytes)
-{
-}
-__attribute__((weak)) int _fstat(int fd, struct stat *buf)
-{
-  (void)fd;
- // buf->st_mode = S_IFCHR; /* Always pretend to be a tty */
-
-  return (0);
-}
-
-__attribute__((weak)) int _isatty(int fd)
-{
-  (void)fd;
-  return (1);
-}
-__attribute__((weak)) off_t _lseek(int fd, off_t offset, int whence)
-{
-  (void)fd;
-  (void)offset;
-  (void)whence;
-  //errno = ESPIPE;
-  return ((off_t)-1);
-}
-__attribute__((weak)) int
-_read (int fd, char* buf, int nbytes)
-{
 }
