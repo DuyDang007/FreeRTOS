@@ -25,9 +25,6 @@ void vConfigureTickInterrupt(void)
 
     Irq_SetupEntry(R_OS_BSP_GENERIC_ARM_TIMER_IRQNUM, (IrqHandlerFn)TickInterruptHandler, NULL);
 
-    //uint64_t g_timer_delay = GENERIC_TIMER_CLK / configTICK_RATE_HZ;
-    //g_timer_delay = CNTPCT_READ() + 0x100000; //hardcode`
-
     /* set timer expiration from current counter value */
     CNTP_CVAL_WRITE(CNTPCT_READ() + COUNT_PER_TICK);
 

@@ -1,3 +1,6 @@
+SEARCH_DIR(.)
+
+INCLUDE lscript_common.ld
 
 /* These values may need changing depending on your app */
 _STACK_SIZE       = 0x180000;
@@ -10,13 +13,6 @@ _HEAP_SIZE        = 0x18000;
 /* Heap uses HeapBase global var, see configTOTAL_HEAP_SIZE */
 
 /* Note: See RCAR_VIDEO_BUFFER_START for additional memory used */
-
-MEMORY
-{
-   ddr_base_addr : ORIGIN = 0x00000000, LENGTH = 0x2000000
-}
-
-ENTRY(_Reset)
 
 SECTIONS
 {
@@ -35,19 +31,19 @@ SECTIONS
    *(.glue_7t)
    *(.ARM.extab)
    *(.gnu.linkonce.armextab.*)
-} > ddr_base_addr
+} > vram_base_addr
 
 .init : {
    KEEP (*(.init))
-} > ddr_base_addr
+} > vram_base_addr
 
 .fini : {
    KEEP (*(.fini))
-} > ddr_base_addr
+} > vram_base_addr
 
 .interp : {
    KEEP (*(.interp))
-} > ddr_base_addr
+} > vram_base_addr
 
 .rodata : {
    __rodata_start = .;
@@ -55,14 +51,14 @@ SECTIONS
    *(.rodata.*)
    *(.gnu.linkonce.r.*)
    __rodata_end = .;
-} > ddr_base_addr
+} > vram_base_addr
 
 .rodata1 : {
    __rodata1_start = .;
    *(.rodata1)
    *(.rodata1.*)
    __rodata1_end = .;
-} > ddr_base_addr
+} > vram_base_addr
 
 .data : {
    __data_start = .;
@@ -73,18 +69,18 @@ SECTIONS
    *(.got)
    *(.got.plt)
    __data_end = .;
-} > ddr_base_addr
+} > vram_base_addr
 
 .data1 : {
    __data1_start = .;
    *(.data1)
    *(.data1.*)
    __data1_end = .;
-} > ddr_base_addr
+} > vram_base_addr
 
 .got : {
    *(.got)
-} > ddr_base_addr
+} > vram_base_addr
 
 
 .ctors : {
@@ -96,7 +92,7 @@ SECTIONS
    KEEP (*(.ctors))
    __CTOR_END__ = .;
    ___CTORS_END___ = .;
-} > ddr_base_addr
+} > vram_base_addr
 
 .dtors : {
    __DTOR_LIST__ = .;
@@ -107,27 +103,27 @@ SECTIONS
    KEEP (*(.dtors))
    __DTOR_END__ = .;
    ___DTORS_END___ = .;
-} > ddr_base_addr
+} > vram_base_addr
 
 .fixup : {
    __fixup_start = .;
    *(.fixup)
    __fixup_end = .;
-} > ddr_base_addr
+} > vram_base_addr
 
 .eh_frame : {
    *(.eh_frame)
-} > ddr_base_addr
+} > vram_base_addr
 
 .eh_framehdr : {
    __eh_framehdr_start = .;
    *(.eh_framehdr)
    __eh_framehdr_end = .;
-} > ddr_base_addr
+} > vram_base_addr
 
 .gcc_except_table : {
    *(.gcc_except_table)
-} > ddr_base_addr
+} > vram_base_addr
 
 
 .ARM.exidx : {
@@ -135,21 +131,21 @@ SECTIONS
    *(.ARM.exidx*)
    *(.gnu.linkonce.armexidix.*.*)
    __exidx_end = .;
-} > ddr_base_addr
+} > vram_base_addr
 
 .preinit_array (READONLY): {
    __preinit_array_start = .;
    KEEP (*(SORT(.preinit_array.*)))
    KEEP (*(.preinit_array))
    __preinit_array_end = .;
-} > ddr_base_addr
+} > vram_base_addr
 
 .init_array (READONLY): {
    __init_array_start = .;
    KEEP (*(SORT(.init_array.*)))
    KEEP (*(.init_array))
    __init_array_end = .;
-} > ddr_base_addr
+} > vram_base_addr
 
 
 .fini_array (READONLY): {
@@ -157,13 +153,13 @@ SECTIONS
    KEEP (*(SORT(.fini_array.*)))
    KEEP (*(.fini_array))
    __fini_array_end = .;
-} > ddr_base_addr
+} > vram_base_addr
 
 .ARM.attributes : {
    __ARM.attributes_start = .;
    *(.ARM.attributes)
    __ARM.attributes_end = .;
-} > ddr_base_addr
+} > vram_base_addr
 
 .sdata : {
    __sdata_start = .;
@@ -171,7 +167,7 @@ SECTIONS
    *(.sdata.*)
    *(.gnu.linkonce.s.*)
    __sdata_end = .;
-} > ddr_base_addr
+} > vram_base_addr
 
 .sbss (NOLOAD) : {
    __sbss_start = .;
@@ -179,7 +175,7 @@ SECTIONS
    *(.sbss.*)
    *(.gnu.linkonce.sb.*)
    __sbss_end = .;
-} > ddr_base_addr
+} > vram_base_addr
 
 .tdata : {
    __tdata_start = .;
@@ -187,7 +183,7 @@ SECTIONS
    *(.tdata.*)
    *(.gnu.linkonce.td.*)
    __tdata_end = .;
-} > ddr_base_addr
+} > vram_base_addr
 
 .tbss : {
    __tbss_start = .;
@@ -195,7 +191,7 @@ SECTIONS
    *(.tbss.*)
    *(.gnu.linkonce.tb.*)
    __tbss_end = .;
-} > ddr_base_addr
+} > vram_base_addr
 
 .bss (NOLOAD) : {
    . = ALIGN(4);
@@ -206,7 +202,7 @@ SECTIONS
    *(COMMON)
    . = ALIGN(4);
    __bss_end__ = .;
-} > ddr_base_addr
+} > vram_base_addr
 
 /* Generate Stack and Heap definitions */
 
@@ -220,7 +216,7 @@ SECTIONS
    . += _HEAP_SIZE;
    _heap_end = .;
    HeapLimit = .;
-} > ddr_base_addr
+} > vram_base_addr
 
 .stack (NOLOAD) : {
    . = ALIGN(16);
@@ -248,7 +244,7 @@ SECTIONS
    . += _UNDEF_STACK_SIZE;
    . = ALIGN(16);
    __undef_stack = .;
-} > ddr_base_addr
+} > vram_base_addr
 
 _end = .;
 }

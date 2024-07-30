@@ -1,6 +1,8 @@
 OUTPUT_DIR = ./bin
 PROJ_NAME = freertos
 
+board := x5h_vdk
+
 CC = arm-none-eabi-gcc
 LD = arm-none-eabi-ld
 AR = arm-none-eabi-ar
@@ -8,20 +10,20 @@ ARFLAGS = rcs
 OBJCOPY = arm-none-eabi-objcopy
 
 SOURCE_C_LIST = ./Blinky/main_blinky.c \
-	        ./common/FreeRTOS_tick_config.c \
-	        ./common/system_rcar_gen5.c \
-            ./common/interrupts.c \
-            ./common/heap_useNewlib.c \
-            ./common/dummy.c \
-            ./CMSIS_5/irq_ctrl_gic.c \
-            ./drivers/gic/gicv3_basic.c \
-            ./drivers/serial/serial.c \
-            ../../Source/portable/GCC/ARM_CR52/port.c \
+		./common/FreeRTOS_tick_config.c \
+		./common/system_rcar_gen5.c \
+		./common/interrupts.c \
+		./common/heap_useNewlib.c \
+		./common/dummy.c \
+		./CMSIS_5/irq_ctrl_gic.c \
+		./drivers/gic/gicv3_basic.c \
+		./drivers/serial/serial.c \
+		../../Source/portable/GCC/ARM_CR52/port.c \
 	        ../../Source/queue.c \
 	        ../../Source/tasks.c \
 	        ../../Source/list.c \
 	        ../../Source/timers.c \
-            ./common/main.c \
+		./common/main.c \
 
 SOURCE_ASM_LIST = ./common/boot.S \
                 ./common/asm_vectors.S \
@@ -30,17 +32,16 @@ SOURCE_ASM_LIST = ./common/boot.S \
 
 OBJ_LIST = $(SOURCE_C_LIST:.c=.o) $(SOURCE_ASM_LIST:.S=.o)
 
-#MAIN_SOURCE = ./common/main.c
-	      
-
-#MAIN_OBJ = $(SOURCE_C_LIST:.c=.o) 
-
-LDFILE = ./common/lscript.ld
+LDFILE = ./common/linker/lscript_sram.ld
+ifeq ($(board),x5h_vdk)
+	LDFILE = ./common/linker/lscript_vram.ld
+endif
 
 CFLAGS = -ffreestanding -std=gnu99  -mfpu=neon-fp-armv8 -mcpu=cortex-r52 -mtune=cortex-r52  -lnosys --specs=nosys.specs \
                 -Wl,-Map=${OUTPUT_DIR}/${PROJ_NAME}.map -T ${LDFILE} -Wl,--no-warn-rwx-segments \
                 -mfloat-abi=hard \
                 -DmainCREATE_SIMPLE_BLINKY_DEMO_ONLY \
+		-L./common/linker		     \
                 -I./				     \
                 -I./CMSIS_5/CMSIS/Core_R/Include/ \
                 -I./CMSIS_5 \

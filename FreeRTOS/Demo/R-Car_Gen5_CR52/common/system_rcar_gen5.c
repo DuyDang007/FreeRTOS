@@ -9,6 +9,8 @@
 #include <string.h>
 #include "cmsis_rcar_gen5.h"
 
+#define SYSTEM_CLOCK_COUNTER_DEFAULT 25000000
+
 extern const unsigned int __bss_start__;
 extern const unsigned int __bss_end__;
 extern const unsigned int _STACK_SIZE;	
@@ -108,6 +110,10 @@ static void FPU_Enable()
 
 }
 
+static void system_counter_init(uint32_t clock_rate) {
+	__set_CNTFRQ(clock_rate);
+}
+
 void SystemInit(void)
 {
 //	uint32_t tmp;
@@ -125,6 +131,8 @@ void SystemInit(void)
 #if (defined(__FPU_USED) && (__FPU_USED == 1U))
     FPU_Enable();
 #endif
+    // Init system counter.
+    system_counter_init(SYSTEM_CLOCK_COUNTER_DEFAULT);
 //
 //	/*
 //	 * Do not use global variables because this function is called before
