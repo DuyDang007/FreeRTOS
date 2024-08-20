@@ -111,7 +111,9 @@ static void FPU_Enable()
 }
 
 static void system_counter_init(uint32_t clock_rate) {
+#if 0 // Fix me later
 	__set_CNTFRQ(clock_rate);
+#endif
 }
 
 void SystemInit(void)

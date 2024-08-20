@@ -1,5 +1,10 @@
 OUTPUT_DIR = ./bin
-PROJ_NAME = freertos
+
+ifdef TEST_FULL
+PROJ_NAME = full_demo
+else
+PROJ_NAME = blinky_demo
+endif
 
 board := x5h_vdk
 
@@ -25,6 +30,32 @@ SOURCE_C_LIST = ./Blinky/main_blinky.c \
 	        ../../Source/timers.c \
 		./common/main.c \
 
+# Full Demo Source
+ifdef TEST_FULL
+SOURCE_C_LIST += ./Full_Demo/main_full.c \
+                 ../Common/Minimal/EventGroupsDemo.c \
+                 ../Common/Minimal/blocktim.c \
+                 ../Common/Minimal/recmutex.c \
+                 ../Common/Minimal/semtest.c \
+                 ../Common/Minimal/dynamic.c \
+                 ../Common/Minimal/countsem.c \
+                 ../Common/Minimal/GenQTest.c \
+                 ../Common/Minimal/flop.c \
+                 ../Common/Minimal/IntSemTest.c \
+                 ../Common/Minimal/TaskNotify.c \
+                 ../Common/Minimal/StaticAllocation.c \
+                 ../Common/Minimal/AbortDelay.c \
+                 ../Common/Minimal/QueueOverwrite.c \
+                 ../Common/Minimal/TimerDemo.c \
+                 ../Common/Minimal/QPeek.c \
+                 ../Common/Minimal/QueueSet.c \
+                 ../Common/Minimal/StreamBufferDemo.c \
+                 ../Common/Minimal/death.c \
+                 ../Common/Minimal/MessageBufferDemo.c \
+                 ../../Source/event_groups.c \
+                 ../../Source/stream_buffer.c
+endif
+
 SOURCE_ASM_LIST = ./common/boot.S \
                 ./common/asm_vectors.S \
                 ./drivers/gic/gicv3_cpuif.S \
@@ -40,7 +71,6 @@ endif
 CFLAGS = -ffreestanding -std=gnu99  -mfpu=neon-fp-armv8 -mcpu=cortex-r52 -mtune=cortex-r52  -lnosys --specs=nosys.specs \
                 -Wl,-Map=${OUTPUT_DIR}/${PROJ_NAME}.map -T ${LDFILE} -Wl,--no-warn-rwx-segments \
                 -mfloat-abi=hard \
-                -DmainCREATE_SIMPLE_BLINKY_DEMO_ONLY \
 		-L./common/linker		     \
                 -I./				     \
                 -I./CMSIS_5/CMSIS/Core_R/Include/ \
@@ -52,6 +82,21 @@ CFLAGS = -ffreestanding -std=gnu99  -mfpu=neon-fp-armv8 -mcpu=cortex-r52 -mtune=
                 -I../../../FreeRTOS-Plus/Source/FreeRTOS-Plus-CLI \
                 -I../../../FreeRTOS-Plus/Source/FreeRTOS-Plus-Trace/Include \
                 -I../../../FreeRTOS-Plus/Source/FreeRTOS-Plus-Trace/config \
+                -I../Common/include
+
+ifdef TEST_FULL
+CFLAGS += -DmainCREATE_SIMPLE_BLINKY_DEMO_ONLY=0 \
+	  -DINCLUDE_eTaskGetState=1 \
+	  -DINCLUDE_xTimerPendFunctionCall=1 \
+	  -DconfigUSE_RECURSIVE_MUTEXES=1 \
+          -DconfigUSE_MUTEXES=1 \
+          -DINCLUDE_xTaskAbortDelay=1 \
+	  -DconfigUSE_QUEUE_SETS=1 \
+	  -DINCLUDE_xTaskGetHandle=1 \
+	  -DINCLUDE_xSemaphoreGetMutexHolder=1
+else
+CFLAGS += -DmainCREATE_SIMPLE_BLINKY_DEMO_ONLY=1
+endif
 
 AFLAGS = -mfpu=neon-fp-armv8 --specs=nosys.specs -mcpu=cortex-r52 -mtune=cortex-r52 -mfloat-abi=hard  \
                 -I./        \
@@ -69,8 +114,9 @@ create:
 
 target: ${OBJ_LIST}
 	@echo CC $<
-	@${CC} ${CFLAGS} ${OBJ_LIST}  ${LIBC} ${LIBGCC}  -o ${OUTPUT_DIR}/${PROJ_NAME}.elf 
+	@${CC} ${CFLAGS} ${OBJ_LIST} -lm -o  ${OUTPUT_DIR}/${PROJ_NAME}.elf 
 	$(OBJCOPY) -O binary "$(OUTPUT_DIR)/$(PROJ_NAME).elf" "$(OUTPUT_DIR)/$(PROJ_NAME).bin"
+	ln -sf ${PROJ_NAME}.elf ${OUTPUT_DIR}/freertos.elf
 
 %.o: %.c
 	@echo CC $<
@@ -83,4 +129,3 @@ target: ${OBJ_LIST}
 .PHONY: clean
 clean:
 	@rm -rf $(OBJ_LIST) $(OUTPUT_DIR)
-

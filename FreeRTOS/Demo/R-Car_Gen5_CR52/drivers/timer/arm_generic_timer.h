@@ -9,6 +9,6 @@
 #define CNTP_CTL_WRITE(v)     __set_CNTP_CTL(v)
 #define CNTP_CVAL_READ()      __get_CNTP_CVAL()
 #define CNTP_CVAL_WRITE(v)    __set_CNTP_CVAL(v)
-#define GENERIC_TIMER_CLK     __get_CNTFRQ()
+#define GENERIC_TIMER_CLK     25000000
 
 #endif // __arm_generic_timer_h

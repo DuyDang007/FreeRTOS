@@ -11,7 +11,8 @@ For the CR52 (arm-gnu) the following toolchain have been used:
 
 ### Build
  cd FreeRTOS/Demo/R-Car_Gen5_CR52/
- make
+ make			# compile Blink Demo
+ make TEST_FULL=1	# compile Full Demo
 
 ### Output
  freertos.a, freertos.bin and freertos.elf are contained in FreeRTOS/Demo/R-Car_Gen5_CR52/bin.

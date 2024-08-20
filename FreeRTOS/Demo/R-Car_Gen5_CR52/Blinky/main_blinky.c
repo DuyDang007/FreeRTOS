@@ -60,9 +60,9 @@
 #define mainQUEUE_RECEIVE_TASK_PRIORITY		( tskIDLE_PRIORITY + 2 )
 #define	mainQUEUE_SEND_TASK_PRIORITY		( tskIDLE_PRIORITY + 1 )
 
-/* The rate at which data is sent to the queue.  The 200ms value is converted
+/* The rate at which data is sent to the queue.  The 1000ms value is converted
 to ticks using the portTICK_PERIOD_MS constant. */
-#define mainQUEUE_SEND_FREQUENCY_MS			( pdMS_TO_TICKS( 200UL ) )
+#define mainQUEUE_SEND_FREQUENCY_MS			( pdMS_TO_TICKS( 2000UL ) )
 
 /* The number of items the queue can hold.  This is 1 as the receive task
 will remove items as they are added, meaning the send task should always find
