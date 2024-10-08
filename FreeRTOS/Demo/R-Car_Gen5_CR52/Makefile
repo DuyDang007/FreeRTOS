@@ -23,6 +23,9 @@ SOURCE_C_LIST = ./Blinky/main_blinky.c \
 		./CMSIS_5/irq_ctrl_gic.c \
 		./drivers/gic/gicv3_basic.c \
 		./drivers/serial/serial.c \
+		./drivers/pcie/pcie.c \
+		./drivers/pcie/printer.c \
+		./drivers/pcie/mem_io.c  \
 		../../Source/portable/GCC/ARM_CR52/port.c \
 	        ../../Source/queue.c \
 	        ../../Source/tasks.c \
