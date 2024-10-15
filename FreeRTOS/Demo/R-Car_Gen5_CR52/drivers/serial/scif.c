@@ -2,12 +2,18 @@
 #include "CMSIS_5/cmsis_rcar_gen5.h"
 
 
+#if SCIF==1
 #define SCIF0_BASE 0xc0700000
 #define SCIF1_BASE 0xc0704000
-#define SCIF3_BASE 0xc0700000
-#define SCIF4_BASE 0xc0700000
-
-static uint32_t scif_base = 0xc0700000; // using scfi 0 by default.
+#define SCIF3_BASE 0xc0708000
+#define SCIF4_BASE 0xc070C000
+#else // HSCIF
+#define SCIF0_BASE 0xc0710000
+#define SCIF1_BASE 0xc0714000
+#define SCIF3_BASE 0xc0718000
+#define SCIF4_BASE 0xc071C000
+#endif
+static uint32_t scif_base = SCIF0_BASE;
 
 
 /* Registers */
