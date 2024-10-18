@@ -178,7 +178,7 @@ int R_I2C_Open(i2c_master_ctrl_t * const p_ctrl, i2c_master_cfg_t const * const 
  *
  * @retval 0 if successful.
  */
-int R_I2C_Close(i2c_master_ctrl_t * const p_ctrl);
+int R_I2C_Close(i2c_master_ctrl_t * const p_ctrl, i2c_master_cfg_t const * const p_cfg);
 
 /**
  * @brief Read data from an I2C slave starting at offset 0x00.

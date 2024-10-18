@@ -10,6 +10,8 @@
 #include "r_i2c_api.h"
 #include "r_i2c_regs.h"
 #include <stdio.h>
+#include "state-manager/r_clock_domain_id.h"
+#include "state-manager/r_state_manager.h"
 
 #define printf_delay(fmt, ...)      \
         vTaskDelay(10);             \
@@ -18,7 +20,7 @@ printf(fmt, ##__VA_ARGS__);         \
 static int32_t  loc_WaitMsrEvent(r_i2c_Unit_t Unit, uint32_t EventMask);
 static uint32_t loc_ReadCommon(r_i2c_Unit_t Unit, uint32_t SlaveAddr,
                                uint8_t *Bytes, uint32_t NumBytes);
-
+static int clock_id;
 static int32_t loc_WaitMsrEvent(r_i2c_Unit_t Unit, uint32_t EventMask)
 {
     uint32_t val;
@@ -43,6 +45,47 @@ static int32_t loc_WaitMsrEvent(r_i2c_Unit_t Unit, uint32_t EventMask)
 void RCar_I2C_Init(r_i2c_Unit_t Unit, uint32_t I2C_ClockRate)
 {
     uintptr_t i2c_base_addr = R_I2C_PRV_GetRegbase(Unit);
+    uint8_t ret;
+
+    switch (Unit) {
+        case R_I2C_IF0:
+            clock_id = X5H_CLOCK_ID_MDLC_I2C0;
+            break;
+        case R_I2C_IF1:
+            clock_id = X5H_CLOCK_ID_MDLC_I2C1;
+            break;
+        case R_I2C_IF2:
+            clock_id = X5H_CLOCK_ID_MDLC_I2C2;
+            break;
+        case R_I2C_IF3:
+            clock_id = X5H_CLOCK_ID_MDLC_I2C3;
+            break;
+        case R_I2C_IF4:
+            clock_id = X5H_CLOCK_ID_MDLC_I2C4;
+            break;
+        case R_I2C_IF5:
+            clock_id = X5H_CLOCK_ID_MDLC_I2C5;
+            break;
+        case R_I2C_IF6:
+            clock_id = X5H_CLOCK_ID_MDLC_I2C6;
+            break;
+        case R_I2C_IF7:
+            clock_id = X5H_CLOCK_ID_MDLC_I2C7;
+            break;
+        case R_I2C_IF8:
+            clock_id = X5H_CLOCK_ID_MDLC_I2C8;
+            break;
+        default:
+            printf("[R_I2C_PRV_GetClockId] : Wrong I2C Unit %d\r\n", Unit);
+            break;
+    }
+
+    ret = R_StateManager_ClockOn(clock_id);
+    if (ret)
+    {
+        printf("Error: Failed to set clock id %d ON.\r\n", clock_id);
+    }
+
 
     switch (I2C_ClockRate)
     {
@@ -71,7 +114,7 @@ void RCar_I2C_Init(r_i2c_Unit_t Unit, uint32_t I2C_ClockRate)
             break;
 
         default:
-            printf_delay("Invalid I2C ClockRate\n");
+            printf("Invalid I2C ClockRate\n");
             break;
     }
 
@@ -359,7 +402,43 @@ uint32_t RCar_I2C_ReadRegMap(r_i2c_Unit_t Unit, uint32_t SlaveAddr, uint32_t Sla
 // Read from slave at default offset 0x00
 uint32_t RCar_I2C_Read(r_i2c_Unit_t Unit, uint32_t SlaveAddr, uint8_t *Bytes, uint32_t NumBytes)
 {
-    return RCar_I2C_ReadRegMap(Unit, SlaveAddr, (uint32_t)0x00, Bytes, NumBytes);
+    uintptr_t i2c_base_addr = R_I2C_PRV_GetRegbase(Unit);
+    uint32_t val;
+
+    /* Clear Master Status register */
+    R_I2C_PRV_RegWrite32(i2c_base_addr + R_I2C_ICMSR, 0);
+
+    /* Set Master Interrupt Enable register (MDRE=1, MATE=1)*/
+    R_I2C_PRV_RegWrite32(i2c_base_addr + R_I2C_ICMIER, R_I2C_MDR_BIT | R_I2C_MAT_BIT);
+
+    /* Set Master Address register (slave addr + 0x01 read mode) */
+    R_I2C_PRV_RegWrite32(i2c_base_addr + R_I2C_ICMAR, (SlaveAddr << 1) + 1);
+
+    do {
+        val = R_I2C_PRV_RegRead32(i2c_base_addr + R_I2C_ICMCR);
+    } while (val & R_I2C_FSDA_BIT);
+
+    /* Set Master Control register (MDBS=1, MIE=1, ESG=1) */
+    R_I2C_PRV_RegWrite32(i2c_base_addr + R_I2C_ICMCR, 0x89);
+
+    return loc_ReadCommon(Unit, SlaveAddr, Bytes, NumBytes);
 }
 
+int RCar_I2C_Close(r_i2c_Unit_t Unit)
+{
+    uintptr_t i2c_base_addr = R_I2C_PRV_GetRegbase(Unit);
+    uint8_t ret;
 
+    R_I2C_PRV_RegWrite32(i2c_base_addr + R_I2C_ICMSR, 0);
+    R_I2C_PRV_RegWrite32(i2c_base_addr + R_I2C_ICMIER, 0);
+    R_I2C_PRV_RegWrite32(i2c_base_addr + R_I2C_ICMCR, 0);
+
+    ret = R_StateManager_ClockOff(clock_id);
+    if (ret)
+    {
+        printf("Error: Failed to set clock id %d OFF.\r\n", clock_id);
+        return ret;
+    }
+
+    return 0;
+}

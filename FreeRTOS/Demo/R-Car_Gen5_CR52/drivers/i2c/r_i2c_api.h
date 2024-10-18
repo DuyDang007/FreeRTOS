@@ -89,6 +89,7 @@ uint32_t RCar_I2C_ReadRegMap(r_i2c_Unit_t Unit, uint32_t SlaveAddr, uint32_t Sla
 void RCar_I2C_Init(r_i2c_Unit_t Unit, uint32_t I2C_ClockRate);
 int R_I2C_SetInterruptCallback(r_i2c_Unit_t Unit, IrqHandlerFn handler, void *ctx);
 int R_I2C_Irq_handler(r_i2c_Unit_t Unit);
+int RCar_I2C_Close(r_i2c_Unit_t Unit);
 /** @} */ /* end of group I2Cgroup */
 
 #ifdef __cplusplus
