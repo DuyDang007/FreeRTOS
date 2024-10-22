@@ -26,6 +26,7 @@ SOURCE_C_LIST = ./Blinky/main_blinky.c \
 		./drivers/pcie/pcie.c \
 		./drivers/pcie/printer.c \
 		./drivers/pcie/mem_io.c  \
+        ./drivers/mpu/mpu.c \
 		../../Source/portable/GCC/ARM_CR52/port.c \
 	        ../../Source/queue.c \
 	        ../../Source/tasks.c \
@@ -79,6 +80,7 @@ CFLAGS = -ffreestanding -std=gnu99  -mfpu=neon-fp-armv8 -mcpu=cortex-r52 -mtune=
                 -I./CMSIS_5/CMSIS/Core_R/Include/ \
                 -I./CMSIS_5 \
                 -I./common \
+                -I./drivers/mpu \
                 -I../../Source/include \
                 -I../../Source/portable/GCC/ARM_CR52 \
                 -I../../../FreeRTOS-Plus/Demo/Common/FreeRTOS_Plus_CLI_Demos \
