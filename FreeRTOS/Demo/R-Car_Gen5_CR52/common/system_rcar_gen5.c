@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "cmsis_rcar_gen5.h"
+#include "mpu.h"
 
 #define SYSTEM_CLOCK_COUNTER_DEFAULT 25000000
 
@@ -25,58 +26,18 @@ extern int main(void);
 
 static void Init_MPU(void)
 {
-#if 0 // Fix me: Enable for CR52
-	int region = 0;
-	uint32_t attributes;
-	uint32_t nr_regions = ARM_MPU_GetNrRegions();
+#if 1
+    /* Disable MPU */
+    MPU_Disable();
 
-	ARM_MPU_Disable();
+    MPU_Init();
 
-	/* ARM_MPU_ATTRIB = XN, AP, TEX, S, C, B. See DRACR register description for
-	 * the meanings */
+    MPU_SetRegion(REGION_0, REGION_SRAM_ATTR(0x00, 0x2000000));
+    MPU_SetRegion(REGION_1, REGION_DEVICE_ATTR(0x2000000, 0xFFFFFFFF));
+    
+    /* Enable MPU */
+    MPU_Enable();
 
-	/* Default */
-	attributes = ARM_MPU_ATTRIB(1, ARM_MPU_AP_NONE, 1, 0, 1, 1);
-	ARM_MPU_SetRegionCR(region++, 0x00000000U, attributes, ARM_MPU_REGION_SIZE_4GB);
-
-	/* Peripherals */
-	attributes = ARM_MPU_ATTRIB(1, ARM_MPU_AP_FULL, 2, 0, 0, 0);
-	ARM_MPU_SetRegionCR(region++, 0xC0000000U, attributes, ARM_MPU_REGION_SIZE_1GB);
-
-	/* Data (non-Cacheable, non-Bufferable) */
-	attributes = ARM_MPU_ATTRIB(1, ARM_MPU_AP_FULL, 1, 0, 0, 0);
-	ARM_MPU_SetRegionCR(region++, 0x40000000U, attributes, ARM_MPU_REGION_SIZE_1GB);
-
-	/* Data (Cacheable, Bufferable) */
-	attributes = ARM_MPU_ATTRIB(1, ARM_MPU_AP_FULL, 1, 0, 1, 1);
-	ARM_MPU_SetRegionCR(region++, 0x70000000U, attributes, ARM_MPU_REGION_SIZE_256MB);
-
-	/* Code */
-	attributes = ARM_MPU_ATTRIB(0, ARM_MPU_AP_FULL, 1, 0, 1, 1);
-	ARM_MPU_SetRegionCR(region++, (uint32_t)&_Reset, attributes, ARM_MPU_REGION_SIZE_8MB);
-
-	/*
-	 * The Cortex R7 can have the vectors at address 0x0 or 0xffff0000 (see the
-	 * SCTLR V bit). On R-Car they are at 0x0, but the access is offset by
-	 * the address programmed into the CR7BAR register. However, as far as
-	 * the MPU is concerned, the access is not offset.
-	 * Therefore, set the MPU to enable access to address 0x0 for the vectors.
-	 */
-	ARM_MPU_SetRegionCR(region++, 0x00000000U, attributes, ARM_MPU_REGION_SIZE_256B);
-
-	/* Resource table (non-Cacheable, non-Bufferable) */
-	attributes = ARM_MPU_ATTRIB(1, ARM_MPU_AP_FULL, 1, 0, 0, 0);
-	ARM_MPU_SetRegionCR(region++, (uint32_t)&resource_table, attributes, ARM_MPU_REGION_SIZE_256B);
-
-#if ETHER_ENABLE
-	/* 128KB non-cached area for URAM (descriptor) area of ETH */
-	attributes = ARM_MPU_ATTRIB(1, ARM_MPU_AP_FULL, 1, 0, 0, 0);
-	ARM_MPU_SetRegionCR(region++, (uint32_t)&eth_non_cache_start, attributes, ARM_MPU_REGION_SIZE_128KB);
-#endif
-	while (region < nr_regions)
-		ARM_MPU_ClrRegion(region++);
-
-	ARM_MPU_Enable();
 #endif
 }
 
