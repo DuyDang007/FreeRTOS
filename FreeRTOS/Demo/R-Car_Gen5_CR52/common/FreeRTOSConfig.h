@@ -12,6 +12,7 @@
  * See http://www.freertos.org/a00110.html
  *----------------------------------------------------------*/
 
+
 #define configSUPPORT_STATIC_ALLOCATION                 1
 #define configSUPPORT_DYNAMIC_ALLOCATION                1 /* Defaults to 1 anyway. */
 
@@ -74,10 +75,10 @@
 #define configUSE_TASK_NOTIFICATIONS (1)
 #endif
 #ifndef configUSE_MUTEXES
-#define configUSE_MUTEXES (0)
+#define configUSE_MUTEXES (1)
 #endif
 #ifndef configUSE_RECURSIVE_MUTEXES
-#define configUSE_RECURSIVE_MUTEXES (0)
+#define configUSE_RECURSIVE_MUTEXES (1)
 #endif
 #ifndef configUSE_COUNTING_SEMAPHORES
 #define configUSE_COUNTING_SEMAPHORES (1)
@@ -92,7 +93,7 @@
 #define configQUEUE_REGISTRY_SIZE (10)
 #endif
 #ifndef configUSE_QUEUE_SETS
-#define configUSE_QUEUE_SETS (0)
+#define configUSE_QUEUE_SETS (1)
 #endif
 #ifndef configUSE_TIME_SLICING
 #define configUSE_TIME_SLICING (0)
@@ -191,19 +192,19 @@
 #define INCLUDE_xTaskGetIdleTaskHandle (0)
 #endif
 #ifndef INCLUDE_eTaskGetState
-#define INCLUDE_eTaskGetState (0)
+#define INCLUDE_eTaskGetState (1)
 #endif
 #ifndef INCLUDE_xEventGroupSetBitFromISR
 #define INCLUDE_xEventGroupSetBitFromISR (1)
 #endif
 #ifndef INCLUDE_xTimerPendFunctionCall
-#define INCLUDE_xTimerPendFunctionCall (0)
+#define INCLUDE_xTimerPendFunctionCall (1)
 #endif
 #ifndef INCLUDE_xTaskAbortDelay
-#define INCLUDE_xTaskAbortDelay (0)
+#define INCLUDE_xTaskAbortDelay (1)
 #endif
 #ifndef INCLUDE_xTaskGetHandle
-#define INCLUDE_xTaskGetHandle (0)
+#define INCLUDE_xTaskGetHandle (1)
 #endif
 #ifndef INCLUDE_xTaskResumeFromISR
 #define INCLUDE_xTaskResumeFromISR (1)
@@ -220,6 +221,21 @@
 #ifndef configUNIQUE_INTERRUPT_PRIORITIES
 #define configUNIQUE_INTERRUPT_PRIORITIES          (32)
 #endif
+#ifndef INCLUDE_xSemaphoreGetMutexHolder
+#define INCLUDE_xSemaphoreGetMutexHolder 1
+#endif
+#ifndef configUSE_EVENT_GROUPS
+#define configUSE_EVENT_GROUPS 1
+#endif
+
+#ifdef  configSUPPORT_POSIX
+#define configUSE_POSIX_ERRNO 1
+#define configUSE_APPLICATION_TASK_TAG 1
+#endif 
+
+// macro is point to a not symbol macro in file portmacro.h -> i can't set it to correct answer 
+// this macro need for SUPPORT_POSIX when build
+#define portFORCE_INLINE
 
 /*
  * The application must provide a function that configures a peripheral to

@@ -57,7 +57,7 @@
 
 /* Standard includes. */
 #include <stdio.h>
-
+#include <string.h>
 /* Kernel includes. */
 #include "FreeRTOS.h"
 #include "task.h"
@@ -88,6 +88,10 @@
 #include "MessageBufferDemo.h"
 #include "StreamBufferDemo.h"
 #include "death.h"
+
+#ifdef configSUPPORT_POSIX
+#include "posix_demo.h"
+#endif 
 /*------------------------*/
 
 /* Priorities for the demo application tasks. */
@@ -117,6 +121,7 @@ purpose of ensuring parameters are passed into tasks correctly. */
 /*CORTEX M3 DEFINE*/
 #define mainMESSAGE_BUFFER_TASKS_STACK_SIZE	( 100 )
 
+#define mainPOSIX_DEMO_PRIORITY    ( tskIDLE_PRIORITY + 4 )
 /*-----------------------------------------------------------*/
 
 
@@ -124,6 +129,7 @@ purpose of ensuring parameters are passed into tasks correctly. */
  * The check task, as described at the top of this file.
  */
 static void prvCheckTask( void *pvParameters );
+TaskHandle_t prvCheckTaskHandle;
 
 /*
  * Register commands that can be used with FreeRTOS+CLI.  The commands are
@@ -153,7 +159,7 @@ void vFullDemoTickHook( void );
 /*-----------------------------------------------------------*/
 
 void main_full( void )
-{
+{	
 	printf( "%s", "This call from full main.\n" );
 	/* Start all the other standard demo/test tasks.  They have no particular
 	functionality, but do demonstrate how to use the FreeRTOS API and test the
@@ -181,14 +187,18 @@ void main_full( void )
 	vStartMessageBufferTasks( mainMESSAGE_BUFFER_TASKS_STACK_SIZE );
 	vStartStreamBufferTasks();
 	/*----------------*/
-
 #endif
+
+#ifdef configSUPPORT_POSIX
+    xTaskCreate( vStartPOSIXDemo, "posix", configMINIMAL_STACK_SIZE, NULL, mainPOSIX_DEMO_PRIORITY, NULL );
+#endif 
+
 	/* Create the task that just adds a little random behaviour. */
 	xTaskCreate( prvPseudoRandomiser, "Rnd", configMINIMAL_STACK_SIZE, NULL, configMAX_PRIORITIES - 1, NULL );
 
 	/* Create the task that performs the 'check' functionality,	as described at
 	the top of this file. */
-	xTaskCreate( prvCheckTask, "Check", configMINIMAL_STACK_SIZE, NULL, mainCHECK_TASK_PRIORITY, NULL );
+	xTaskCreate( prvCheckTask, "Check", configMINIMAL_STACK_SIZE, NULL, mainCHECK_TASK_PRIORITY, &prvCheckTaskHandle);
 
 	/* Start the scheduler. */
 	vTaskStartScheduler();
@@ -207,6 +217,9 @@ void main_full( void )
 
 static void prvCheckTask( void *pvParameters )
 {
+#ifdef configSUPPORT_POSIX
+vTaskSuspend(NULL);
+#endif 
 TickType_t xDelayPeriod = mainNO_ERROR_CHECK_TASK_PERIOD;
 TickType_t xLastExecutionTime;
 static uint32_t ulLastRegTest1Value = 0, ulLastRegTest2Value = 0;

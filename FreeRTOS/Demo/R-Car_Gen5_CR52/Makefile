@@ -14,7 +14,11 @@ AR = arm-none-eabi-ar
 ARFLAGS = rcs
 OBJCOPY = arm-none-eabi-objcopy
 
-SOURCE_C_LIST = ./Blinky/main_blinky.c \
+POSIX_DIR = ../../../FreeRTOS-Plus/Source/FreeRTOS-Plus-POSIX
+POSIX_SRC = ${POSIX_DIR}/FreeRTOS-Plus-POSIX/source
+POSIX_PORT_INC = ${POSIX_DIR}/FreeRTOS-Plus-POSIX/include
+
+SOURCE_C_LIST = \
 		./common/FreeRTOS_tick_config.c \
 		./common/system_rcar_gen5.c \
 		./common/interrupts.c \
@@ -28,11 +32,12 @@ SOURCE_C_LIST = ./Blinky/main_blinky.c \
 		./drivers/pcie/mem_io.c  \
         ./drivers/mpu/mpu.c \
 		../../Source/portable/GCC/ARM_CR52/port.c \
-	        ../../Source/queue.c \
-	        ../../Source/tasks.c \
-	        ../../Source/list.c \
-	        ../../Source/timers.c \
-		./common/main.c \
+	    ../../Source/queue.c \
+	    ../../Source/tasks.c \
+	    ../../Source/list.c \
+	    ../../Source/timers.c \
+        ../../Source/event_groups.c \
+		./common/main.c
 
 # Full Demo Source
 ifdef TEST_FULL
@@ -56,8 +61,24 @@ SOURCE_C_LIST += ./Full_Demo/main_full.c \
                  ../Common/Minimal/StreamBufferDemo.c \
                  ../Common/Minimal/death.c \
                  ../Common/Minimal/MessageBufferDemo.c \
-                 ../../Source/event_groups.c \
-                 ../../Source/stream_buffer.c
+				 ../../Source/stream_buffer.c 
+				 
+ifdef SUPPORT_POSIX
+SOURCE_C_LIST += ./Full_Demo/posix_demo/posix_demo.c \
+				 ${POSIX_SRC}/FreeRTOS_POSIX_clock.c \
+				 ${POSIX_SRC}/FreeRTOS_POSIX_mqueue.c  \
+				 ${POSIX_SRC}/FreeRTOS_POSIX_pthread.c  \
+				 ${POSIX_SRC}/FreeRTOS_POSIX_pthread_cond.c  \
+				 ${POSIX_SRC}/FreeRTOS_POSIX_pthread_mutex.c  \
+				 ${POSIX_SRC}/FreeRTOS_POSIX_sched.c  \
+				 ${POSIX_SRC}/FreeRTOS_POSIX_semaphore.c  \
+				 ${POSIX_SRC}/FreeRTOS_POSIX_timer.c  \
+				 ${POSIX_SRC}/FreeRTOS_POSIX_unistd.c  \
+				 ${POSIX_SRC}/FreeRTOS_POSIX_utils.c \
+				 ${POSIX_SRC}/FreeRTOS_POSIX_pthread_barrier.c  
+endif # SUPPORT_POSIX
+else 
+SOURCE_C_LIST += ./Blinky/main_blinky.c 
 endif
 
 SOURCE_ASM_LIST = ./common/boot.S \
@@ -75,7 +96,7 @@ endif
 CFLAGS = -ffreestanding -std=gnu99  -mfpu=neon-fp-armv8 -mcpu=cortex-r52 -mtune=cortex-r52  -lnosys --specs=nosys.specs \
                 -Wl,-Map=${OUTPUT_DIR}/${PROJ_NAME}.map -T ${LDFILE} -Wl,--no-warn-rwx-segments \
                 -mfloat-abi=hard \
-		-L./common/linker		     \
+				-L./common/linker		     \
                 -I./				     \
                 -I./CMSIS_5/CMSIS/Core_R/Include/ \
                 -I./CMSIS_5 \
@@ -87,20 +108,21 @@ CFLAGS = -ffreestanding -std=gnu99  -mfpu=neon-fp-armv8 -mcpu=cortex-r52 -mtune=
                 -I../../../FreeRTOS-Plus/Source/FreeRTOS-Plus-CLI \
                 -I../../../FreeRTOS-Plus/Source/FreeRTOS-Plus-Trace/Include \
                 -I../../../FreeRTOS-Plus/Source/FreeRTOS-Plus-Trace/config \
-                -I../Common/include
+                -I../Common/include \
+                -I./${POSIX_DIR}/include \
+                -I./${POSIX_DIR}/include/private \
+                -I./${POSIX_PORT_INC} \
+                -I./${POSIX_PORT_INC}/portable \
+                -I./${POSIX_PORT_INC}/portable/Rcar_Cr52_Gen5 \
+                -I./Full_Demo/posix_demo
 
 ifdef TEST_FULL
-CFLAGS += -DmainCREATE_SIMPLE_BLINKY_DEMO_ONLY=0 \
-	  -DINCLUDE_eTaskGetState=1 \
-	  -DINCLUDE_xTimerPendFunctionCall=1 \
-	  -DconfigUSE_RECURSIVE_MUTEXES=1 \
-          -DconfigUSE_MUTEXES=1 \
-          -DINCLUDE_xTaskAbortDelay=1 \
-	  -DconfigUSE_QUEUE_SETS=1 \
-	  -DINCLUDE_xTaskGetHandle=1 \
-	  -DINCLUDE_xSemaphoreGetMutexHolder=1
+CFLAGS += -DmainCREATE_SIMPLE_BLINKY_DEMO_ONLY=0 
+ifdef SUPPORT_POSIX
+CFLAGS += -DconfigSUPPORT_POSIX 
+endif # SUPPORT_POSIX
 else
-CFLAGS += -DmainCREATE_SIMPLE_BLINKY_DEMO_ONLY=1
+CFLAGS += -DmainCREATE_SIMPLE_BLINKY_DEMO_ONLY=1 
 endif
 
 AFLAGS = -mfpu=neon-fp-armv8 --specs=nosys.specs -mcpu=cortex-r52 -mtune=cortex-r52 -mfloat-abi=hard  \
@@ -113,12 +135,40 @@ create:
 	@echo CREATE ${OUTPUT_DIR} folder
 	@mkdir -p ${OUTPUT_DIR}
 
+check_file:
+ifdef TEST_FULL
+	@if [ -e "./Blinky/main_blinky.o" ]; then \
+		rm -rf ./common/main.o ./Blinky/main_blinky.o; \
+		if [ $$SUPPORT_POSIX ]; then \
+			rm -rf ../../Source/tasks.o; \
+		fi; \
+	fi
+ifdef SUPPORT_POSIX
+	@if [ ! -e "Full_Demo/posix_demo/posix_demo.o" ]; then \
+		rm -rf Full_Demo/main_full.o; \
+		rm -rf ../../Source/tasks.o; \
+    	rm -rf ../Common/Minimal/StaticAllocation.o; \
+	fi
+else 
+	@if [ -e "Full_Demo/posix_demo/posix_demo.o" ]; then \
+		rm -rf Full_Demo/main_full.o; \
+		rm -rf Full_Demo/posix_demo/posix_demo.o; \
+		rm -rf ../../Source/tasks.o; \
+    	rm -rf ../Common/Minimal/StaticAllocation.o; \
+	fi
+endif # SUPPORT_POSIX
+else 
+	@if [ ! -e "./Blinky/main_blinky.o" ]; then \
+		rm -rf ./common/main.o ; \
+	fi
+endif
+
 #lib: ${OBJ_LIST}
 #	@echo LD ${PROJ_NAME}.a
 #	@${AR} ${ARFLAGS} ${OUTPUT_DIR}/${PROJ_NAME}.a ${OBJ_LIST}
 
-target: ${OBJ_LIST}
-	@echo CC $<
+target: check_file ${OBJ_LIST}
+	@echo LD ${PROJ_NAME}.elf
 	@${CC} ${CFLAGS} ${OBJ_LIST} -lm -o  ${OUTPUT_DIR}/${PROJ_NAME}.elf 
 	$(OBJCOPY) -O binary "$(OUTPUT_DIR)/$(PROJ_NAME).elf" "$(OUTPUT_DIR)/$(PROJ_NAME).bin"
 	ln -sf ${PROJ_NAME}.elf ${OUTPUT_DIR}/freertos.elf
