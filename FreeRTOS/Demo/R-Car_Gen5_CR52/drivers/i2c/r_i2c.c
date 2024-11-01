@@ -11,7 +11,7 @@
 #define I2C_OPEN                                (0x00000001ULL)
 
 static int i2c_abort_seq_master (i2c_instance_ctrl_t * const p_instance_ctrl);
-static void r_i2c_isr_handler(void * p_context);
+//static void r_i2c_isr_handler(void * p_context);
 
 int R_I2C_Open(i2c_master_ctrl_t * const p_ctrl, i2c_master_cfg_t const * const p_cfg) {
 
@@ -62,7 +62,16 @@ int R_I2C_Read(i2c_master_ctrl_t * const p_ctrl,
     int result = -1;
     (void) restart; // unused parameter.
     i2c_instance_ctrl_t * p_instance_ctrl = (i2c_instance_ctrl_t *) p_ctrl;
-    return RCar_I2C_Read(p_instance_ctrl->p_cfg->channel, p_instance_ctrl->p_cfg->slave, p_dest, bytes, p_instance_ctrl->p_cfg->dma_single);
+    return RCar_I2C_Read(p_instance_ctrl->p_cfg->channel, p_instance_ctrl->p_cfg->slave, p_dest, bytes);
+}
+
+int R_I2C_ReadRegMap(i2c_master_ctrl_t * const p_ctrl,
+			uint32_t const            slave_reg,
+			uint8_t * const           p_dest,
+			uint32_t const            bytes) {
+    i2c_instance_ctrl_t * p_instance_ctrl = (i2c_instance_ctrl_t *) p_ctrl;
+    return RCar_I2C_ReadRegMap(p_instance_ctrl->p_cfg->channel, p_instance_ctrl->p_cfg->slave,
+						slave_reg, p_dest, bytes);
 }
 
 int R_I2C_Write(i2c_master_ctrl_t * const p_ctrl,
@@ -71,7 +80,7 @@ int R_I2C_Write(i2c_master_ctrl_t * const p_ctrl,
                           bool const                restart) {
     (void) restart;
     i2c_instance_ctrl_t * p_instance_ctrl = (i2c_instance_ctrl_t *) p_ctrl;
-    return RCar_I2C_Write(p_instance_ctrl->p_cfg->channel, p_instance_ctrl->p_cfg->slave, p_src, bytes, p_instance_ctrl->p_cfg->dma_single);
+    return RCar_I2C_Write(p_instance_ctrl->p_cfg->channel, p_instance_ctrl->p_cfg->slave, p_src, bytes);
 }
 
 int R_I2C_Abort(i2c_master_ctrl_t * const p_ctrl) {
@@ -104,7 +113,8 @@ int R_I2C_CallbackSet(i2c_master_ctrl_t * const          p_ctrl,
     p_instance_ctrl->p_context         = p_context;
     p_instance_ctrl->p_callback_memory = p_callback_memory;
 
-    return R_I2C_SetInterruptCallback(p_instance_ctrl->p_cfg->channel, r_i2c_isr_handler, (void *)p_context);
+    //R_I2C_SetInterruptCallback(p_instance_ctrl->p_cfg->channel, r_i2c_isr_handler, (void *)p_context);
+    return 0;
 }
 
 int R_I2C_StatusGet(i2c_master_ctrl_t * const p_ctrl, i2c_master_status_t * p_status) {
@@ -124,7 +134,7 @@ static void r_i2c_isr_handler(void * const p_context)
     i2c_instance_ctrl_t * p_instance_ctrl = (i2c_instance_ctrl_t *) p_context;
 
     // Call to HAL driver to process data.
-    R_I2C_Irq_handler(p_instance_ctrl->p_cfg->channel);
+    //R_I2C_Irq_handler(p_instance_ctrl->p_cfg->channel);
 
     if (p_instance_ctrl->p_callback != NULL) {
         p_instance_ctrl->p_callback(p_context);

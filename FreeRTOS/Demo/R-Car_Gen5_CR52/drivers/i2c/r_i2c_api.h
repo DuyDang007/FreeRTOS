@@ -56,7 +56,7 @@ typedef enum {
  *
  */
 uint32_t RCar_I2C_Write(r_i2c_Unit_t Unit, uint32_t SlaveAddr, const uint8_t *Bytes,
-                     uint32_t NumBytes, bool dma_single);
+                     uint32_t NumBytes);
 
 /**
  * Read a number of bytes from an address of the given I2C channel
@@ -70,7 +70,7 @@ uint32_t RCar_I2C_Write(r_i2c_Unit_t Unit, uint32_t SlaveAddr, const uint8_t *By
  *
  */
 uint32_t RCar_I2C_Read(r_i2c_Unit_t Unit, uint32_t SlaveAddr, uint8_t *Bytes,
-                    uint32_t NumBytes, bool dma_single);
+                    uint32_t NumBytes);
 
 /**
  * Configure the slave map in read mode and read the number of bytes required
@@ -83,7 +83,7 @@ uint32_t RCar_I2C_Read(r_i2c_Unit_t Unit, uint32_t SlaveAddr, uint8_t *Bytes,
  *
  * @retval 0 if successful
  */
-uint32_t R_I2C_ReadRegMap(r_i2c_Unit_t Unit, uint32_t SlaveAddr, uint32_t SlaveReg,
+uint32_t RCar_I2C_ReadRegMap(r_i2c_Unit_t Unit, uint32_t SlaveAddr, uint32_t SlaveReg,
                           uint8_t *Bytes, uint32_t NumBytes);
 
 void RCar_I2C_Init(r_i2c_Unit_t Unit, uint32_t I2C_ClockRate);

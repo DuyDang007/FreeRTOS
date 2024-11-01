@@ -181,7 +181,7 @@ int R_I2C_Open(i2c_master_ctrl_t * const p_ctrl, i2c_master_cfg_t const * const 
 int R_I2C_Close(i2c_master_ctrl_t * const p_ctrl);
 
 /**
- * @brief Read data from the I2C bus into a destination buffer.
+ * @brief Read data from an I2C slave starting at offset 0x00.
  *
  * @param[in]  p_ctrl  - Pointer to the I2C control structure.
  * @param[out] p_dest  - Pointer to the buffer where received data will be stored.
@@ -196,6 +196,25 @@ int R_I2C_Read(i2c_master_ctrl_t * const p_ctrl,
                          bool const                restart);
 
 /**
+ * @brief Read data from a specific register of an I2C slave device.
+ *
+ * This function reads a block of data starting from a specified register address
+ * on the I2C slave and stores it in the provided destination buffer.
+ *
+ * @param[in]  p_ctrl     - Pointer to the I2C control structure.
+ * @param[in]  slave_reg  - Register address on the slave device to start reading from.
+ * @param[out] p_dest     - Pointer to the buffer where received data will be stored.
+ * @param[in]  bytes      - Number of bytes to read from the slave device.
+ *
+ * @retval 0 if successful.
+ */
+
+int R_I2C_ReadRegMap(i2c_master_ctrl_t * const p_ctrl,
+			uint32_t const            slave_reg,
+			uint8_t * const           p_dest,
+			uint32_t const            bytes);
+
+/**
  * @brief Write data to the I2C bus from a source buffer.
  *
  * @param[in]  p_ctrl  - Pointer to the I2C control structure.
@@ -205,6 +224,7 @@ int R_I2C_Read(i2c_master_ctrl_t * const p_ctrl,
  *
  * @retval 0 if successful.
  */
+
 int R_I2C_Write(i2c_master_ctrl_t * const p_ctrl,
                           uint8_t * const           p_src,
                           uint32_t const            bytes,

@@ -9,28 +9,15 @@
 #include "task.h"
 #include "r_i2c_api.h"
 #include "r_i2c_regs.h"
-#include "dmac/dmac_common.h"
-#include "dmac/sysdmac_ctrl.h"
 #include <stdio.h>
-#include <stdbool.h>
-#include "interrupts.h"
+
 #define printf_delay(fmt, ...)      \
-        vTaskDelay(1);             \
+        vTaskDelay(10);             \
 printf(fmt, ##__VA_ARGS__);         \
 
 static int32_t  loc_WaitMsrEvent(r_i2c_Unit_t Unit, uint32_t EventMask);
 static uint32_t loc_ReadCommon(r_i2c_Unit_t Unit, uint32_t SlaveAddr,
                                uint8_t *Bytes, uint32_t NumBytes);
-typedef struct {
-    uint8_t * buf;
-    uint32_t len;
-    uint32_t pos;
-    bool dma_single;
-    bool dma_cont;
-} msg;
-
-static msg r_i2c_msg;
-static bool ID_DONE = false;
 
 static int32_t loc_WaitMsrEvent(r_i2c_Unit_t Unit, uint32_t EventMask)
 {
@@ -45,7 +32,7 @@ static int32_t loc_WaitMsrEvent(r_i2c_Unit_t Unit, uint32_t EventMask)
 
         /* Check if the master has received a NACK response */
         uint32_t a = (uint32_t)val & ((uint32_t)R_I2C_MNR_BIT);
-        if ((val & R_I2C_MNR_BIT) != (uint32_t)0) {
+	 if ((val & R_I2C_MNR_BIT) != (uint32_t)0) {
             break;
         }
     } while (!(val & EventMask));
@@ -100,12 +87,10 @@ static uint32_t loc_ReadCommon(r_i2c_Unit_t Unit, uint32_t SlaveAddr,
     uint32_t i;
     int r;
 
-    (void) SlaveAddr;
-
     /* Wait for the slave address to be transmitted*/
     r = loc_WaitMsrEvent(Unit, R_I2C_MAT_BIT);
     if (r < 0) {
-	    printf_delay("[loc_ReadCommon] loc_WaitMsrEvent : Return value(r) is %d.(Wait for the slave address to be transmitted) Failed(0)\r\n",r);
+	printf_delay("[loc_ReadCommon] loc_WaitMsrEvent : Return value(r) is %d.(Wait for the slave address to be transmitted) Failed(0)\r\n",r);
         return 0;
     }
 
@@ -123,14 +108,14 @@ static uint32_t loc_ReadCommon(r_i2c_Unit_t Unit, uint32_t SlaveAddr,
         /* Wait for transfer to complete */
         r = loc_WaitMsrEvent(Unit, (uint32_t)R_I2C_MDR_BIT);
         if (r < 0) {
-	        printf_delay("[loc_ReadCommon] loc_WaitMsrEvent : Return value(r) is %d.(Wait for transfer to complete) Failed(0)\r\n",r);
-            return 0;
+	    printf_delay("[loc_ReadCommon] loc_WaitMsrEvent : Return value(r) is %d.(Wait for transfer to complete) Failed(0)\r\n",r);
+            return -1;
         }
 
         /* Copy the byte into the buffer */
         Bytes[0] = R_I2C_PRV_RegRead32(i2c_base_addr + R_I2C_ICRXD);
 
-        return 1;
+        return 0;
     } else {
 
         /* Suspend data transfer */
@@ -140,14 +125,14 @@ static uint32_t loc_ReadCommon(r_i2c_Unit_t Unit, uint32_t SlaveAddr,
          * of data */
         val = R_I2C_PRV_RegRead32(i2c_base_addr + R_I2C_ICMSR) & (uint32_t)0x7f;
         val &= (uint32_t)~(R_I2C_MAT_BIT | R_I2C_MDR_BIT);
-	    printf_delay("[R_I2C_Write]: line :%d\r\n", __LINE__);
+
         R_I2C_PRV_RegWrite32(i2c_base_addr + R_I2C_ICMSR, val);
 
         /* Wait for Data Empty event */
         r = loc_WaitMsrEvent(Unit, R_I2C_MDR_BIT);
         if (r < 0) {
-	        printf_delay("[loc_ReadCommon] loc_WaitMsrEvent : Return value(r) is %d.(Wait for Data Empty event 1) Failed(0)\r\n",r);
-            return 0;
+	    printf_delay("[loc_ReadCommon] loc_WaitMsrEvent : Return value(r) is %d.(Wait for Data Empty event 1) Failed(0)\r\n",r);
+            return -1;
         }
 
         /* Copy the first byte into the buffer */
@@ -168,8 +153,7 @@ static uint32_t loc_ReadCommon(r_i2c_Unit_t Unit, uint32_t SlaveAddr,
             }
 
             /* Copy the next byte into the buffer */
-            Bytes[i] = R_I2C_PRV_RegRead32(i2c_base_addr + R_I2C_ICRXD);
-            i++;
+            Bytes[i++] = R_I2C_PRV_RegRead32(i2c_base_addr + R_I2C_ICRXD);
         }
 
         /* Generate a STOP condition after transmission */
@@ -188,107 +172,19 @@ static uint32_t loc_ReadCommon(r_i2c_Unit_t Unit, uint32_t SlaveAddr,
         }
 
         /* Copy the last byte into the buffer */
-        Bytes[i] = R_I2C_PRV_RegRead32(i2c_base_addr + R_I2C_ICRXD);
-        i++;
-        return i;
+        Bytes[i++] = R_I2C_PRV_RegRead32(i2c_base_addr + R_I2C_ICRXD);
+
+        return 0;
     }
 }
 
-static int rcar_i2c_dma_unmap(r_i2c_Unit_t Unit)
-{
-    uintptr_t i2c_base_addr = R_I2C_PRV_GetRegbase(Unit);
-
-    ID_DONE = true;
-    R_I2C_PRV_RegWrite32(i2c_base_addr + R_I2C_ICDMAER, (uint32_t)0);
-
-    return 0;
-}
-
-static void rcar_i2c_dma_callback(r_i2c_Unit_t Unit )
-{
-    r_i2c_msg.pos = r_i2c_msg.len;
-
-    rcar_i2c_dma_unmap(Unit);
-}
-
-
-static bool rcar_i2c_dma(r_i2c_Unit_t Unit, bool is_read)
-{
-    uintptr_t i2c_base_addr = R_I2C_PRV_GetRegbase(Unit);
-    uint8_t *buf;
-    uint32_t len;
-    int ret;
-    Context_t p_usr_context;
-
-    if (is_read)
-	return false;
-
-    if (r_i2c_msg.dma_single == 0 || r_i2c_msg.len < (uint32_t)8)
-        return false;
-
-    if (is_read) {
-        /*
-         * The last two bytes needs to be fetched using PIO in
-         * order for the STOP phase to work.
-         */
-        buf = r_i2c_msg.buf;
-        len = r_i2c_msg.len - (uint32_t)2;
-    } else {
-        /*
-         * First byte in message was sent using PIO.
-         */
-        buf = r_i2c_msg.buf + (uint32_t)1;
-        len = r_i2c_msg.len - (uint32_t)1;
-    }
-
-    /* Define configure DMA Controller */
-    rDmacCfg_t cfg =
-    {
-        //Fill in the configuration details
-        .mSrcAddr = ((is_read) ? (i2c_base_addr + R_I2C_ICRXD) : (uintptr_t)(buf)),
-        .mDestAddr = (is_read) ? (uintptr_t)buf : (i2c_base_addr + R_I2C_ICTXD),
-        .mTransferCount = len,
-        .mDMAMode = DRV_DMAC_DMA_NO_DESCRIPTOR, // Assuming DRV_DMAC_DMA_NO_DESCRIPTOR is defined
-        .mSrcAddrMode = (is_read) ? DRV_RTDMAC_ADDR_FIXED : DRV_RTDMAC_ADDR_INCREMENTED,
-        .mDestAddrMode = (is_read) ? DRV_RTDMAC_ADDR_INCREMENTED:  DRV_RTDMAC_ADDR_FIXED,
-        .mSourceRequest = (is_read) ? MID_RID_I2C1_MST_RX : MID_RID_I2C1_MST_TX,
-        .mTransferUnit = DRV_RTDMAC_TRANS_UNIT_1BYTE,
-        .mResource = DRV_RTDMAC_RESOUCE_MAX, // Assuming DRV_RTDMAC_MEMORY is defined
-        .mLowSpeed = DRV_RTDMAC_SPEED_NORMAL, // Assuming DRV_RTDMAC_SPEED_NORMAL is defined
-        .mPrioLevel = 0
-    };
-
-    rDmacIrqCfg_t rDmacIrqHandler_t_irq =
-    {
-        .Unit = SYS_DMAC2,
-        .SubCh = DMAC_CH0,
-        .irq_channel = INTID_SYSDMA2_CH0
-    };
-    p_usr_context.ctx = &rDmacIrqHandler_t_irq;
-    // Initialize DMA transfer
-    R_SYSDMAC_RcarDmacCtrlInit(SYS_DMAC2, DRV_RTDMAC_PRIO_FIX);
-
-    ret = R_SYSDMAC_RcarCallBackSet(&rDmacIrqHandler_t_irq, (void *)rcar_i2c_dma_callback, &p_usr_context);
-    if (ret)
-        return false;
-
-    int dmaStatus = R_SYSDMAC_RcarDmacExec(SYS_DMAC2, DMAC_CH0, &cfg, 0);
-    /* Enable DMA Master Received/Transmitted */
-    if (is_read == true) {
-        R_I2C_PRV_RegWrite32(i2c_base_addr + R_I2C_ICDMAER, R_I2C_RMDMAE);
-    } else {
-        R_I2C_PRV_RegWrite32(i2c_base_addr + R_I2C_ICDMAER, R_I2C_TMDMAE);
-    }
-
-    return (dmaStatus) ? false : true;
-}
 
 /*
  * Note: the slave address is 7 bits long, i.e. does not include the
  * direction bit.
  */
 uint32_t RCar_I2C_Write(r_i2c_Unit_t Unit, uint32_t SlaveAddr, const uint8_t * Bytes,
-                     uint32_t NumBytes, bool dma_single)
+                     uint32_t NumBytes)
 {
     uintptr_t i2c_base_addr = R_I2C_PRV_GetRegbase(Unit);
     uint32_t val;
@@ -303,119 +199,100 @@ uint32_t RCar_I2C_Write(r_i2c_Unit_t Unit, uint32_t SlaveAddr, const uint8_t * B
     /* Set Master Address register (slave addr and write mode) */
     R_I2C_PRV_RegWrite32(i2c_base_addr + R_I2C_ICMAR, ((SlaveAddr << 1) & (0xFFFFFFFE)));
 
+    /* Load the first byte into the shift register */
+    R_I2C_PRV_RegWrite32(i2c_base_addr + R_I2C_ICTXD, Bytes[0]);
+
     do {
         val = R_I2C_PRV_RegRead32(i2c_base_addr + R_I2C_ICMCR);
     } while ((val & R_I2C_FSDA_BIT) != (uint32_t)0);
-
-    r_i2c_msg.buf = (uint8_t *)Bytes;
-    r_i2c_msg.len = NumBytes;
-    r_i2c_msg.pos = 0;
-    r_i2c_msg.dma_single = dma_single;
 
     /* Set Master Control register (MDBS=1, MIE=1, ESG=1) */
     R_I2C_PRV_RegWrite32(i2c_base_addr + R_I2C_ICMCR, 0x89);
 
-    return 0;
-}
-
-static void rcar_i2c_irq_send(r_i2c_Unit_t Unit, uint32_t msr)
-{
-    uintptr_t i2c_base_addr = R_I2C_PRV_GetRegbase(Unit);
-    uint32_t irqs_to_clear = (uint32_t)R_I2C_MDE_BIT;
-
-    if ((msr & R_I2C_MDE_BIT) == (uint32_t)0) {
-        return;
+    /* Wait for the slave address to be transmitted*/
+    r = loc_WaitMsrEvent(Unit, R_I2C_MAT_BIT);
+    if (r < 0) {
+        printf_delay("[R_I2C_Write] loc_WaitMsrEvent : Return value(r) is %d.(Wait for the slave address to be transmitted) Failed(0)\r\n",r);
+        return -1;
     }
 
-    if ((msr & R_I2C_MAT_BIT) != (uint32_t)0) {
-        irqs_to_clear |= (uint32_t)R_I2C_MAT_BIT;
-        R_I2C_PRV_RegWrite32(i2c_base_addr + R_I2C_ICMCR, 0x88);
-    }
-
-    if (r_i2c_msg.pos == (uint32_t)1 && (rcar_i2c_dma(Unit, false))) {
-	return;
-    }
-
-    while( (R_I2C_PRV_RegRead32(i2c_base_addr + R_I2C_ICDMAER) != (uint32_t)0));
-
-    if (r_i2c_msg.pos < r_i2c_msg.len) {
-        R_I2C_PRV_RegWrite32(i2c_base_addr + R_I2C_ICTXD, r_i2c_msg.buf[r_i2c_msg.pos]);
-        r_i2c_msg.pos++;
-    } else {
-        /* Generate a STOP condition after transmission */
-        R_I2C_PRV_RegWrite32(i2c_base_addr + R_I2C_ICMCR, (uint32_t)0x8A);
-    }
-    /* Clear irq after handle */
-    R_I2C_PRV_RegWrite32(i2c_base_addr + R_I2C_ICMSR, ~(irqs_to_clear) & (uint32_t)0x7f);
-}
-
-uint32_t RCar_I2C_Read(r_i2c_Unit_t Unit, uint32_t SlaveAddr, uint8_t *Bytes, uint32_t NumBytes, bool dma_single)
-{
-    uintptr_t i2c_base_addr = R_I2C_PRV_GetRegbase(Unit);
-    uint32_t val;
-
-    /* Clear Master Status register */
-    R_I2C_PRV_RegWrite32(i2c_base_addr + R_I2C_ICMSR, 0);
-
-    /* Set Master Interrupt Enable register (MDRE=1, MATE=1)*/
-    R_I2C_PRV_RegWrite32(i2c_base_addr + R_I2C_ICMIER, R_I2C_MDR_BIT | R_I2C_MAT_BIT);
-
-    /* Set Master Address register (slave addr + 0x01 read mode) */
-    R_I2C_PRV_RegWrite32(i2c_base_addr + R_I2C_ICMAR, (SlaveAddr << 1) | (uint32_t)0x01);
-    do {
-        val = R_I2C_PRV_RegRead32(i2c_base_addr + R_I2C_ICMCR);
-    } while ((val & R_I2C_FSDA_BIT) != (uint32_t)0);
-
-    r_i2c_msg.len = NumBytes;
-    r_i2c_msg.pos = 0;
-    r_i2c_msg.dma_single = dma_single;
-
-    /* Set Master Control register (MDBS=1, MIE=1, ESG=1) */
-    R_I2C_PRV_RegWrite32(i2c_base_addr + R_I2C_ICMCR, (uint32_t)0x89);
-    while(!ID_DONE) {
-        for (uint32_t i = 0; i < r_i2c_msg.len; i++)
-            Bytes[i] = r_i2c_msg.buf[i];
-    }
-
-    return 0;
-}
-
-static void rcar_i2c_irq_recv(r_i2c_Unit_t Unit, uint32_t msr)
-{
-    uintptr_t i2c_base_addr = R_I2C_PRV_GetRegbase(Unit);
-    uint32_t irqs_to_clear = (uint32_t)R_I2C_MDR_BIT;
-
-    if ((msr & R_I2C_MDR_BIT) == (uint32_t)0)
-        return;
-
-    if ((msr & R_I2C_MAT_BIT) != (uint32_t)0) {
-        irqs_to_clear |= (uint32_t)R_I2C_MAT_BIT;
-        /* Suspend data transfer */
-        R_I2C_PRV_RegWrite32(i2c_base_addr + R_I2C_ICMCR, 0x88);
-        /*
-         * Address transfer phase finished, but no data at this point.
-         * Try to use DMA to receive data.
-         */
-        rcar_i2c_dma(Unit, true);
-    } else if (r_i2c_msg.pos < r_i2c_msg.len) {
-        /* get receive data */
-        r_i2c_msg.buf[r_i2c_msg.pos] = R_I2C_PRV_RegRead32(i2c_base_addr + R_I2C_ICRXD);
-        r_i2c_msg.pos++;
-    }
-
-    /* If next received data is the _LAST_, prepare _STOP_ here */
-    if (r_i2c_msg.pos + (uint32_t)1 ==  r_i2c_msg.len) {
+    if (NumBytes == 1) {
+        /* If there is only 1 byte to transmit, generate a STOP
+         * condition after transmission */
         R_I2C_PRV_RegWrite32(i2c_base_addr + R_I2C_ICMCR, 0x8A);
+
+        /* Clear ICMSR_MAT and ICMSR_MDE bits to resume transmission
+         * of data */
+        val = R_I2C_PRV_RegRead32(i2c_base_addr + R_I2C_ICMSR) & 0x7f;
+        val &= ~(R_I2C_MAT_BIT | R_I2C_MDE_BIT);
+        R_I2C_PRV_RegWrite32(i2c_base_addr + R_I2C_ICMSR, val);
+
+        /* Wait for transmission to complete */
+        r = loc_WaitMsrEvent(Unit, R_I2C_MST_BIT);
+        if (r < 0) {
+	    printf_delay("[R_I2C_Write] loc_WaitMsrEvent :Return value(r) is %d.(Wait for transmission to complete) Failed(0)\r\n",r);
+            return -1;
+        } else {
+            return 0;
+        }
+    } else {
+        int i;
+
+        /* Clear ESG bit in ICMCR reg */
+        R_I2C_PRV_RegWrite32(i2c_base_addr + R_I2C_ICMCR, 0x88);
+
+        /* Clear ICMSR_MAT and ICMSR_MDE bits to resume transmission
+         * of data */
+        val = R_I2C_PRV_RegRead32(i2c_base_addr + R_I2C_ICMSR) & 0x7f;
+        val &= ~(R_I2C_MAT_BIT | R_I2C_MDE_BIT);
+        R_I2C_PRV_RegWrite32(i2c_base_addr + R_I2C_ICMSR, val);
+
+        /* Wait for Data Empty event */
+        r = loc_WaitMsrEvent(Unit, R_I2C_MDE_BIT);
+        if (r < 0) {
+	    printf_delay("[R_I2C_Write] loc_WaitMsrEvent : Return value(r) is %d.(Wait for Data Empty event 1) Failed(0)\r\n",r);
+            return -1;
+        }
+
+        i = 1;
+        while (i < NumBytes) {
+            /* Load the next byte into the shift register */
+            R_I2C_PRV_RegWrite32(i2c_base_addr + R_I2C_ICTXD, Bytes[i++]);
+
+            /* Clear ICMSR_MDE bit */
+            val = R_I2C_PRV_RegRead32(i2c_base_addr + R_I2C_ICMSR) & 0x7f;
+            val &= ~R_I2C_MDE_BIT;
+            R_I2C_PRV_RegWrite32(i2c_base_addr + R_I2C_ICMSR, val);
+
+            /* Wait for Data Empty event */
+            r = loc_WaitMsrEvent(Unit, R_I2C_MDE_BIT);
+            if (r < 0) {
+		printf_delay("[R_I2C_Write] loc_WaitMsrEvent : Return value(r) is %d.(Wait for Data Empty event 2) Failed(%u)\r\n",r,--i);
+                return --i;
+            }
+        }
+
+        /* Generate a STOP condition after transmission */
+        R_I2C_PRV_RegWrite32(i2c_base_addr + R_I2C_ICMCR, 0x8A);
+
+        /* Clear ICMSR_MDE bit */
+        val = R_I2C_PRV_RegRead32(i2c_base_addr + R_I2C_ICMSR) & 0x7f;
+        val &= ~R_I2C_MDE_BIT;
+        R_I2C_PRV_RegWrite32(i2c_base_addr + R_I2C_ICMSR, val);
+
+        /* Wait for transmission to complete */
+        r = loc_WaitMsrEvent(Unit, R_I2C_MST_BIT);
+        if (r < 0) {
+	    printf_delay("[R_I2C_Write] loc_WaitMsrEvent : Return value(r) is %d.(Wait for transmission to complete) Failed(%u)\r\n",r,--i);
+            return --i;
+        } else {
+            return 0;
+        }
     }
-
-    /* Clear irq after handle */
-    R_I2C_PRV_RegWrite32(i2c_base_addr + R_I2C_ICMSR, ~(irqs_to_clear) & (uint32_t)0x7f);
-
-    if (r_i2c_msg.pos == r_i2c_msg.len)
-	ID_DONE = true;
 }
 
-uint32_t R_I2C_ReadRegMap(r_i2c_Unit_t Unit, uint32_t SlaveAddr, uint32_t SlaveReg,
+// Read from slave at specified register offset
+uint32_t RCar_I2C_ReadRegMap(r_i2c_Unit_t Unit, uint32_t SlaveAddr, uint32_t SlaveReg,
                           uint8_t *Bytes, uint32_t NumBytes)
 {
     uintptr_t i2c_base_addr = R_I2C_PRV_GetRegbase(Unit);
@@ -446,7 +323,7 @@ uint32_t R_I2C_ReadRegMap(r_i2c_Unit_t Unit, uint32_t SlaveAddr, uint32_t SlaveR
     r = loc_WaitMsrEvent(Unit, R_I2C_MAT_BIT);
     if (r < 0) {
 	printf_delay("[R_I2C_ReadRegMap] loc_WaitMsrEvent : Return value(r) is %d.(Wait for the slave address to be transmitted) Failed(0)\r\n",r);
-        return 0;
+        return -1;
     }
     /* Clear ESG bit in ICMCR reg */
     R_I2C_PRV_RegWrite32(i2c_base_addr + R_I2C_ICMCR, (uint32_t)0x88);
@@ -460,7 +337,7 @@ uint32_t R_I2C_ReadRegMap(r_i2c_Unit_t Unit, uint32_t SlaveAddr, uint32_t SlaveR
     r = loc_WaitMsrEvent(Unit, R_I2C_MDE_BIT);
     if (r < 0) {
 	printf_delay("[R_I2C_ReadRegMap] loc_WaitMsrEvent : Return value(r) is %d.(Wait for the slave register address to be transmitted) Failed(0)\r\n",r);
-        return 0;
+        return -1;
     }
     /* Change from Write mode to Read mode */
     /* Set Master Address register (slave addr + 0x01 read mode) */
@@ -479,101 +356,10 @@ uint32_t R_I2C_ReadRegMap(r_i2c_Unit_t Unit, uint32_t SlaveAddr, uint32_t SlaveR
     return loc_ReadCommon(Unit, SlaveAddr, Bytes, NumBytes);
 }
 
-int R_I2C_SetInterruptCallback(r_i2c_Unit_t Unit, IrqHandlerFn handler, void *ctx)
+// Read from slave at default offset 0x00
+uint32_t RCar_I2C_Read(r_i2c_Unit_t Unit, uint32_t SlaveAddr, uint8_t *Bytes, uint32_t NumBytes)
 {
-    uintptr_t i2c_base_addr = R_I2C_PRV_GetRegbase(Unit);
-    uint32_t int_id;
-
-    switch (Unit) {
-	case R_I2C_IF0:
-	    int_id = INTID_I2C_IF0;
-	    break;
-	case R_I2C_IF1:
-	    int_id = INTID_I2C_IF1;
-	    break;
-	case R_I2C_IF2:
-	    int_id = INTID_I2C_IF2;
-	    break;
-	case R_I2C_IF3:
-	    int_id = INTID_I2C_IF3;
-	    break;
-	case R_I2C_IF4:
-	    int_id = INTID_I2C_IF4;
-	    break;
-	case R_I2C_IF5:
-	    int_id = INTID_I2C_IF5;
-	    break;
-	case R_I2C_IF6:
-	    int_id = INTID_I2C_IF6;
-	    break;
-	case R_I2C_IF7:
-	    int_id = INTID_I2C_IF7;
-	    break;
-	case R_I2C_IF8:
-	    int_id = INTID_I2C_IF8;
-	    break;
-	default:
-	    int_id = INTID_NO_EXIST;
-	    goto setup_irq_fail;
-	}
-
-    /* Set Handler for Irq */
-    Irq_SetupEntry(int_id, handler, ctx);
-
-    /* Set priority for Irq */
-    Irq_SetPriority(int_id, IPRIORITY(3));
-
-    /* Enable Irq */
-    Irq_Enable(int_id);
-
-    return 0;
-
-setup_irq_fail:
-    printf("IRQ FAILED: no INTID exist!\n");
-    return -1;
+    return RCar_I2C_ReadRegMap(Unit, SlaveAddr, (uint32_t)0x00, Bytes, NumBytes);
 }
 
-int R_I2C_Irq_handler(r_i2c_Unit_t Unit)
-{
-    uintptr_t i2c_base_addr = R_I2C_PRV_GetRegbase(Unit);
-    static uint32_t msr;
-    static uint32_t val = 0;
 
-    /* Only handle interrupts that are currently enabled */
-    msr = R_I2C_PRV_RegRead32(i2c_base_addr + R_I2C_ICMSR) & (uint32_t)0x7f;
-    msr &= R_I2C_PRV_RegRead32(i2c_base_addr + R_I2C_ICMIER);
-
-    if (val == (uint32_t)0)
-        val = R_I2C_PRV_RegRead32(i2c_base_addr + R_I2C_ICMAR) & (uint32_t)0x1;
-
-    if ((msr & R_I2C_MAL_BIT) != (uint32_t)0) {
-        /* Arbitration lost */
-        goto out;
-    }
-
-    if ((msr & R_I2C_MNR_BIT) != (uint32_t)0) {
-        /* HW automatically sends STOP after received NACK */
-        R_I2C_PRV_RegWrite32(i2c_base_addr + R_I2C_ICMIER, R_I2C_MST_BIT);
-    }
-
-    if ((msr & R_I2C_MST_BIT) != (uint32_t)0) {
-        /* Last data */
-        ID_DONE = true;
-        goto out;
-    }
-
-    if (val != (uint32_t)0)
-        rcar_i2c_irq_recv(Unit, msr);
-    else
-        rcar_i2c_irq_send(Unit, msr);
-
-    return 0;
-
-out:
-    if (ID_DONE) {
-        R_I2C_PRV_RegWrite32(i2c_base_addr + R_I2C_ICMIER, 0);
-        R_I2C_PRV_RegWrite32(i2c_base_addr + R_I2C_ICMSR, 0);
-    }
-
-    return 0;
-}
