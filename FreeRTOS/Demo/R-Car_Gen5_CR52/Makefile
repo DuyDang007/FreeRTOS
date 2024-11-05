@@ -14,12 +14,13 @@ AR = arm-none-eabi-ar
 ARFLAGS = rcs
 OBJCOPY = arm-none-eabi-objcopy
 
+LOGGING_INC = ../../../FreeRTOS-Plus/Source/Utilities/logging
+
 POSIX_DIR = ../../../FreeRTOS-Plus/Source/FreeRTOS-Plus-POSIX
 POSIX_SRC = ${POSIX_DIR}/FreeRTOS-Plus-POSIX/source
 POSIX_PORT_INC = ${POSIX_DIR}/FreeRTOS-Plus-POSIX/include
 
-SOURCE_C_LIST = \
-		./common/FreeRTOS_tick_config.c \
+SOURCE_C_LIST = ./common/FreeRTOS_tick_config.c \
 		./common/system_rcar_gen5.c \
 		./common/interrupts.c \
 		./common/heap_useNewlib.c \
@@ -114,13 +115,18 @@ CFLAGS = -ffreestanding -std=gnu99  -mfpu=neon-fp-armv8 -mcpu=cortex-r52 -mtune=
                 -I./${POSIX_PORT_INC} \
                 -I./${POSIX_PORT_INC}/portable \
                 -I./${POSIX_PORT_INC}/portable/Rcar_Cr52_Gen5 \
-                -I./Full_Demo/posix_demo
+                -I./Full_Demo/posix_demo \
+		-I${LOGGING_INC} \
+
 
 ifdef TEST_FULL
 CFLAGS += -DmainCREATE_SIMPLE_BLINKY_DEMO_ONLY=0 
 ifdef SUPPORT_POSIX
 CFLAGS += -DconfigSUPPORT_POSIX 
 endif # SUPPORT_POSIX
+ifdef LOGGING_ENABLE
+CFLAGS += -DLOGGING_ENABLE
+endif # SUPPORT_LOGGING
 else
 CFLAGS += -DmainCREATE_SIMPLE_BLINKY_DEMO_ONLY=1 
 endif

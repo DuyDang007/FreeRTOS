@@ -91,7 +91,13 @@
 
 #ifdef configSUPPORT_POSIX
 #include "posix_demo.h"
-#endif 
+#endif
+
+/* Logging Function include. */
+#ifdef LOGGING_ENABLE
+#include "logging_stack.h"
+#endif
+
 /*------------------------*/
 
 /* Priorities for the demo application tasks. */
@@ -365,7 +371,11 @@ const char *pcStatusString = "Pass";
 
 		/* Output the system status string. */
 		/* Change your output method */
-		printf( "%s, status code = %lu, tick count = %lu\r\n", pcStatusString, ulErrorFound, xTaskGetTickCount() );
+		#ifdef LOGGING_ENABLE
+		  LogDebug( ( "%s, status code = %lu, tick count = %lu", pcStatusString, ulErrorFound, xTaskGetTickCount() ) );
+		#else
+		  printf( "%s, status code = %lu, tick count = %lu\r\n", pcStatusString, ulErrorFound, xTaskGetTickCount() );
+		#endif
 
 		//configASSERT( ulErrorFound == pdFALSE );
 	}

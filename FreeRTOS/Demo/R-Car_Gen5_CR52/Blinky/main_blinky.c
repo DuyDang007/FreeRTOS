@@ -160,6 +160,7 @@ const unsigned long ulExpectedValue = 100UL;
 	for( ;; )
 	{
 		printf("prvQueueReceiveTask ...\n");
+
 		/* Wait until something arrives in the queue - this task will block
 		indefinitely provided INCLUDE_vTaskSuspend is set to 1 in
 		FreeRTOSConfig.h. */
