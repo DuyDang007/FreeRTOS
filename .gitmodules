@@ -5,3 +5,4 @@
 [submodule "FreeRTOS-Plus/Source/FreeRTOS-Plus-POSIX"]
 	path = FreeRTOS-Plus/Source/FreeRTOS-Plus-POSIX
 	url = https://rcar-env.dgn.renesas.com/gitlab/linuxbsp_yocto/freertos/Lab-Project-FreeRTOS-POSIX.git
+	branch = posix_rcar_gen5

@@ -114,7 +114,7 @@ CFLAGS = -ffreestanding -std=gnu99  -mfpu=neon-fp-armv8 -mcpu=cortex-r52 -mtune=
                 -I./${POSIX_DIR}/include/private \
                 -I./${POSIX_PORT_INC} \
                 -I./${POSIX_PORT_INC}/portable \
-                -I./${POSIX_PORT_INC}/portable/Rcar_Cr52_Gen5 \
+                -I./${POSIX_PORT_INC}/portable/renesas/rcar_gen5 \
                 -I./Full_Demo/posix_demo \
 		-I${LOGGING_INC} \
 
