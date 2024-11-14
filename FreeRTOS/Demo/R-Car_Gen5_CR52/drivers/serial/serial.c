@@ -105,7 +105,7 @@ void vSerialClose(xComPortHandle xPort)
 void outbyte(char c)
 {
 	if (!xSerialPortInitialized)
-		xSerialPortInitMinimal(115200, 200);
+		xSerialPortInitMinimal(UART_BAUDRATE, 200);
 
 	/* Standard practice to convert \n to \r\n */
 	if (c == '\n')

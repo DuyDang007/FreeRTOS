@@ -6,8 +6,13 @@
 /// Initialize scif .
 /// \param[in]     port          port number
 /// \return 1 on success, 0 on error.
+
+#ifndef UART_BAUDRATE
+#define UART_BAUDRATE 115200
+#endif
+
 uint32_t console_init(uint32_t port);
 
 void console_putc(char c);
-
+int console_getc(unsigned char *p_char);
 #endif	/* __SCIF_H__ */

@@ -381,7 +381,3 @@ void vStartPOSIXDemo( void *pvParameters )
 	must not run off the end of its implementing thread. */
 	vTaskDelete( NULL );
 }
-
-/**
-TaskHanle for prvCheckTask task 
- */

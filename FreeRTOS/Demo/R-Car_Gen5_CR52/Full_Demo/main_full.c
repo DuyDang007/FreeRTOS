@@ -98,28 +98,19 @@
 #include "logging_stack.h"
 #endif
 
+#ifdef UART_TEST
+#include "drivers/serial/scif.h"
+#endif
 /*------------------------*/
 
 /* Priorities for the demo application tasks. */
 #define mainSEM_TEST_PRIORITY				( tskIDLE_PRIORITY + ( UBaseType_t ) 1 )
-#define mainBLOCK_Q_PRIORITY				( tskIDLE_PRIORITY + ( UBaseType_t ) 2 )
-#define mainCREATOR_TASK_PRIORITY			( tskIDLE_PRIORITY + ( UBaseType_t ) 3 )
 #define mainFLOP_TASK_PRIORITY				( tskIDLE_PRIORITY )
-#define mainUART_COMMAND_CONSOLE_STACK_SIZE	( configMINIMAL_STACK_SIZE * ( UBaseType_t ) 3 )
-#define mainCOM_TEST_TASK_PRIORITY			( tskIDLE_PRIORITY + ( UBaseType_t ) 2 )
 #define mainCHECK_TASK_PRIORITY				( configMAX_PRIORITIES - ( UBaseType_t ) 1 )
 #define mainQUEUE_OVERWRITE_PRIORITY		( tskIDLE_PRIORITY )
 
-/* A block time of zero simply means "don't block". */
-#define mainDONT_BLOCK						( ( TickType_t ) 0 )
-
 /* The period of the check task, in ms. */
 #define mainNO_ERROR_CHECK_TASK_PERIOD		pdMS_TO_TICKS( ( TickType_t ) 500 )
-
-/* Parameters that are passed into the register check tasks solely for the
-purpose of ensuring parameters are passed into tasks correctly. */
-#define mainREG_TEST_TASK_1_PARAMETER		( ( void * ) 0x12345678 )
-#define mainREG_TEST_TASK_2_PARAMETER		( ( void * ) 0x87654321 )
 
 /* The base period used by the timer test tasks. */
 #define mainTIMER_TEST_PERIOD				( 50 )
@@ -130,23 +121,11 @@ purpose of ensuring parameters are passed into tasks correctly. */
 #define mainPOSIX_DEMO_PRIORITY    ( tskIDLE_PRIORITY + 4 )
 /*-----------------------------------------------------------*/
 
-
 /*
  * The check task, as described at the top of this file.
  */
 static void prvCheckTask( void *pvParameters );
 TaskHandle_t prvCheckTaskHandle;
-
-/*
- * Register commands that can be used with FreeRTOS+CLI.  The commands are
- * defined in CLI-Commands.c and File-Related-CLI-Command.c respectively.
- */
-extern void vRegisterSampleCLICommands( void );
-
-/*
- * The task that manages the FreeRTOS+CLI input and output.
- */
-extern void vUARTCommandConsoleStart( uint16_t usStackSize, UBaseType_t uxPriority );
 
 /*
  * A high priority task that does nothing other than execute at a pseudo random
@@ -162,11 +141,20 @@ static void prvPseudoRandomiser( void *pvParameters );
  */
 void vFullDemoTickHook( void );
 
+/*
+ * UART Rx task test 
+ */
+static void prvUARTTask(void *pvParameters);
+
 /*-----------------------------------------------------------*/
 
 void main_full( void )
 {	
 	printf( "%s", "This call from full main.\n" );
+
+#ifdef UART_TEST
+    xTaskCreate( prvUARTTask, "UART", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1, NULL);
+#else
 	/* Start all the other standard demo/test tasks.  They have no particular
 	functionality, but do demonstrate how to use the FreeRTOS API and test the
 	kernel port. */
@@ -206,6 +194,8 @@ void main_full( void )
 	the top of this file. */
 	xTaskCreate( prvCheckTask, "Check", configMINIMAL_STACK_SIZE, NULL, mainCHECK_TASK_PRIORITY, &prvCheckTaskHandle);
 
+#endif // UART_TEST
+
 	/* Start the scheduler. */
 	vTaskStartScheduler();
 
@@ -228,7 +218,6 @@ vTaskSuspend(NULL);
 #endif 
 TickType_t xDelayPeriod = mainNO_ERROR_CHECK_TASK_PERIOD;
 TickType_t xLastExecutionTime;
-static uint32_t ulLastRegTest1Value = 0, ulLastRegTest2Value = 0;
 uint32_t ulErrorFound = pdFALSE;
 const char *pcStatusString = "Pass";
 
@@ -460,3 +449,23 @@ void vFullDemoTickHook( void )
 	}
 	#endif /* configASSERT_DEFINED */
 }
+
+#ifdef UART_TEST
+static void prvUARTTask(void *pvParameters) {
+    (void)pvParameters;
+    unsigned char p_char;
+
+    printf("<----- Start UART Rx test ----->\n");
+	printf("Enter char or press ENTER to finish:\n");
+    for (;;) { 
+
+        while(console_getc(&p_char));
+        if (p_char == '\n' || p_char == '\r') {
+            break;
+        }
+        printf("Output char: %c\n", p_char);
+    }
+    printf("<----- End UART task ----->\n");
+    vTaskDelete(NULL);
+}
+#endif

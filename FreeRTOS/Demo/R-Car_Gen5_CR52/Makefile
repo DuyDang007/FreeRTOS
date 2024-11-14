@@ -28,6 +28,7 @@ SOURCE_C_LIST = ./common/FreeRTOS_tick_config.c \
 		./CMSIS_5/irq_ctrl_gic.c \
 		./drivers/gic/gicv3_basic.c \
 		./drivers/serial/serial.c \
+		./drivers/serial/scif.c \
 		./drivers/pcie/pcie.c \
 		./drivers/pcie/printer.c \
 		./drivers/pcie/mem_io.c  \
@@ -85,7 +86,6 @@ endif
 SOURCE_ASM_LIST = ./common/boot.S \
                 ./common/asm_vectors.S \
                 ./drivers/gic/gicv3_cpuif.S \
-                ./drivers/serial/scif.S \
 
 OBJ_LIST = $(SOURCE_C_LIST:.c=.o) $(SOURCE_ASM_LIST:.S=.o)
 
@@ -102,7 +102,7 @@ CFLAGS = -ffreestanding -std=gnu99  -mfpu=neon-fp-armv8 -mcpu=cortex-r52 -mtune=
                 -I./CMSIS_5/CMSIS/Core_R/Include/ \
                 -I./CMSIS_5 \
                 -I./common \
-                -I./drivers/mpu \
+				-I./drivers/mpu \
                 -I../../Source/include \
                 -I../../Source/portable/GCC/ARM_CR52 \
                 -I../../../FreeRTOS-Plus/Demo/Common/FreeRTOS_Plus_CLI_Demos \
@@ -121,14 +121,24 @@ CFLAGS = -ffreestanding -std=gnu99  -mfpu=neon-fp-armv8 -mcpu=cortex-r52 -mtune=
 
 ifdef TEST_FULL
 CFLAGS += -DmainCREATE_SIMPLE_BLINKY_DEMO_ONLY=0 
+
 ifdef SUPPORT_POSIX
 CFLAGS += -DconfigSUPPORT_POSIX 
 endif # SUPPORT_POSIX
+
+ifdef UART_TEST
+CFLAGS += -DUART_TEST
+endif # UART_TEST
+
 ifdef LOGGING_ENABLE
 CFLAGS += -DLOGGING_ENABLE
 endif # SUPPORT_LOGGING
-else
+else # TEST_FULL
 CFLAGS += -DmainCREATE_SIMPLE_BLINKY_DEMO_ONLY=1 
+endif
+
+ifdef BAUDRATE
+CFLAGS += -DUART_BAUDRATE=${BAUDRATE}
 endif
 
 AFLAGS = -mfpu=neon-fp-armv8 --specs=nosys.specs -mcpu=cortex-r52 -mtune=cortex-r52 -mfloat-abi=hard  \
@@ -149,6 +159,13 @@ ifdef TEST_FULL
 			rm -rf ../../Source/tasks.o; \
 		fi; \
 	fi
+
+ifdef UART_TEST
+	@rm -rf Full_Demo/main_full.o
+else # UART_TEST
+	@rm -rf Full_Demo/main_full.o
+endif 
+
 ifdef SUPPORT_POSIX
 	@if [ ! -e "Full_Demo/posix_demo/posix_demo.o" ]; then \
 		rm -rf Full_Demo/main_full.o; \
@@ -168,6 +185,10 @@ else
 		rm -rf ./common/main.o ; \
 	fi
 endif
+ifdef BAUDRATE
+	@rm -rf ./drivers/serial/serial.o ./drivers/serial/scif.o
+endif
+
 
 #lib: ${OBJ_LIST}
 #	@echo LD ${PROJ_NAME}.a

@@ -162,7 +162,7 @@ uint32_t console_init(uint32_t port) {
 	uart_rcar_write_16(SCSMR, reg_val);
 
 	/* Set baudrate */
-	uart_rcar_set_baudrate(115200);
+	uart_rcar_set_baudrate(UART_BAUDRATE);
 
 	/* FIFOs data count trigger configuration */
 	reg_val = uart_rcar_read_16(SCFCR);
@@ -193,4 +193,23 @@ void console_putc(char c) {
 	reg_val = uart_rcar_read_16(SCFSR);
 	reg_val &= ~(SCFSR_TDFE | SCFSR_TEND);
 	uart_rcar_write_16(SCFSR, reg_val);
+}
+
+int console_getc(unsigned char *p_char) {
+	uint16_t reg_val;
+	uint8_t ret = 0;
+
+	/* Receive FIFO empty */
+	if (!((uart_rcar_read_16(SCFSR)) & SCFSR_RDF)) {
+		ret = 1;
+		return ret;
+	}
+
+	*p_char = uart_rcar_read_16(SCFRDR);
+
+	reg_val = uart_rcar_read_16(SCFSR);
+	reg_val &= ~SCFSR_RDF;
+	uart_rcar_write_16(SCFSR, reg_val);
+
+	return ret;
 }
