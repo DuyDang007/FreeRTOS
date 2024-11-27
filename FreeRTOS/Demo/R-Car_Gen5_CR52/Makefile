@@ -29,16 +29,13 @@ SOURCE_C_LIST = ./common/FreeRTOS_tick_config.c \
 		./drivers/gic/gicv3_basic.c \
 		./drivers/serial/serial.c \
 		./drivers/serial/scif.c \
-		./drivers/pcie/pcie.c \
-		./drivers/pcie/printer.c \
-		./drivers/pcie/mem_io.c  \
-        ./drivers/mpu/mpu.c \
+                ./drivers/mpu/mpu.c \
 		../../Source/portable/GCC/ARM_CR52/port.c \
-	    ../../Source/queue.c \
-	    ../../Source/tasks.c \
-	    ../../Source/list.c \
-	    ../../Source/timers.c \
-        ../../Source/event_groups.c \
+                ../../Source/queue.c \
+	        ../../Source/tasks.c \
+	        ../../Source/list.c \
+	        ../../Source/timers.c \
+                ../../Source/event_groups.c \
 		./common/main.c
 
 # Full Demo Source
