@@ -38,7 +38,7 @@
 #define configUSE_DAEMON_TASK_STARTUP_HOOK (0)
 #endif
 #ifndef configUSE_TICK_HOOK
-#define configUSE_TICK_HOOK (0)
+#define configUSE_TICK_HOOK (1)
 #endif
 #ifndef configCPU_CLOCK_HZ
 #define configCPU_CLOCK_HZ (SystemCoreClock)
@@ -47,7 +47,7 @@
 #define configTICK_RATE_HZ (1000)
 #endif
 #ifndef configMAX_PRIORITIES
-#define configMAX_PRIORITIES (5)
+#define configMAX_PRIORITIES (9)
 #endif
 #ifndef configMINIMAL_STACK_SIZE
 #define configMINIMAL_STACK_SIZE (256)

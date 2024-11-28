@@ -13,10 +13,14 @@
 
 #define __FPU_PRESENT             1
 
+#include <stdint.h>
 #include "core_cr52.h"
 #include "irq_ctrl.h"
 
 #define R_OS_BSP_GENERIC_ARM_TIMER_IRQNUM 30
+#define RESERVED_PRIORITY_BIT 3
+#define MAX_PRIORITY_VALUE 31
+#define IPRIORITY(x) (((x <= MAX_PRIORITY_VALUE && x >= 0) ? x : MAX_PRIORITY_VALUE) << RESERVED_PRIORITY_BIT)
 
 typedef void (*IrqHandlerFn)(void *data);
 
@@ -25,7 +29,7 @@ void Irq_SetupEntry(unsigned int id, IrqHandlerFn Handler, void *Context);
 void Irq_RemoveEntry(unsigned int id);
 void Irq_Enable(unsigned int id);
 void Irq_Disable(unsigned int id);
-void Irq_SetPriority(unsigned int id, unsigned int priority);
+void Irq_SetPriority(unsigned int id, uint8_t priority);
 unsigned int FreeRTOS_GetActiveIRQ(void);
 void FreeRTOS_EndOfInterrupt(unsigned int id);
 

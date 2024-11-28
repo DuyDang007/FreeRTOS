@@ -98,9 +98,8 @@
 #include "logging_stack.h"
 #endif
 
-#ifdef UART_TEST
 #include "drivers/serial/scif.h"
-#endif
+#include "common/interrupts.h"
 /*------------------------*/
 
 /* Priorities for the demo application tasks. */
@@ -110,7 +109,7 @@
 #define mainQUEUE_OVERWRITE_PRIORITY		( tskIDLE_PRIORITY )
 
 /* The period of the check task, in ms. */
-#define mainNO_ERROR_CHECK_TASK_PERIOD		pdMS_TO_TICKS( ( TickType_t ) 500 )
+#define mainNO_ERROR_CHECK_TASK_PERIOD		pdMS_TO_TICKS( ( TickType_t ) 5000)
 
 /* The base period used by the timer test tasks. */
 #define mainTIMER_TEST_PERIOD				( 50 )
@@ -118,7 +117,7 @@
 /*CORTEX M3 DEFINE*/
 #define mainMESSAGE_BUFFER_TASKS_STACK_SIZE	( 100 )
 
-#define mainPOSIX_DEMO_PRIORITY    ( tskIDLE_PRIORITY + 4 )
+#define mainPOSIX_DEMO_PRIORITY    ( tskIDLE_PRIORITY + 4)
 /*-----------------------------------------------------------*/
 
 /*
@@ -144,17 +143,30 @@ void vFullDemoTickHook( void );
 /*
  * UART Rx task test 
  */
-static void prvUARTTask(void *pvParameters);
-
+void UARTInterruptHandler(void *data);
+SemaphoreHandle_t xSemaphore = NULL;
+void UartIrqTriggerTask(void *pvParameters);
+unsigned char p_char;
 /*-----------------------------------------------------------*/
 
 void main_full( void )
 {	
 	printf( "%s", "This call from full main.\n" );
 
-#ifdef UART_TEST
-    xTaskCreate( prvUARTTask, "UART", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1, NULL);
-#else
+	Irq_SetupEntry(623, UARTInterruptHandler, NULL);
+	Irq_SetPriority(623, IPRIORITY(2));
+	Irq_Enable(623);
+	
+	xSemaphore = xSemaphoreCreateBinary();
+
+	if (xSemaphore == NULL) {
+        printf("Semaphore creation failed!\n");
+    }
+    else {
+		printf("UART Interrupt is ready - Please type to RX terminal for testing\n");
+        xTaskCreate(UartIrqTriggerTask, "UartIrqTriggerTask", configMINIMAL_STACK_SIZE, NULL, configMAX_PRIORITIES - 1, NULL);
+    }
+
 	/* Start all the other standard demo/test tasks.  They have no particular
 	functionality, but do demonstrate how to use the FreeRTOS API and test the
 	kernel port. */
@@ -174,7 +186,7 @@ void main_full( void )
 	vStartQueueOverwriteTask( mainQUEUE_OVERWRITE_PRIORITY );
 	vStartTimerDemoTask( mainTIMER_TEST_PERIOD );
 
-#if 0
+#if 1
 	/* CORTEX M3 QEMU */
 	vStartQueuePeekTasks();
 	vStartQueueSetTasks();
@@ -188,13 +200,11 @@ void main_full( void )
 #endif 
 
 	/* Create the task that just adds a little random behaviour. */
-	xTaskCreate( prvPseudoRandomiser, "Rnd", configMINIMAL_STACK_SIZE, NULL, configMAX_PRIORITIES - 1, NULL );
+	xTaskCreate( prvPseudoRandomiser, "Rnd", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 4, NULL );
 
 	/* Create the task that performs the 'check' functionality,	as described at
 	the top of this file. */
 	xTaskCreate( prvCheckTask, "Check", configMINIMAL_STACK_SIZE, NULL, mainCHECK_TASK_PRIORITY, &prvCheckTaskHandle);
-
-#endif // UART_TEST
 
 	/* Start the scheduler. */
 	vTaskStartScheduler();
@@ -434,7 +444,7 @@ void vFullDemoTickHook( void )
 
 	/* Test flop alignment in interrupts - calling printf from an interrupt
 	is BAD! */
-	#if( configASSERT_DEFINED == 1 )
+	#if( configASSERT_DEFINED == 0 )
 	{
 	char cBuf[ 20 ];
 	UBaseType_t uxSavedInterruptStatus;
@@ -450,22 +460,24 @@ void vFullDemoTickHook( void )
 	#endif /* configASSERT_DEFINED */
 }
 
-#ifdef UART_TEST
-static void prvUARTTask(void *pvParameters) {
-    (void)pvParameters;
-    unsigned char p_char;
+void UARTInterruptHandler(void *data) {
+    (void)data;
 
-    printf("<----- Start UART Rx test ----->\n");
-	printf("Enter char or press ENTER to finish:\n");
-    for (;;) { 
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+	console_getc(&p_char);
+    xSemaphoreGiveFromISR(xSemaphore, &xHigherPriorityTaskWoken);
+    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 
-        while(console_getc(&p_char));
-        if (p_char == '\n' || p_char == '\r') {
-            break;
-        }
-        printf("Output char: %c\n", p_char);
-    }
-    printf("<----- End UART task ----->\n");
-    vTaskDelete(NULL);
 }
-#endif
+
+void UartIrqTriggerTask(void *pvParameters) {
+    ( void ) pvParameters;
+
+    for(;;) {
+
+        if (xSemaphoreTake(xSemaphore, portMAX_DELAY) == pdTRUE) {
+
+            printf("Task has been triggered by interrupt! Receive char: %c\n", p_char);
+        }
+    }
+}

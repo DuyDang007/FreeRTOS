@@ -3,7 +3,8 @@
  *
  * SPDX-License-Identifier: MIT
  */
-
+#include "FreeRTOS.h"
+#include "task.h"
 #include <stddef.h>
 #include "cmsis_rcar_gen5.h"
 #include "interrupts.h"
@@ -11,7 +12,7 @@
 #include "drivers/gic/gicv3_basic.h"
 
 #define MAX_IRQ_NUMBER       1019
-#define DEFAULT_ISR_PRIORITY 0
+#define DEFAULT_ISR_PRIORITY IPRIORITY(1)
 
 typedef void (*IrqHandlerFn)(void *data);
 
@@ -25,28 +26,28 @@ static IvtEntry HandlerTable[MAX_IRQ_NUMBER];
 
 void Irq_Setup(void)
 {
-    uint32_t rd, affinity;
-    affinity = 0;
-
-    //
-    // Configure the interrupt controller
-    //
-    // Set location of GIC
+	uint32_t rd, affinity;
+	affinity = 0;
+	
+	//
+	// Configure the interrupt controller
+	//
+	// Set location of GIC
 	setGICAddr(CR52_GICD_ADDR, CR52_GICR_ADDR);
-
-    // Enable GIC
-    enableGIC();
-
-    // Get the ID of the Redistributor connected to this PE
-    rd = getRedistID(affinity);
-    // Mark this core as being active
-    wakeUpRedist(rd);
-
-    // Configure the CPU interface
-    // This assumes that the SRE bits are already set
-    setPriorityMask(0xFF);
-    enableGroup0Ints();
-    enableGroup1Ints();
+	
+	// Enable GIC
+	enableGIC();
+	
+	// Get the ID of the Redistributor connected to this PE
+	rd = getRedistID(affinity);
+	// Mark this core as being active
+	wakeUpRedist(rd);
+	
+	// Configure the CPU interface
+	// This assumes that the SRE bits are already set
+	setPriorityMask(0xFF);
+	enableGroup0Ints();
+	enableGroup1Ints();
 }
 
 /* Set up a CR7 or INTC-RT GIC entry */
@@ -110,13 +111,13 @@ int32_t IRQ_Disable (IRQn_ID_t irqn)
 	return 0;
 }
 
-void Irq_SetPriority(unsigned int id, unsigned int priority)
-{
+void Irq_SetPriority(unsigned int id, uint8_t priority)
+{	
 	setIntPriority(id, CR52_CPU_ID, priority);
 }
 
 
-/* CR7 GIC interrupt handler that also checks the INTC-RT GIC */
+/* CR52 GIC interrupt handler that also checks the INTC-RT GIC */
 void vApplicationIRQHandler(uint32_t ulICCIAR)
 {
 	/*
@@ -126,7 +127,7 @@ void vApplicationIRQHandler(uint32_t ulICCIAR)
 	 */
 	uint32_t id = ulICCIAR & 0x3FFU;
 	IvtEntry *pEntry;
-
+	UBaseType_t UxSavedInterruptStatus;
 	if (id > MAX_IRQ_NUMBER) {
         return;
 	}
@@ -138,7 +139,7 @@ void vApplicationIRQHandler(uint32_t ulICCIAR)
 		while (1)
 			;
 	}
-
+	UxSavedInterruptStatus = taskENTER_CRITICAL_FROM_ISR();
 	pEntry->Handler(pEntry->Context);
-
+	taskEXIT_CRITICAL_FROM_ISR(UxSavedInterruptStatus);
 }
