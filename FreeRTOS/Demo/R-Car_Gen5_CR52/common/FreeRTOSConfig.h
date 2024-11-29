@@ -16,6 +16,7 @@
 #define configSUPPORT_STATIC_ALLOCATION                 1
 #define configSUPPORT_DYNAMIC_ALLOCATION                1 /* Defaults to 1 anyway. */
 
+// Phuong
 #define __BKPT(value)                       __ASM volatile ("bkpt "#value)
 #define __ASM                                  __asm
 

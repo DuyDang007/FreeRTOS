@@ -12,7 +12,7 @@ __attribute__((weak)) int _close(int fd)
 _write (int fd, char* buf, int nbytes)
 {
 }*/
-__attribute__((weak)) int _fstat(int fd, void *buf)
+__attribute__((weak)) int _fstat(int fd, struct stat *buf)
 {
   (void)fd;
 
