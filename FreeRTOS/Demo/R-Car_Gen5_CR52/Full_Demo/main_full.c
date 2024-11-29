@@ -116,8 +116,9 @@
 
 /*CORTEX M3 DEFINE*/
 #define mainMESSAGE_BUFFER_TASKS_STACK_SIZE	( 100 )
+#define mainCREATOR_TASK_PRIORITY  ( configMAX_PRIORITIES - ( UBaseType_t ) 2 )
 
-#define mainPOSIX_DEMO_PRIORITY    ( tskIDLE_PRIORITY + 4)
+#define mainPOSIX_DEMO_PRIORITY    ( tskIDLE_PRIORITY + 4 )
 /*-----------------------------------------------------------*/
 
 /*
@@ -185,6 +186,11 @@ void main_full( void )
 	vCreateAbortDelayTasks();
 	vStartQueueOverwriteTask( mainQUEUE_OVERWRITE_PRIORITY );
 	vStartTimerDemoTask( mainTIMER_TEST_PERIOD );
+  
+  /* The suicide tasks must be created last as they need to know how many
+  tasks were running prior to their creation in order to ascertain whether
+  or not the correct/expected number of tasks are running at any given time. */
+  vCreateSuicidalTasks( mainCREATOR_TASK_PRIORITY );
 
 #if 1
 	/* CORTEX M3 QEMU */

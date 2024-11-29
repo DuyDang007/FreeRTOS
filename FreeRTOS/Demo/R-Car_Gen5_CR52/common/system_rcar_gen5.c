@@ -7,6 +7,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 #include "cmsis_rcar_gen5.h"
 #include "mpu.h"
 
@@ -126,4 +127,13 @@ void SystemInit(void)
 //	L1C_EnableCaches();
 //	L1C_EnableBTAC();
 //	bss_init((void *)&__bss_start__, (void *)&__bss_end__);
+}
+
+void assert_func(const char *file, int line, const char *func)
+{
+    printf("ASSERT! File \"%s\", Line \"%d\", Function \"%s\" \n", file, line, func);
+    for (;;)
+    {
+        __BKPT(0);
+    }
 }

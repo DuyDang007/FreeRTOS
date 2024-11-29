@@ -121,7 +121,8 @@ CFLAGS = -ffreestanding -std=gnu99  -mfpu=neon-fp-armv8 -mcpu=cortex-r52 -mtune=
 
 
 ifdef TEST_FULL
-	CFLAGS += -DmainCREATE_SIMPLE_BLINKY_DEMO_ONLY=0
+	CFLAGS += -DmainCREATE_SIMPLE_BLINKY_DEMO_ONLY=0 \
+            -DconfigUSE_TICK_HOOK=1              
 else
     CFLAGS += -DmainCREATE_SIMPLE_BLINKY_DEMO_ONLY=1
 endif

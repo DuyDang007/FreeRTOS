@@ -38,7 +38,7 @@
 #define configUSE_DAEMON_TASK_STARTUP_HOOK (0)
 #endif
 #ifndef configUSE_TICK_HOOK
-#define configUSE_TICK_HOOK (1)
+#define configUSE_TICK_HOOK (0)
 #endif
 #ifndef configCPU_CLOCK_HZ
 #define configCPU_CLOCK_HZ (SystemCoreClock)
@@ -155,7 +155,8 @@
 #define configMAX_API_CALL_INTERRUPT_PRIORITY (configMAX_SYSCALL_INTERRUPT_PRIORITY)
 #endif
 #ifndef configASSERT
-#define configASSERT( x ) if (!(x)) {__BKPT(0);}
+void assert_func(const char *file, int line, const char *func);
+#define configASSERT( x ) if (!(x)) {assert_func(__FILE__, __LINE__, __func__);}
 #endif
 #ifndef configINCLUDE_APPLICATION_DEFINED_PRIVILEGED_FUNCTIONS
 #define configINCLUDE_APPLICATION_DEFINED_PRIVILEGED_FUNCTIONS (0)
