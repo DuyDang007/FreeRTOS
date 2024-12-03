@@ -90,7 +90,7 @@
 #include "death.h"
 
 #ifdef configSUPPORT_POSIX
-#include "posix_demo.h"
+//#include "posix_demo.h"
 #endif
 
 /* Logging Function include. */
@@ -202,7 +202,7 @@ void main_full( void )
 #endif
 
 #ifdef configSUPPORT_POSIX
-    xTaskCreate( vStartPOSIXDemo, "posix", configMINIMAL_STACK_SIZE, NULL, mainPOSIX_DEMO_PRIORITY, NULL );
+//    xTaskCreate( vStartPOSIXDemo, "posix", configMINIMAL_STACK_SIZE, NULL, mainPOSIX_DEMO_PRIORITY, NULL );
 #endif 
 
 	/* Create the task that just adds a little random behaviour. */
@@ -230,7 +230,7 @@ void main_full( void )
 static void prvCheckTask( void *pvParameters )
 {
 #ifdef configSUPPORT_POSIX
-vTaskSuspend(NULL);
+//vTaskSuspend(NULL);
 #endif 
 TickType_t xDelayPeriod = mainNO_ERROR_CHECK_TASK_PERIOD;
 TickType_t xLastExecutionTime;

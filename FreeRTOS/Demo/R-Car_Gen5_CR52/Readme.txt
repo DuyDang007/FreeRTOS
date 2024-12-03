@@ -10,9 +10,14 @@ For the CR52 (arm-gnu) the following toolchain have been used:
  Extract tool chain to <your_tool_chain_path>. Then add <your_tool_chain_path>/bin to your `PATH`*
 
 ### Build
+ export PATH=<your_tool_chain_path>/bin:$PATH
+ export FREERTOS_DIR=<your_freertos_source>
  cd FreeRTOS/Demo/R-Car_Gen5_CR52/
  make			# compile Blink Demo
- make TEST_FULL=1	# compile Full Demo
+ cd sample_apps
+ cd hello_app
+ make
 
 ### Output
  freertos.a, freertos.bin and freertos.elf are contained in FreeRTOS/Demo/R-Car_Gen5_CR52/bin.
+ freertos.map, freertos.bin and freertos.elf are contained in FreeRTOS/Demo/R-Car_Gen5_CR52/sample_apps/hello_world/bin.

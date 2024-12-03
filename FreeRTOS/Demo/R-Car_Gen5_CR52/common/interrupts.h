@@ -15,7 +15,7 @@
 
 #include <stdint.h>
 #include "core_cr52.h"
-#include "irq_ctrl.h"
+#include "CMSIS_5/irq_ctrl.h"
 
 #define R_OS_BSP_GENERIC_ARM_TIMER_IRQNUM 30
 #define RESERVED_PRIORITY_BIT 3

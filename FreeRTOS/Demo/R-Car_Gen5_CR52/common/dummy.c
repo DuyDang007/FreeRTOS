@@ -8,10 +8,10 @@ __attribute__((weak)) int _close(int fd)
 //  (void)fd;
   return (0);
 }
-/*__attribute__((weak)) int
-_write (int fd, char* buf, int nbytes)
+__attribute__((weak)) int _write (int fd, char* buf, int nbytes)
 {
-}*/
+    return (0);
+}
 __attribute__((weak)) int _fstat(int fd, void *buf)
 {
   (void)fd;
