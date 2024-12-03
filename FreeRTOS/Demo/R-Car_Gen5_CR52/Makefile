@@ -95,14 +95,15 @@ endif
 LDFILE += -L${FREERTOS_BSP_DIR}/common/linker/
 
 CFLAGS = -ffreestanding -std=gnu99  -mfpu=neon-fp-armv8 -mcpu=cortex-r52 -mtune=cortex-r52 -lnosys --specs=nosys.specs \
-		-Wl,-Map=${OUTPUT_DIR}/${PROJ_NAME}.map  -T ${LDFILE} -Wl,--no-warn-rwx-segments \
+        -Wl,-Map=${OUTPUT_DIR}/${PROJ_NAME}.map  -T ${LDFILE} -Wl,--no-warn-rwx-segments \
         -mfloat-abi=hard \
-		-DconfigSUPPORT_POSIX \
+        -DconfigSUPPORT_POSIX \
         -I$(FREERTOS_BSP_DIR)				     \
         -I$(FREERTOS_BSP_DIR)/CMSIS_5/CMSIS/Core_R/Include/ \
         -I$(FREERTOS_BSP_DIR)/CMSIS_5 \
         -I$(FREERTOS_BSP_DIR)/common \
-		-I$(FREERTOS_BSP_DIR)/drivers/mpu \
+        -I$(FREERTOS_BSP_DIR)/common/POSIX_portable \
+        -I$(FREERTOS_BSP_DIR)/drivers/mpu \
         -I${FREERTOS_DIR}/FreeRTOS/Source/include \
         -I${FREERTOS_DIR}/FreeRTOS/Source/portable/GCC/ARM_CR52 \
         -I${FREERTOS_DIR}/FreeRTOS-Plus/Demo/Common/FreeRTOS_Plus_CLI_Demos \
@@ -114,9 +115,8 @@ CFLAGS = -ffreestanding -std=gnu99  -mfpu=neon-fp-armv8 -mcpu=cortex-r52 -mtune=
         -I${POSIX_DIR}/include/private \
         -I${POSIX_PORT_INC} \
         -I${POSIX_PORT_INC}/portable \
-        -I${POSIX_PORT_INC}/portable/renesas/rcar_gen5 \
         -I$(FREERTOS_BSP_DIR)/Full_Demo/posix_demo \
-		-I${LOGGING_INC} \
+        -I${LOGGING_INC} \
 
 
 ifdef TEST_FULL
