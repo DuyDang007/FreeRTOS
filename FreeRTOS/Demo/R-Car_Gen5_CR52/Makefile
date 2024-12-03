@@ -10,11 +10,11 @@ FREERTOS_BSP_DIR=${FREERTOS_DIR}/FreeRTOS/Demo/R-Car_Gen5_CR52
 FREERTOS_LIB = freertos_lib
 OUTPUT_DIR = $(FREERTOS_BSP_DIR)/bin
 
-CC = arm-none-eabi-gcc
-LD = arm-none-eabi-ld
-AR = arm-none-eabi-ar
+CC = ${CROSS_COMPILE}gcc
+LD = ${CROSS_COMPILE}ld
+AR = ${CROSS_COMPILE}ar
 ARFLAGS = rcs
-OBJCOPY = arm-none-eabi-objcopy
+OBJCOPY = ${CROSS_COMPILE}objcopy
 
 LOGGING_INC = $(FREERTOS_BSP_DIR)/FreeRTOS-Plus/Source/Utilities/logging
 

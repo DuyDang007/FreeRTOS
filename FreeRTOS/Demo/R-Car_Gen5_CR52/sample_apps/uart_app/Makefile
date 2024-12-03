@@ -4,11 +4,11 @@ board := x5h_vdk
 
 FREERTOS_LIB = freertos_lib
 
-CC = arm-none-eabi-gcc
-LD = arm-none-eabi-ld
-AR = arm-none-eabi-ar
+CC = ${CROSS_COMPILE}gcc
+LD = ${CROSS_COMPILE}ld
+AR = ${CROSS_COMPILE}ar
 ARFLAGS = rcs
-OBJCOPY = arm-none-eabi-objcopy
+OBJCOPY = ${CROSS_COMPILE}objcopy
 
 TARGET_NAME = freertos
 FREERTOS_DIR ?= ../../../../..
