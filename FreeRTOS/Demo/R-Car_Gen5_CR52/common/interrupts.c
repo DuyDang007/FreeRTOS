@@ -8,6 +8,8 @@
 #include <stddef.h>
 #include "cmsis_rcar_gen5.h"
 #include "interrupts.h"
+#include "core_cr52.h"
+#include "CMSIS_5/irq_ctrl.h"
 #include "irq_ctrl.h"
 #include "drivers/gic/gicv3_basic.h"
 

@@ -9,6 +9,8 @@
 #include "task.h"
 
 #include "interrupts.h"
+#include "core_cr52.h"
+#include "CMSIS_5/irq_ctrl.h"
 #include "drivers/timer/arm_generic_timer.h"
 
 #include "cmsis_cp15.h"
