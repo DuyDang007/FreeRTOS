@@ -44,7 +44,9 @@
 /* Scheduler include files. */
 #include "FreeRTOS.h"
 #include "task.h"
+#include "semphr.h"
 
+#include "drivers/serial/scif.h"
 #include "interrupts.h"
 #include "stdio.h"
 #define main_LOG_TASK_PRIORITY        ( tskIDLE_PRIORITY + 1 )
@@ -58,14 +60,36 @@ static void prvSetupHardware( void );
 
 static void prvLogTask( void *pvParameters );
 
+static void UartIrqTriggerTask(void *pvParameters);
+static void UARTInterruptHandler(void *data);
+SemaphoreHandle_t xSemaphore = NULL;
+unsigned char p_char;
 /*-----------------------------------------------------------*/
 
 int main( void )
 {
-	/* Configure the hardware ready to run the demo. */
-	prvSetupHardware();
+    /* Configure the hardware ready to run the demo. */
+    prvSetupHardware();
     
+    /* Set Handler for Irq */
+    Irq_SetupEntry(HSCIF_INT_ID, UARTInterruptHandler, NULL);
     
+    /* Set priority for Irq */
+    Irq_SetPriority(HSCIF_INT_ID, IPRIORITY(2));
+
+    /* Enable Irq */
+    Irq_Enable(HSCIF_INT_ID);
+
+    xSemaphore = xSemaphoreCreateBinary();
+
+    if (xSemaphore == NULL) {
+        printf("Semaphore creation failed!\n");
+    }
+    else {
+        printf("UART Interrupt is ready - Please type to RX terminal for testing\n");
+        xTaskCreate(UartIrqTriggerTask, "UartIrqTriggerTask", configMINIMAL_STACK_SIZE, NULL, configMAX_PRIORITIES - 1, NULL);
+    }
+
     xTaskCreate( prvLogTask, "Log", configMINIMAL_STACK_SIZE, NULL, main_LOG_TASK_PRIORITY, NULL );
     /* Start the tasks and timer running. */
     vTaskStartScheduler();
@@ -100,6 +124,26 @@ static void prvLogTask( void *pvParameters )
     }
 }
 
+/*-----------------------------------------------------------*/
+
+void UARTInterruptHandler(void *data) {
+    (void)data;
+
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    console_getc(&p_char);
+    xSemaphoreGiveFromISR(xSemaphore, &xHigherPriorityTaskWoken);
+    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+}
+
+void UartIrqTriggerTask(void *pvParameters) {
+    ( void ) pvParameters;
+
+    for(;;) {
+        if (xSemaphoreTake(xSemaphore, portMAX_DELAY) == pdTRUE) {
+            printf("Task has been triggered by interrupt! Receive char: %c\n", p_char);
+        }
+    }
+}
 /*-----------------------------------------------------------*/
 
 /* configUSE_STATIC_ALLOCATION is set to 1, so the application must provide an
