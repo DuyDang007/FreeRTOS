@@ -10,7 +10,7 @@ target_compile_definitions(${app_name}
 
 # Essential libraries to link with
 target_link_libraries(${app_name}
-    freertos_bsp m c
+    freertos_bsp m
 )
 
 # Add output program address map file

@@ -93,7 +93,7 @@ set(bsp_include_dir
     ${BSP_DIR}/drivers/gic
 )
 
-add_library(dummy STATIC
+add_library(dummy OBJECT
     ${BSP_DIR}/common/dummy.c
 )
 link_libraries(dummy)
@@ -150,6 +150,7 @@ install(
 install(
     TARGETS freertos_bsp dummy
     ARCHIVE DESTINATION lib
+    OBJECTS DESTINATION .
 )
 install(
     FILES 

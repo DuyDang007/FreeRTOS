@@ -33,7 +33,7 @@ make install
 
 `<install_dir>/lib/libfreertos_bsp.a` The archieve file contains FreeRTOS Kernel and R-Car BSP, POSIX libraries
 
-`<install_dir>/lib/libdummy.a` Link your application with this library to suspend some warning: `warning: <symbol> is not implemented and will always fail`
+`<install_dir>/objects/dummy/common/dummy.c.o` Link your application with this object to suspend some warning: `warning: <symbol> is not implemented and will always fail`
 
 `<install_dir>/include` The public include header directory
 
@@ -62,8 +62,7 @@ link_directories(
 )
 link_libraries(
     freertos_bsp
-	dummy
-	c
+	<INSTALL_DIR>/objects/dummy/common/dummy.c.o
 )
 
 # Add linker script and your custom link options
