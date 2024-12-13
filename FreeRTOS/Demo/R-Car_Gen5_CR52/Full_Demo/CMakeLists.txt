@@ -3,25 +3,25 @@ set(app_name "main_full")
 add_executable(${app_name}
     main.c
     main_full.c
-    ${FREERTOS_DIR}/FreeRTOS/Demo/Common/Minimal/EventGroupsDemo.c
-    ${FREERTOS_DIR}/FreeRTOS/Demo/Common/Minimal/blocktim.c
-    ${FREERTOS_DIR}/FreeRTOS/Demo/Common/Minimal/recmutex.c
-    ${FREERTOS_DIR}/FreeRTOS/Demo/Common/Minimal/semtest.c
-    ${FREERTOS_DIR}/FreeRTOS/Demo/Common/Minimal/dynamic.c
-    ${FREERTOS_DIR}/FreeRTOS/Demo/Common/Minimal/countsem.c
-    ${FREERTOS_DIR}/FreeRTOS/Demo/Common/Minimal/GenQTest.c
-    ${FREERTOS_DIR}/FreeRTOS/Demo/Common/Minimal/flop.c
-    ${FREERTOS_DIR}/FreeRTOS/Demo/Common/Minimal/IntSemTest.c
-    ${FREERTOS_DIR}/FreeRTOS/Demo/Common/Minimal/TaskNotify.c
-    ${FREERTOS_DIR}/FreeRTOS/Demo/Common/Minimal/StaticAllocation.c
-    ${FREERTOS_DIR}/FreeRTOS/Demo/Common/Minimal/AbortDelay.c
-    ${FREERTOS_DIR}/FreeRTOS/Demo/Common/Minimal/QueueOverwrite.c
-    ${FREERTOS_DIR}/FreeRTOS/Demo/Common/Minimal/TimerDemo.c
-    ${FREERTOS_DIR}/FreeRTOS/Demo/Common/Minimal/QPeek.c
-    ${FREERTOS_DIR}/FreeRTOS/Demo/Common/Minimal/QueueSet.c
-    ${FREERTOS_DIR}/FreeRTOS/Demo/Common/Minimal/StreamBufferDemo.c
-    ${FREERTOS_DIR}/FreeRTOS/Demo/Common/Minimal/death.c
-    ${FREERTOS_DIR}/FreeRTOS/Demo/Common/Minimal/MessageBufferDemo.c
+    ${FREERTOS_DIR}/FreeRTOS/Demo/Common/Minimal/EventGroupsDemo.c 
+    ${FREERTOS_DIR}/FreeRTOS/Demo/Common/Minimal/blocktim.c 
+    ${FREERTOS_DIR}/FreeRTOS/Demo/Common/Minimal/recmutex.c 
+    ${FREERTOS_DIR}/FreeRTOS/Demo/Common/Minimal/semtest.c 
+    ${FREERTOS_DIR}/FreeRTOS/Demo/Common/Minimal/dynamic.c 
+    ${FREERTOS_DIR}/FreeRTOS/Demo/Common/Minimal/countsem.c 
+    ${FREERTOS_DIR}/FreeRTOS/Demo/Common/Minimal/GenQTest.c 
+    ${FREERTOS_DIR}/FreeRTOS/Demo/Common/Minimal/flop.c 
+    ${FREERTOS_DIR}/FreeRTOS/Demo/Common/Minimal/IntSemTest.c 
+    ${FREERTOS_DIR}/FreeRTOS/Demo/Common/Minimal/TaskNotify.c 
+    ${FREERTOS_DIR}/FreeRTOS/Demo/Common/Minimal/StaticAllocation.c 
+    ${FREERTOS_DIR}/FreeRTOS/Demo/Common/Minimal/AbortDelay.c 
+    ${FREERTOS_DIR}/FreeRTOS/Demo/Common/Minimal/QueueOverwrite.c 
+    ${FREERTOS_DIR}/FreeRTOS/Demo/Common/Minimal/TimerDemo.c 
+    ${FREERTOS_DIR}/FreeRTOS/Demo/Common/Minimal/QPeek.c 
+    ${FREERTOS_DIR}/FreeRTOS/Demo/Common/Minimal/QueueSet.c 
+    ${FREERTOS_DIR}/FreeRTOS/Demo/Common/Minimal/StreamBufferDemo.c 
+    ${FREERTOS_DIR}/FreeRTOS/Demo/Common/Minimal/death.c 
+    ${FREERTOS_DIR}/FreeRTOS/Demo/Common/Minimal/MessageBufferDemo.c 
 )
 
 target_include_directories(${app_name}
