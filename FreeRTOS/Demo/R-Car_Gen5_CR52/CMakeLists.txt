@@ -103,6 +103,8 @@ target_include_directories(freertos_bsp
         $<INSTALL_INTERFACE:include/kernel/include>
         # BSP
         $<INSTALL_INTERFACE:include>
+        # CR52
+        $<INSTALL_INTERFACE:include/ARM_CR52>
 )
 
 ### Installation config
@@ -116,8 +118,18 @@ install(
 # BSP
 install(
     TARGETS freertos_bsp dummy
+    EXPORT freertos_bspTargets
     ARCHIVE DESTINATION lib
     OBJECTS DESTINATION .
+)
+install(
+    EXPORT freertos_bspTargets
+    NAMESPACE freertos_bsp::
+    DESTINATION lib
+)
+install(
+    FILES ${CMAKE_SOURCE_DIR}/freertos_bspConfig.cmake
+    DESTINATION .
 )
 install(
     FILES 

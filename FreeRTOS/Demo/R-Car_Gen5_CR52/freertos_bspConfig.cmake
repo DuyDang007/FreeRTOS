@@ -1,1 +1,1 @@
-include("${CMAKE_CURRENT_LIST_DIR}/freertos_bspTargets.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/lib/freertos_bspTargets.cmake")
