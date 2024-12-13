@@ -144,6 +144,11 @@ install(
 
 #######################################################################################
 # Add subdirectory for applications below
+if(ENABLE_OPENAMP)
+    add_subdirectory(libraries/libmetal)
+    add_subdirectory(libraries/openamp)
+endif()
+
 add_subdirectory(Full_Demo)
 add_subdirectory(sample_apps/hello_world)
 add_subdirectory(sample_apps/uart_app)

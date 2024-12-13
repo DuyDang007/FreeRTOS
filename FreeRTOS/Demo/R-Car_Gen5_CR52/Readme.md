@@ -19,7 +19,11 @@ Extract tool chain to <your_tool_chain_path>.
  export PATH=$PATH:<your_tool_chain_path>/bin/
  cd FreeRTOS/Demo/R-Car_Gen5_CR52/
  mkdir build && cd build
- cmake -G "Unix Makefiles" -DCMAKE_TOOLCHAIN_FILE=../toolchain_arm_none_eabi.cmake -DCMAKE_INSTALL_PREFIX=<path/to/install/dir> ..
+ cmake -G "Unix Makefiles" \
+     -DCMAKE_TOOLCHAIN_FILE=../toolchain_arm_none_eabi.cmake \
+	 -DCMAKE_INSTALL_PREFIX=<path/to/install/dir> \
+	 -DENABLE_OPENAMP=1 \ 			# OPTIONAL: Enable OpenAMP and Libmetal build 
+ ..
  make
 ```
 
