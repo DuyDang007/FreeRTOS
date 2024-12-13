@@ -14,6 +14,10 @@ _HEAP_SIZE        = 0x18000;
 
 /* Note: See RCAR_VIDEO_BUFFER_START for additional memory used */
 
+/* Address of RAM */
+_RAM_START = ORIGIN(vram_base_addr);
+_RAM_SIZE = LENGTH(vram_base_addr);
+
 SECTIONS
 {
 .text (READONLY): {

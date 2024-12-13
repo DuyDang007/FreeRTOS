@@ -176,6 +176,7 @@ add_subdirectory(Full_Demo)
 add_subdirectory(sample_apps/hello_world)
 add_subdirectory(sample_apps/uart_app)
 add_subdirectory(sample_apps/logging_app)
+add_subdirectory(sample_apps/mpu_app)
 
 # TODO: Delete application makefile
 # TODO: Remove porting code in Kernel

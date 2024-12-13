@@ -13,9 +13,21 @@
 
 #define SYSTEM_CLOCK_COUNTER_DEFAULT 25000000
 
+#define RESERVED_MEMORY_ADDRESS 0x50000000
+#define RESERVED_MEMORY_SIZE    0x10000000
+
+#define OSAL_MEMORY_ADDRESS     0x60000000
+#define OSAL_MEMORY_SIZE        0x20000000
+
+#define DEVICE_MEMORY_ADDRESS   0x80000000
+#define DEVICE_MEMORY_SIZE      0x80000000
+
 extern const unsigned int __bss_start__;
 extern const unsigned int __bss_end__;
-extern const unsigned int _STACK_SIZE;	
+extern const unsigned int _STACK_SIZE;
+
+extern uint32_t _RAM_START;
+extern uint32_t _RAM_SIZE;
 
 extern uint32_t _Reset;
 uint32_t resource_table;
@@ -27,19 +39,18 @@ extern int main(void);
 
 static void Init_MPU(void)
 {
-#if 1
     /* Disable MPU */
     MPU_Disable();
 
     MPU_Init();
-
-    MPU_SetRegion(REGION_0, REGION_SRAM_ATTR(0x00, 0x2000000));
-    MPU_SetRegion(REGION_1, REGION_DEVICE_ATTR(0x2000000, 0xFFFFFFFF));
     
+    MPU_SetRegion(REGION_0, REGION_SRAM_ATTR((uint32_t) &_RAM_START, (uint32_t) &_RAM_SIZE));
+    MPU_SetRegion(REGION_1, REGION_RAM_RO_ATTR((uint32_t) RESERVED_MEMORY_ADDRESS, (uint32_t) RESERVED_MEMORY_SIZE));
+    MPU_SetRegion(REGION_2, REGION_DEVICE_ATTR((uint32_t) OSAL_MEMORY_ADDRESS, (uint32_t) OSAL_MEMORY_SIZE));
+    MPU_SetRegion(REGION_3, REGION_DEVICE_ATTR((uint32_t) DEVICE_MEMORY_ADDRESS, (uint32_t) DEVICE_MEMORY_SIZE));
+
     /* Enable MPU */
     MPU_Enable();
-
-#endif
 }
 
 __STATIC_INLINE void bss_init(unsigned int* section_begin, unsigned int* section_end)

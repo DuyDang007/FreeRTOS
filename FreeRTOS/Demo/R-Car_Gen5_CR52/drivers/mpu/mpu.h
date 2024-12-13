@@ -54,83 +54,83 @@ typedef enum {
 
 /** \brief Non shareable - EL1 RW EL0 None - Execute-never - Device nGnRnE 
  * \param BASE  Region Base address
- * \param LIMIT Region Limit address 
+ * \param LIMIT Region Size
 */
-#define REGION_DEVICE_ATTR(BASE, LIMIT)						      	\
+#define REGION_DEVICE_ATTR(BASE, SIZE)						      	\
 	(ARM_MPU_Region_t){							      			          		\
 		.prbar = ARM_MPU_SET_PRBAR(BASE, ARM_MPU_SH_NON, ARM_MPU_AP_EL1_RW_EL0_None, ARM_MPU_XN), \
-		.prlar = ARM_MPU_SET_PRLAR(LIMIT - 1, MPU_MAIR_INDEX_DEVICE),		  \
+		.prlar = ARM_MPU_SET_PRLAR((unsigned int)(BASE + SIZE - 1), MPU_MAIR_INDEX_DEVICE),		  \
 	}
 
 /** \brief Non shareable - EL1 RW EL0 None - Execute-never - Outer NT-WB-RA-WA, Inner NT-WB-RA-WA
  * \param BASE  Region Base address
- * \param LIMIT Region Limit address 
+ * \param LIMIT Region Size
 */
-#define REGION_RAM_ATTR(BASE, LIMIT)							\
+#define REGION_RAM_ATTR(BASE, SIZE)							\
 	(ARM_MPU_Region_t){								\
 		.prbar = ARM_MPU_SET_PRBAR(BASE, ARM_MPU_SH_NON, ARM_MPU_AP_EL1_RW_EL0_None, ARM_MPU_XN), \
-		.prlar = ARM_MPU_SET_PRLAR(LIMIT - 1, MPU_MAIR_INDEX_SRAM),			\
+		.prlar = ARM_MPU_SET_PRLAR(BASE + SIZE - 1, MPU_MAIR_INDEX_SRAM),			\
 	}
 
 /** \brief Non shareable - EL1 RW EL0 None - Execute-never - Outer Non Cacheable, Inner Non Cacheable
  * \param BASE  Region Base address
- * \param LIMIT Region Limit address 
+ * \param LIMIT Region Size
 */
-#define REGION_RAM_NOCACHE_ATTR(BASE, LIMIT)				      \
+#define REGION_RAM_NOCACHE_ATTR(BASE, SIZE)				      \
 	(ARM_MPU_Region_t){							      \
 		.prbar = ARM_MPU_SET_PRBAR(BASE, ARM_MPU_SH_NON, ARM_MPU_AP_EL1_RW_EL0_None, ARM_MPU_XN), \
-		.prlar = ARM_MPU_SET_PRLAR(LIMIT - 1, MPU_MAIR_INDEX_SRAM_NOCACHE),	      \
+		.prlar = ARM_MPU_SET_PRLAR(Base + SIZE - 1, MPU_MAIR_INDEX_SRAM_NOCACHE),	      \
 	}
 
 /** \brief Non shareable - EL1 RO EL0 RO - Execute - Outer NT-WB-RA-WA, Inner NT-WB-RA-WA
  * \param BASE  Region Base address
- * \param LIMIT Region Limit address 
+ * \param LIMIT Region Size
 */
-#define REGION_RAM_TEXT_ATTR(BASE, LIMIT)					\
+#define REGION_RAM_TEXT_ATTR(BASE, SIZE)					\
 	(ARM_MPU_Region_t){							\
 		.prbar = ARM_MPU_SET_PRBAR(BASE, ARM_MPU_SH_NON, ARM_MPU_AP_EL1_RO_EL0_RO, ARM_MPU_EX),	\
-		.prlar = ARM_MPU_SET_PRLAR(LIMIT - 1, MPU_MAIR_INDEX_SRAM),		\
+		.prlar = ARM_MPU_SET_PRLAR(BASE + SIZE - 1, MPU_MAIR_INDEX_SRAM),		\
 	}
 
 /** \brief Non shareable - EL1 RO EL0 RO - Execute-never - Outer NT-WB-RA-WA, Inner NT-WB-RA-WA
  * \param BASE  Region Base address
- * \param LIMIT Region Limit address 
+ * \param LIMIT Region Size
 */
-#define REGION_RAM_RO_ATTR(BASE, LIMIT)						\
+#define REGION_RAM_RO_ATTR(BASE, SIZE)						\
 	(ARM_MPU_Region_t){								\
 		.prbar = ARM_MPU_SET_PRBAR(BASE, ARM_MPU_SH_NON, ARM_MPU_AP_EL1_RO_EL0_RO, ARM_MPU_XN), \
-		.prlar = ARM_MPU_SET_PRLAR(LIMIT - 1, MPU_MAIR_INDEX_SRAM),			\
+		.prlar = ARM_MPU_SET_PRLAR(BASE + SIZE - 1, MPU_MAIR_INDEX_SRAM),			\
 	}
 
 /** \brief Non shareable - EL1 RW EL0 RW - Execute - Outer NT-WB-RA-WA, Inner NT-WB-RA-WA
  * \param BASE  Region Base address
- * \param LIMIT Region Limit address 
+ * \param LIMIT Region Size
 */
-#define REGION_SRAM_ATTR(BASE, LIMIT)                          \
+#define REGION_SRAM_ATTR(BASE, SIZE)                          \
     (ARM_MPU_Region_t){                                 \
         .prbar = ARM_MPU_SET_PRBAR(BASE, ARM_MPU_SH_NON, ARM_MPU_AP_EL1_RW_EL0_RW, ARM_MPU_EX), \
-        .prlar = ARM_MPU_SET_PRLAR(LIMIT - 1, MPU_MAIR_INDEX_SRAM),                \
+        .prlar = ARM_MPU_SET_PRLAR(BASE + SIZE - 1, MPU_MAIR_INDEX_SRAM),                \
     }
 
 #ifdef CONFIG_ARM_MPU_ALLOW_FLASH_WRITE
 /** \brief Non shareable - EL1 RW EL0 RW - Execute - Outer NT-WT-RA, Inner NT-WT-RA
  * \param BASE  Region Base address
- * \param LIMIT Region Limit address 
+ * \param LIMIT Region Size
 */
-#define REGION_FLASH_ATTR(BASE, LIMIT)						    \
+#define REGION_FLASH_ATTR(BASE, SIZE)						    \
 	(ARM_MPU_Region_t){								    \
 		.prbar = ARM_MPU_SET_PRBAR(BASE, ARM_MPU_SH_NON, ARM_MPU_AP_EL1_RW_EL0_RW, ARM_MPU_EX), \
-		.prlar = ARM_MPU_SET_PRLAR(LIMIT - 1, MPU_MAIR_INDEX_FLASH),			    \
+		.prlar = ARM_MPU_SET_PRLAR(BASE + SIZE - 1, MPU_MAIR_INDEX_FLASH),			    \
 	}
 #else /* CONFIG_ARM_MPU_ALLOW_FLASH_WRITE */
 /** \brief Non shareable - EL1 RO EL0 RO - Execute - Outer NT-WT-RA, Inner NT-WT-RA
  * \param BASE  Region Base address
- * \param LIMIT Region Limit address 
+ * \param LIMIT Region Size
 */
-#define REGION_FLASH_ATTR(BASE, LIMIT)						    \
+#define REGION_FLASH_ATTR(BASE, SIZE)						    \
 	(ARM_MPU_Region_t){								    \
 		.prbar = ARM_MPU_SET_PRBAR(BASE, ARM_MPU_SH_NON, ARM_MPU_AP_EL1_RO_EL0_RO, ARM_MPU_EX), \
-		.prlar = ARM_MPU_SET_PRLAR(LIMIT - 1, MPU_MAIR_INDEX_FLASH),			    \
+		.prlar = ARM_MPU_SET_PRLAR(BASE + SIZE - 1, MPU_MAIR_INDEX_FLASH),			    \
 	}
 #endif /* CONFIG_ARM_MPU_ALLOW_FLASH_WRITE */
 /*-------------------------------------------------------------------------------------------------*/
