@@ -7,10 +7,12 @@ enable_language(C ASM)
 file(REAL_PATH ${CMAKE_SOURCE_DIR}/../../.. FREERTOS_DIR)
 set(BSP_DIR ${CMAKE_SOURCE_DIR})
 set(KERNEL_DIR ${FREERTOS_DIR}/FreeRTOS/Source)
+set(LOGGING_DIR ${FREERTOS_DIR}/FreeRTOS-Plus/Source/Utilities/logging)
 
 message(STATUS ${BSP_DIR})
 message(STATUS ${POSIX_DIR})
 message(STATUS ${KERNEL_DIR})
+message(STATUS ${LOGGING_DIR})
 
 ### Check the argumment
 set(BOARD "x5h_vdk")
@@ -144,6 +146,15 @@ install(
         ${BSP_DIR}/CMSIS_5
     DESTINATION include
     FILES_MATCHING PATTERN "*.h"
+)
+
+# Logging
+install(
+    FILES
+        ${LOGGING_DIR}/logging.h
+        ${LOGGING_DIR}/logging_levels.h
+        ${LOGGING_DIR}/logging_stack.h
+    DESTINATION include
 )
 
 # Linker scripts

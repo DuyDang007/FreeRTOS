@@ -1,6 +1,4 @@
 set(app_name "logging_app")
-set(LOGGING_DIR ${FREERTOS_DIR}/FreeRTOS-Plus/Source/Utilities/logging)
-message(STATUS ${LOGGING_DIR})
 
 add_executable(${app_name}
     main.c
