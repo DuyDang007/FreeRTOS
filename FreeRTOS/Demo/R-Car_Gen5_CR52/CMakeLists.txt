@@ -59,7 +59,6 @@ set(bsp_source
     ${BSP_DIR}/drivers/serial/serial.c
     ${BSP_DIR}/drivers/serial/scif.c
     ${BSP_DIR}/drivers/mpu/mpu.c
-    ${BSP_DIR}/common/main.c
     ${BSP_DIR}/common/ARM_CR52/port.c
 )
 
@@ -149,6 +148,7 @@ if(ENABLE_OPENAMP)
     add_subdirectory(libraries/openamp)
 endif()
 
+add_subdirectory(Blinky)
 add_subdirectory(Full_Demo)
 add_subdirectory(sample_apps/hello_world)
 add_subdirectory(sample_apps/uart_app)
