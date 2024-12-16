@@ -6,6 +6,7 @@ enable_language(C ASM)
 
 file(REAL_PATH ${CMAKE_SOURCE_DIR}/../../.. FREERTOS_DIR)
 set(BSP_DIR ${CMAKE_SOURCE_DIR})
+set(POSIX_DIR ${FREERTOS_DIR}/FreeRTOS-Plus/Source/FreeRTOS-Plus-POSIX)
 set(KERNEL_DIR ${FREERTOS_DIR}/FreeRTOS/Source)
 set(LOGGING_DIR ${FREERTOS_DIR}/FreeRTOS-Plus/Source/Utilities/logging)
 
@@ -23,6 +24,8 @@ endif()
 
 ### Global compile definitions
 set(global_definition
+    -DconfigUSE_POSIX_ERRNO=1
+    -DconfigSUPPORT_POSIX=1
 )
 
 ### Set common build flags
@@ -64,9 +67,24 @@ set(bsp_source
     ${BSP_DIR}/common/ARM_CR52/port.c
 )
 
+set(posix_source
+    ${POSIX_DIR}/FreeRTOS-Plus-POSIX/source/FreeRTOS_POSIX_clock.c
+    ${POSIX_DIR}/FreeRTOS-Plus-POSIX/source/FreeRTOS_POSIX_mqueue.c 
+    ${POSIX_DIR}/FreeRTOS-Plus-POSIX/source/FreeRTOS_POSIX_pthread.c 
+    ${POSIX_DIR}/FreeRTOS-Plus-POSIX/source/FreeRTOS_POSIX_pthread_cond.c 
+    ${POSIX_DIR}/FreeRTOS-Plus-POSIX/source/FreeRTOS_POSIX_pthread_mutex.c 
+    ${POSIX_DIR}/FreeRTOS-Plus-POSIX/source/FreeRTOS_POSIX_sched.c 
+    ${POSIX_DIR}/FreeRTOS-Plus-POSIX/source/FreeRTOS_POSIX_semaphore.c 
+    ${POSIX_DIR}/FreeRTOS-Plus-POSIX/source/FreeRTOS_POSIX_timer.c 
+    ${POSIX_DIR}/FreeRTOS-Plus-POSIX/source/FreeRTOS_POSIX_unistd.c 
+    ${POSIX_DIR}/FreeRTOS-Plus-POSIX/source/FreeRTOS_POSIX_utils.c
+    ${POSIX_DIR}/FreeRTOS-Plus-POSIX/source/FreeRTOS_POSIX_pthread_barrier.c
+)
+
 set(bsp_include_dir
     ${BSP_DIR}
     ${BSP_DIR}/common/
+    ${BSP_DIR}/common/POSIX_portable
     ${BSP_DIR}/CMSIS_5
     ${BSP_DIR}/CMSIS_5/CMSIS/Core_R/Include
     ${BSP_DIR}/drivers
@@ -84,6 +102,7 @@ link_libraries(dummy)
 add_library(freertos_bsp STATIC
     ${kernel_source}
     ${bsp_source}
+    ${posix_source}
 )
 
 target_include_directories(freertos_bsp
@@ -92,6 +111,7 @@ target_include_directories(freertos_bsp
         $<BUILD_INTERFACE:${BSP_DIR}>
         $<BUILD_INTERFACE:${BSP_DIR}/common/>
         $<BUILD_INTERFACE:${BSP_DIR}/common/ARM_CR52>
+        $<BUILD_INTERFACE:${BSP_DIR}/common/POSIX_portable>
         $<BUILD_INTERFACE:${BSP_DIR}/CMSIS_5>
         $<BUILD_INTERFACE:${BSP_DIR}/CMSIS_5/CMSIS/Core_R/Include>
         $<BUILD_INTERFACE:${BSP_DIR}/drivers>
@@ -99,14 +119,28 @@ target_include_directories(freertos_bsp
         $<BUILD_INTERFACE:${BSP_DIR}/drivers/serial>
         $<BUILD_INTERFACE:${BSP_DIR}/drivers/timer>
         $<BUILD_INTERFACE:${BSP_DIR}/drivers/gic>
+        $<BUILD_INTERFACE:${BSP_DIR}/POSIX_portable>
+        $<BUILD_INTERFACE:${POSIX_DIR}/include>
+        $<BUILD_INTERFACE:${POSIX_DIR}/include/private>
+        $<BUILD_INTERFACE:${POSIX_DIR}/include/FreeRTOS_POSIX>
+        $<BUILD_INTERFACE:${POSIX_DIR}/FreeRTOS-Plus-POSIX/include>
+        $<BUILD_INTERFACE:${POSIX_DIR}/FreeRTOS-Plus-POSIX/include/portable>
 
         # Kernel
         $<INSTALL_INTERFACE:include>
         $<INSTALL_INTERFACE:include/kernel/include>
         # BSP
         $<INSTALL_INTERFACE:include>
+
         # CR52
         $<INSTALL_INTERFACE:include/ARM_CR52>
+
+        # POSIX
+        $<INSTALL_INTERFACE:include/POSIX>
+        $<INSTALL_INTERFACE:include/POSIX/private>
+        $<INSTALL_INTERFACE:include/POSIX/FreeRTOS_POSIX>
+        $<INSTALL_INTERFACE:include/POSIX/FreeRTOS-Plus-POSIX/include>
+        $<INSTALL_INTERFACE:include/POSIX/FreeRTOS-Plus-POSIX/include/portable>
 )
 
 ### Installation config
@@ -137,6 +171,7 @@ install(
     FILES 
         ${BSP_DIR}/common/interrupts.h
         ${BSP_DIR}/common/FreeRTOSConfig.h
+        ${BSP_DIR}/common/POSIX_portable/FreeRTOS_POSIX_portable.h
     DESTINATION include
 )
 install(
@@ -145,6 +180,14 @@ install(
         ${BSP_DIR}/driver
         ${BSP_DIR}/CMSIS_5
     DESTINATION include
+    FILES_MATCHING PATTERN "*.h"
+)
+# POSIX
+install(
+    DIRECTORY
+        ${POSIX_DIR}/include
+        ${POSIX_DIR}/FreeRTOS-Plus-POSIX/include
+    DESTINATION include/POSIX
     FILES_MATCHING PATTERN "*.h"
 )
 
@@ -175,8 +218,10 @@ add_subdirectory(Blinky)
 add_subdirectory(Full_Demo)
 add_subdirectory(sample_apps/hello_world)
 add_subdirectory(sample_apps/uart_app)
+add_subdirectory(sample_apps/posix_app)
 add_subdirectory(sample_apps/logging_app)
 add_subdirectory(sample_apps/mpu_app)
 
 # TODO: Delete application makefile
 # TODO: Remove porting code in Kernel
+# TODO: Remove rcar code in FreeRTOS_POSIX repo

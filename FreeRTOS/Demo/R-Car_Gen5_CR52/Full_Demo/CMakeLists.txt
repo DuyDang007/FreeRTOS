@@ -27,6 +27,9 @@ add_executable(${app_name}
 target_include_directories(${app_name}
     PRIVATE
         ${FREERTOS_DIR}/FreeRTOS/Demo/Common/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/posix_demo
+        ${FREERTOS_DIR}/FreeRTOS/Demo/Common/include
+
 )
 
 target_compile_definitions(${app_name}
