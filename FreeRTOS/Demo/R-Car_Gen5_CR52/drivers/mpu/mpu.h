@@ -79,7 +79,7 @@ typedef enum {
 #define REGION_RAM_NOCACHE_ATTR(BASE, SIZE)				      \
 	(ARM_MPU_Region_t){							      \
 		.prbar = ARM_MPU_SET_PRBAR(BASE, ARM_MPU_SH_NON, ARM_MPU_AP_EL1_RW_EL0_None, ARM_MPU_XN), \
-		.prlar = ARM_MPU_SET_PRLAR(Base + SIZE - 1, MPU_MAIR_INDEX_SRAM_NOCACHE),	      \
+		.prlar = ARM_MPU_SET_PRLAR(BASE + SIZE - 1, MPU_MAIR_INDEX_SRAM_NOCACHE),	      \
 	}
 
 /** \brief Non shareable - EL1 RO EL0 RO - Execute - Outer NT-WB-RA-WA, Inner NT-WB-RA-WA
