@@ -136,11 +136,11 @@ target_include_directories(freertos_bsp
         $<INSTALL_INTERFACE:include/ARM_CR52>
 
         # POSIX
-        $<INSTALL_INTERFACE:include/POSIX>
-        $<INSTALL_INTERFACE:include/POSIX/private>
-        $<INSTALL_INTERFACE:include/POSIX/FreeRTOS_POSIX>
-        $<INSTALL_INTERFACE:include/POSIX/FreeRTOS-Plus-POSIX/include>
-        $<INSTALL_INTERFACE:include/POSIX/FreeRTOS-Plus-POSIX/include/portable>
+        $<INSTALL_INTERFACE:include/POSIX/include>
+        $<INSTALL_INTERFACE:include/POSIX/include/private>
+        $<INSTALL_INTERFACE:include/POSIX/include/FreeRTOS_POSIX>
+        $<INSTALL_INTERFACE:include/POSIX/include/FreeRTOS-Plus-POSIX/include>
+        $<INSTALL_INTERFACE:include/POSIX/include/FreeRTOS-Plus-POSIX/include/portable>
 )
 
 ### Installation config
