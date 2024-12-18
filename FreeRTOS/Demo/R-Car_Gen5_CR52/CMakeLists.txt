@@ -122,7 +122,6 @@ target_include_directories(freertos_bsp
         $<BUILD_INTERFACE:${BSP_DIR}/POSIX_portable>
         $<BUILD_INTERFACE:${POSIX_DIR}/include>
         $<BUILD_INTERFACE:${POSIX_DIR}/include/private>
-        $<BUILD_INTERFACE:${POSIX_DIR}/include/FreeRTOS_POSIX>
         $<BUILD_INTERFACE:${POSIX_DIR}/FreeRTOS-Plus-POSIX/include>
         $<BUILD_INTERFACE:${POSIX_DIR}/FreeRTOS-Plus-POSIX/include/portable>
 
@@ -138,9 +137,7 @@ target_include_directories(freertos_bsp
         # POSIX
         $<INSTALL_INTERFACE:include/POSIX/include>
         $<INSTALL_INTERFACE:include/POSIX/include/private>
-        $<INSTALL_INTERFACE:include/POSIX/include/FreeRTOS_POSIX>
-        $<INSTALL_INTERFACE:include/POSIX/include/FreeRTOS-Plus-POSIX/include>
-        $<INSTALL_INTERFACE:include/POSIX/include/FreeRTOS-Plus-POSIX/include/portable>
+        $<INSTALL_INTERFACE:include/POSIX/include/portable>
 )
 
 ### Installation config
