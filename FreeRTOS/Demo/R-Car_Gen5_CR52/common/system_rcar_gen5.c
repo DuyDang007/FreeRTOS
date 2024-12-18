@@ -22,6 +22,16 @@
 #define DEVICE_MEMORY_ADDRESS   0x80000000
 #define DEVICE_MEMORY_SIZE      0x80000000
 
+/* RT-DMA memory:
+ * 1. RT-DMAC0 Region 0 to RT-DMAC3 Region 15.
+ * 2. RT-DMAC0 (public) to RT-DMAC3 (public).
+ */
+#define RT_DMA_REGIONS		0x18900000
+#define RT_DMA_REGIONS_SIZE	0x00040000
+
+#define RT_DMA_PUBLIC		0x19438000
+#define RT_DMA_PUBLIC_SIZE	0x00040000
+
 extern const unsigned int __bss_start__;
 extern const unsigned int __bss_end__;
 extern const unsigned int _STACK_SIZE;
@@ -48,6 +58,8 @@ static void Init_MPU(void)
     MPU_SetRegion(REGION_1, REGION_RAM_RO_ATTR((uint32_t) RESERVED_MEMORY_ADDRESS, (uint32_t) RESERVED_MEMORY_SIZE));
     MPU_SetRegion(REGION_2, REGION_DEVICE_ATTR((uint32_t) OSAL_MEMORY_ADDRESS, (uint32_t) OSAL_MEMORY_SIZE));
     MPU_SetRegion(REGION_3, REGION_DEVICE_ATTR((uint32_t) DEVICE_MEMORY_ADDRESS, (uint32_t) DEVICE_MEMORY_SIZE));
+    MPU_SetRegion(REGION_4, REGION_DEVICE_ATTR((uint32_t) RT_DMA_REGIONS, (uint32_t) RT_DMA_REGIONS_SIZE));
+    MPU_SetRegion(REGION_5, REGION_DEVICE_ATTR((uint32_t) RT_DMA_PUBLIC, (uint32_t) RT_DMA_PUBLIC_SIZE));
 
     /* Enable MPU */
     MPU_Enable();
