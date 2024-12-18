@@ -29,9 +29,11 @@ ExternalProject_Add(libmetal_build
 
 add_library(libmetal STATIC IMPORTED GLOBAL)
 add_dependencies(libmetal libmetal_build)
+
 set_target_properties(libmetal PROPERTIES
     IMPORTED_LOCATION ${CMAKE_CURRENT_BINARY_DIR}/install/usr/local/lib/libmetal.a
-    INTERFACE_INCLUDE_DIRECTORIES ${CMAKE_CURRENT_BINARY_DIR}/install/usr/local/include
+    INTERFACE_INCLUDE_DIRECTORIES
+        ${CMAKE_CURRENT_BINARY_DIR}/install/usr/local/include
 )
 # Workaround to avoid error: Imported target "libmetal" includes non-existent path
 # The path does not exist at configuration time, but after build
@@ -40,4 +42,11 @@ file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/install/usr/local/include)
 install(
     DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/install/usr
     DESTINATION .
+)
+# Custom import cmake file, since IMPORTED library cannot be exported, we write it manually
+install(
+    FILES
+        ${CMAKE_CURRENT_LIST_DIR}/libmetalTargets.cmake
+        ${CMAKE_CURRENT_LIST_DIR}/libmetalTargets-noconfig.cmake
+    DESTINATION usr/local/lib/
 )

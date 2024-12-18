@@ -49,3 +49,10 @@ install(
     DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/install/usr
     DESTINATION .
 )
+# Custom import cmake file, since IMPORTED library cannot be exported, we write it manually
+install(
+    FILES
+        ${CMAKE_CURRENT_LIST_DIR}/openampTargets.cmake
+        ${CMAKE_CURRENT_LIST_DIR}/openampTargets-noconfig.cmake
+    DESTINATION usr/local/lib/
+)

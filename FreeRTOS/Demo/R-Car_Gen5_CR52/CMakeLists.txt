@@ -218,7 +218,9 @@ add_subdirectory(sample_apps/uart_app)
 add_subdirectory(sample_apps/posix_app)
 add_subdirectory(sample_apps/logging_app)
 add_subdirectory(sample_apps/mpu_app)
-
+if(ENABLE_OPENAMP)
+    add_subdirectory(sample_apps/rpmsg_sample)
+endif()
 # TODO: Delete application makefile
 # TODO: Remove porting code in Kernel
 # TODO: Remove rcar code in FreeRTOS_POSIX repo

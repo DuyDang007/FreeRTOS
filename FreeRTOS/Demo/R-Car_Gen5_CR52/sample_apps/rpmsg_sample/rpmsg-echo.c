@@ -1,0 +1,212 @@
+/*
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
+
+/*
+ * This is a sample demonstration application that showcases usage of rpmsg
+ * This application is meant to run on the remote CPU running baremetal code.
+ * This application echoes back data that was sent to it by the host core.
+ */
+
+#include <stdio.h>
+#include <errno.h>
+#include <openamp/open_amp.h>
+#include <openamp/version.h>
+#include <metal/alloc.h>
+#include <metal/version.h>
+#include "FreeRTOS.h"
+#include "interrupts.h"
+#include "platform_info.h"
+
+#define RPMSG_SERVICE_NAME         "rpmsg-openamp-demo-channel"
+#define SHUTDOWN_MSG	0xEF56A55A
+
+#define LPRINTF(format, ...) printf(format, ##__VA_ARGS__)
+//#define LPRINTF(format, ...)
+#define LPERROR(format, ...) LPRINTF("ERROR: " format, ##__VA_ARGS__)
+
+static struct rpmsg_endpoint lept;
+static int shutdown_req = 0;
+
+/*-----------------------------------------------------------------------------*
+ *  RPMSG endpoint callbacks
+ *-----------------------------------------------------------------------------*/
+static int rpmsg_endpoint_cb(struct rpmsg_endpoint *ept, void *data, size_t len,
+			     uint32_t src, void *priv)
+{
+	(void)priv;
+	(void)src;
+
+	/* On reception of a shutdown we signal the application to terminate */
+	if ((*(unsigned int *)data) == SHUTDOWN_MSG) {
+		LPRINTF("shutdown message is received.\r\n");
+		shutdown_req = 1;
+		return RPMSG_SUCCESS;
+	}
+
+	/* Send data back to host */
+	if (rpmsg_send(ept, data, len) < 0) {
+		LPERROR("rpmsg_send failed\r\n");
+	}
+	return RPMSG_SUCCESS;
+}
+
+static void rpmsg_service_unbind(struct rpmsg_endpoint *ept)
+{
+	(void)ept;
+	LPRINTF("unexpected Remote endpoint destroy\r\n");
+	shutdown_req = 1;
+}
+
+/*----------------------------------------------------------------------------*/
+static void prvSetupHardware( void )
+{
+	/* Ensure no interrupts execute while the scheduler is in an inconsistent
+	state.  Interrupts are automatically enabled when the scheduler is
+	started. */
+	portDISABLE_INTERRUPTS();
+
+	Irq_Setup();
+}
+void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer, StackType_t **ppxIdleTaskStackBuffer, uint32_t *pulIdleTaskStackSize )
+{
+/* If the buffers to be provided to the Idle task are declared inside this
+function then they must be declared static - otherwise they will be allocated on
+the stack and so not exists after this function exits. */
+static StaticTask_t xIdleTaskTCB;
+static StackType_t uxIdleTaskStack[ configMINIMAL_STACK_SIZE ];
+
+	/* Pass out a pointer to the StaticTask_t structure in which the Idle task's
+	state will be stored. */
+	*ppxIdleTaskTCBBuffer = &xIdleTaskTCB;
+
+	/* Pass out the array that will be used as the Idle task's stack. */
+	*ppxIdleTaskStackBuffer = uxIdleTaskStack;
+
+	/* Pass out the size of the array pointed to by *ppxIdleTaskStackBuffer.
+	Note that, as the array is necessarily of type StackType_t,
+	configMINIMAL_STACK_SIZE is specified in words, not bytes. */
+	*pulIdleTaskStackSize = configMINIMAL_STACK_SIZE;
+}
+/*-----------------------------------------------------------*/
+
+/* configUSE_STATIC_ALLOCATION and configUSE_TIMERS are both set to 1, so the
+application must provide an implementation of vApplicationGetTimerTaskMemory()
+to provide the memory that is used by the Timer service task. */
+void vApplicationGetTimerTaskMemory( StaticTask_t **ppxTimerTaskTCBBuffer, StackType_t **ppxTimerTaskStackBuffer, uint32_t *pulTimerTaskStackSize )
+{
+/* If the buffers to be provided to the Timer task are declared inside this
+function then they must be declared static - otherwise they will be allocated on
+the stack and so not exists after this function exits. */
+static StaticTask_t xTimerTaskTCB;
+static StackType_t uxTimerTaskStack[ configTIMER_TASK_STACK_DEPTH ];
+
+	/* Pass out a pointer to the StaticTask_t structure in which the Timer
+	task's state will be stored. */
+	*ppxTimerTaskTCBBuffer = &xTimerTaskTCB;
+
+	/* Pass out the array that will be used as the Timer task's stack. */
+	*ppxTimerTaskStackBuffer = uxTimerTaskStack;
+
+	/* Pass out the size of the array pointed to by *ppxTimerTaskStackBuffer.
+	Note that, as the array is necessarily of type StackType_t,
+	configMINIMAL_STACK_SIZE is specified in words, not bytes. */
+	*pulTimerTaskStackSize = configTIMER_TASK_STACK_DEPTH;
+}
+
+void vApplicationIdleHook( void )
+{
+}
+
+/*-----------------------------------------------------------------------------*
+ *  Application
+ *-----------------------------------------------------------------------------*/
+void echoTask( void *pvParameters )
+{
+	/* Remove compiler warning about unused parameter. */
+    ( void ) pvParameters;
+
+	int ret;
+	void *platform;
+	struct rpmsg_device *rpdev;
+
+	LPRINTF("openamp lib version: %s (", openamp_version());
+	LPRINTF("Major: %d, ", openamp_version_major());
+	LPRINTF("Minor: %d, ", openamp_version_minor());
+	LPRINTF("Patch: %d)\r\n", openamp_version_patch());
+
+	LPRINTF("libmetal lib version: %s (", metal_ver());
+	LPRINTF("Major: %d, ", metal_ver_major());
+	LPRINTF("Minor: %d, ", metal_ver_minor());
+	LPRINTF("Patch: %d)\r\n", metal_ver_patch());
+
+	LPRINTF("Starting application...\r\n");
+
+	/* Initialize platform */
+	ret = platform_init(1, "Sample", &platform);
+	if (ret) {
+		LPERROR("Failed to initialize platform.\r\n");
+		ret = -1;
+	} else {
+		rpdev = platform_create_rpmsg_vdev(platform, 0,
+						   VIRTIO_DEV_DEVICE,
+						   NULL, NULL);
+		if (!rpdev) {
+			LPERROR("Failed to create rpmsg virtio device.\r\n");
+			ret = -1;
+		}
+	}
+
+	/* Initialize RPMSG framework */
+	LPRINTF("Try to create rpmsg endpoint.\r\n");
+
+	ret = rpmsg_create_ept(&lept, rpdev, RPMSG_SERVICE_NAME,
+			       RPMSG_ADDR_ANY, RPMSG_ADDR_ANY,
+			       rpmsg_endpoint_cb,
+			       rpmsg_service_unbind);
+	if (ret) {
+		LPERROR("Failed to create endpoint.\r\n");
+		return;
+	}
+
+	LPRINTF("Successfully created rpmsg endpoint.\r\n");
+
+	LPRINTF("RPMsg device TX buffer size: %#x\r\n", rpmsg_get_tx_buffer_size(&lept));
+	LPRINTF("RPMsg device RX buffer size: %#x\r\n", rpmsg_get_rx_buffer_size(&lept));
+
+	while(1) {
+		platform_poll(platform);
+		/* we got a shutdown request, exit */
+		if (shutdown_req) {
+			break;
+		}
+	}
+
+	LPRINTF("Stopping application...\r\n");
+	rpmsg_destroy_ept(&lept);
+	platform_release_rpmsg_vdev(rpdev, platform);
+	platform_cleanup(platform);
+
+	return;
+}
+
+/*-----------------------------------------------------------------------------*
+ *  Application entry point
+ *-----------------------------------------------------------------------------*/
+int main(void)
+{
+	
+	/* Configure the hardware ready to run the demo. */
+	prvSetupHardware();
+    
+    
+    xTaskCreate( echoTask, "echoTask", configMINIMAL_STACK_SIZE, NULL, ( tskIDLE_PRIORITY + 1 ), NULL );
+    /* Start the tasks and timer running. */
+    vTaskStartScheduler();
+    for( ;; )
+    {
+    }
+	/* Don't expect to reach here. */
+
+	return 0;
+}
