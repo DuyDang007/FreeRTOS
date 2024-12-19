@@ -153,7 +153,7 @@ static void * prvWorkerThread( void * pvArgs )
 {
     WorkerThreadResources_t pArgList = *( WorkerThreadResources_t * ) pvArgs;
 
-    printf( "Worker thread #[%d] - start\n", ( int ) pArgList.pxID);
+    printf( "Worker thread #[%d] [prio : %d] - start\n", ( int ) pArgList.pxID, uxTaskPriorityGet(NULL));
 
     struct timespec xReceiveTimeout = { 0 };
 
@@ -170,7 +170,7 @@ static void * prvWorkerThread( void * pvArgs )
                                    pcReceiveBuffer,
                                    MQUEUE_MSG_WORKER_CTRL_MSG_SIZE,
                                    0 );
-
+        usleep(10000); // WA missing log. Remove me when missing serial log is fixed. 
         /* Parse messages */
         if( xMessageSize == MQUEUE_MSG_WORKER_CTRL_MSG_SIZE )
         {
@@ -196,7 +196,6 @@ static void * prvWorkerThread( void * pvArgs )
         {
             /* Invalid message. Error handling can be done here, if desired. */
         }
-        usleep(500000);
     }
 
     /* You should never hit here. */
@@ -207,9 +206,9 @@ static void * prvWorkerThread( void * pvArgs )
 
 static void * prvDispatcherThread( void * pvArgs )
 {
-    DispatcherThreadResources_t pArgList = *( DispatcherThreadResources_t * ) pvArgs;
-    usleep(100);
-    printf( "Dispatcher thread - start\n");
+    DispatcherThreadResources_t pArgList = *( DispatcherThreadResources_t * ) pvArgs; 
+    printf( "Dispatcher thread [prio : %d] - start \n", uxTaskPriorityGet(NULL));
+    usleep(10000); // WA missing log. Remove me when missing serial log is fixed.
     struct timespec xSendTimeout = { 0 };
 
     ssize_t xMessageSize = 0;
@@ -243,7 +242,7 @@ static void * prvDispatcherThread( void * pvArgs )
             printf( "An acceptable failure -- dispatcher failed to send eWORKER_CTRL_MSG_CONTINUE to outbox ID: %x. errno %d\n",
                     ( int ) pArgList.pOutboxID[ i % MQUEUE_NUMBER_OF_WORKERS ], errno);
         }   
-        usleep(500000);     
+        usleep(500000); // WA missing log. Remove me when missing serial log is fixed.   
     }
 
     /* Control thread is now done with distributing jobs. Tell workers they are done. */
@@ -258,7 +257,7 @@ static void * prvDispatcherThread( void * pvArgs )
                                 pcSendBuffer,
                                 MQUEUE_MSG_WORKER_CTRL_MSG_SIZE,
                                 0 );
-        usleep(500000);
+        usleep(500000); // WA missing log. Remove me when missing serial log is fixed.
     }
 
     return NULL;
@@ -281,10 +280,19 @@ void vStartPOSIXDemo( void *pvParameters )
     ( void ) pvParameters;
 
     /* Handles of the threads and related resources. */
-    DispatcherThreadResources_t pxDispatcher = { 0 };
+    DispatcherThreadResources_t pxDispatcher = { 0 }; 
+
     WorkerThreadResources_t pxWorkers[ MQUEUE_NUMBER_OF_WORKERS ] = { { 0 } };
     mqd_t workerMqueues[ MQUEUE_NUMBER_OF_WORKERS ] = { 0 };
 
+    pthread_attr_t worker_attr;
+
+    /* Init attr  */
+    pthread_attr_init(&worker_attr);
+
+    /* set priority for WorkerThread */
+    pthread_attr_setschedparam(&worker_attr, &(struct sched_param){configMAX_PRIORITIES - 1,});
+    
     struct mq_attr xQueueAttributesWorker =
     {
         .mq_flags   = 0,
@@ -327,11 +335,15 @@ void vStartPOSIXDemo( void *pvParameters )
     {
         for( i = 0; i < MQUEUE_NUMBER_OF_WORKERS; i++ )
         {
-            ( void ) pthread_create( &( pxWorkers[ i ].pxID ), NULL, prvWorkerThread, &pxWorkers[ i ] );
+            ( void ) pthread_create( &( pxWorkers[ i ].pxID ), &worker_attr, prvWorkerThread, &pxWorkers[ i ] );
+            usleep(10000); // WA missing log. Remove me when missing serial log is fixed.
         }
 
         /* Create and start dispatcher thread. */
         ( void ) pthread_create( &( pxDispatcher.pxID ), NULL, prvDispatcherThread, &pxDispatcher );
+        
+        /* Clear worker_attr */
+        pthread_attr_destroy(&worker_attr);
 
         /* Actors will do predefined tasks in threads. Current implementation is that
          * dispatcher actor notifies worker actors to terminate upon finishing distributing tasks. */
