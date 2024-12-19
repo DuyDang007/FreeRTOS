@@ -1,4 +1,4 @@
-#include "drivers/serial/scif.h"
+#include "scif.h"
 #include "CMSIS_5/cmsis_rcar_gen5.h"
 
 

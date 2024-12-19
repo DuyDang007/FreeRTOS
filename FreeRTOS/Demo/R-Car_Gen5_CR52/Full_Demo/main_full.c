@@ -98,8 +98,8 @@
 #include "logging_stack.h"
 #endif
 
-#include "drivers/serial/scif.h"
-#include "common/interrupts.h"
+#include "scif.h"
+#include "interrupts.h"
 /*------------------------*/
 
 /* Priorities for the demo application tasks. */

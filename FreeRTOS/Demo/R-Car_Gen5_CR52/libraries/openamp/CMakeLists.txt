@@ -2,7 +2,7 @@ include(ExternalProject)
 
 set (C_FLAGS
         "-mfloat-abi=soft -mcpu=cortex-r52 -Os -flto \
-        -I${BSP_DIR}/common \
+        -I${BSP_DIR}/include \
         -I${BSP_DIR}/common/ARM_CR52 \
         -I${KERNEL_DIR}/include"
 )

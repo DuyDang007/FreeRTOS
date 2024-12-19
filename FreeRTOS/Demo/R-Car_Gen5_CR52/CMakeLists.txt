@@ -81,19 +81,6 @@ set(posix_source
     ${POSIX_DIR}/FreeRTOS-Plus-POSIX/source/FreeRTOS_POSIX_pthread_barrier.c
 )
 
-set(bsp_include_dir
-    ${BSP_DIR}
-    ${BSP_DIR}/common/
-    ${BSP_DIR}/common/POSIX_portable
-    ${BSP_DIR}/CMSIS_5
-    ${BSP_DIR}/CMSIS_5/CMSIS/Core_R/Include
-    ${BSP_DIR}/drivers
-    ${BSP_DIR}/drivers/mpu
-    ${BSP_DIR}/drivers/serial
-    ${BSP_DIR}/drivers/timer
-    ${BSP_DIR}/drivers/gic
-)
-
 add_library(dummy OBJECT
     ${BSP_DIR}/common/dummy.c
 )
@@ -108,36 +95,29 @@ add_library(freertos_bsp STATIC
 target_include_directories(freertos_bsp
     PUBLIC
         $<BUILD_INTERFACE:${KERNEL_DIR}/include>
-        $<BUILD_INTERFACE:${BSP_DIR}>
-        $<BUILD_INTERFACE:${BSP_DIR}/common/>
-        $<BUILD_INTERFACE:${BSP_DIR}/common/ARM_CR52>
-        $<BUILD_INTERFACE:${BSP_DIR}/common/POSIX_portable>
-        $<BUILD_INTERFACE:${BSP_DIR}/CMSIS_5>
-        $<BUILD_INTERFACE:${BSP_DIR}/CMSIS_5/CMSIS/Core_R/Include>
-        $<BUILD_INTERFACE:${BSP_DIR}/drivers>
+        $<BUILD_INTERFACE:${BSP_DIR}/include>
         $<BUILD_INTERFACE:${BSP_DIR}/drivers/mpu>
         $<BUILD_INTERFACE:${BSP_DIR}/drivers/serial>
         $<BUILD_INTERFACE:${BSP_DIR}/drivers/timer>
         $<BUILD_INTERFACE:${BSP_DIR}/drivers/gic>
-        $<BUILD_INTERFACE:${BSP_DIR}/POSIX_portable>
+        # POSIX
+        $<BUILD_INTERFACE:${BSP_DIR}/common/POSIX_portable>
         $<BUILD_INTERFACE:${POSIX_DIR}/include>
         $<BUILD_INTERFACE:${POSIX_DIR}/include/private>
         $<BUILD_INTERFACE:${POSIX_DIR}/FreeRTOS-Plus-POSIX/include>
         $<BUILD_INTERFACE:${POSIX_DIR}/FreeRTOS-Plus-POSIX/include/portable>
 
-        # Kernel
-        $<INSTALL_INTERFACE:include>
         $<INSTALL_INTERFACE:include/kernel/include>
-        # BSP
         $<INSTALL_INTERFACE:include>
-
-        # CR52
-        $<INSTALL_INTERFACE:include/ARM_CR52>
-
         # POSIX
         $<INSTALL_INTERFACE:include/POSIX/include>
         $<INSTALL_INTERFACE:include/POSIX/include/private>
         $<INSTALL_INTERFACE:include/POSIX/include/portable>
+
+    PRIVATE
+        $<BUILD_INTERFACE:${BSP_DIR}>
+        $<BUILD_INTERFACE:${BSP_DIR}/CMSIS_5>
+        $<BUILD_INTERFACE:${BSP_DIR}/CMSIS_5/CMSIS/Core_R/Include>
 )
 
 ### Installation config
@@ -145,7 +125,6 @@ target_include_directories(freertos_bsp
 install(
     DIRECTORY ${KERNEL_DIR}/include
     DESTINATION include/kernel
-    COMPONENT Kernel
     FILES_MATCHING PATTERN "*.h"
 )
 # BSP
@@ -165,19 +144,8 @@ install(
     DESTINATION .
 )
 install(
-    FILES 
-        ${BSP_DIR}/common/interrupts.h
-        ${BSP_DIR}/common/FreeRTOSConfig.h
-        ${BSP_DIR}/common/POSIX_portable/FreeRTOS_POSIX_portable.h
-    DESTINATION include
-)
-install(
-    DIRECTORY 
-        ${BSP_DIR}/common/ARM_CR52
-        ${BSP_DIR}/driver
-        ${BSP_DIR}/CMSIS_5
-    DESTINATION include
-    FILES_MATCHING PATTERN "*.h"
+    DIRECTORY ${BSP_DIR}/include
+    DESTINATION .
 )
 # POSIX
 install(

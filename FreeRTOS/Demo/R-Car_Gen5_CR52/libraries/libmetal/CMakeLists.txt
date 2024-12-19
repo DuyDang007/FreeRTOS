@@ -1,7 +1,7 @@
 include(ExternalProject)
 
 set (C_FLAGS
-    "-I${KERNEL_DIR}/include -I${BSP_DIR}/common/ARM_CR52 -I${BSP_DIR}/common\
+    "-I${KERNEL_DIR}/include -I${BSP_DIR}/common/ARM_CR52 -I${BSP_DIR}/include \
     -mfloat-abi=soft -mcpu=cortex-r52 -Wall -Werror -Wextra -flto -Os"
 )
 

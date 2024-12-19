@@ -46,7 +46,7 @@
 #include "task.h"
 #include "semphr.h"
 
-#include "drivers/serial/scif.h"
+#include "scif.h"
 #include "interrupts.h"
 #include "stdio.h"
 #define main_LOG_TASK_PRIORITY        ( tskIDLE_PRIORITY + 1 )

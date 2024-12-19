@@ -8,6 +8,11 @@ target_compile_definitions(${app_name}
     PUBLIC
 )
 
+# target_include_directories(${app_name}
+#     PRIVATE
+#         ${BSP_DIR}
+# )
+
 # Essential libraries to link with
 target_link_libraries(${app_name}
     freertos_bsp m
