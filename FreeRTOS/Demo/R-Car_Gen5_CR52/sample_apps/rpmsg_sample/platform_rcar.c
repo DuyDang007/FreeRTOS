@@ -1,9 +1,12 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <errno.h>
+#include "FreeRTOS.h"
 #include "platform_info.h"
 #include "rsc_table.h"
 #include "mfis.h"
+
+#define LPRINTF(format, ...) printf(format, ##__VA_ARGS__); vTaskDelay(10);
 
 /* Define shared DRAM area for each channel */
 #define SHARED_CH_RAM_SIZE (0x100000) // 1MB
@@ -59,11 +62,11 @@ struct remoteproc * platform_create_proc(int mfis_ch, int rsc_index)
     /* parse resource table to remoteproc */
     ret = remoteproc_set_rsc_table(&rproc_inst, rsc_table, rsc_size);
     if (ret) {
-        printf("Failed to initialize remoteproc\r\n");
+        LPRINTF("Failed to initialize remoteproc\r\n");
         remoteproc_remove(&rproc_inst);
         return NULL;
     }
-    printf("Initialize remoteproc successfully.\r\n");
+    LPRINTF("Initialize remoteproc successfully.\r\n");
 
     return &rproc_inst;
 
@@ -80,14 +83,13 @@ int platform_init(int channel, void **platform)
     struct remoteproc *rproc;
 
     if (!platform) {
-        printf("Failed to initialize platform,"
-                "NULL pointer to store platform data.\r\n");
+        LPRINTF("Failed to initialize platform\r\n");
         return -EINVAL;
     }
 
     rproc = platform_create_proc(mfis_ch, rsc_id);
     if (!rproc) {
-        printf("Failed to create remoteproc device.\r\n");
+        LPRINTF("Failed to create remoteproc device.\r\n");
         return -EINVAL;
     }
     *platform = rproc;
@@ -125,11 +127,11 @@ platform_create_rpmsg_vdev(void *platform, unsigned int vdev_index,
     shbuf = metal_io_phys_to_virt(shbuf_io,
                       SHARED_CH_RAM_BASE(mfis_ch->ch) + 0); // Shared buff offset = 0
 
-    printf("creating remoteproc virtio\r\n");
+    LPRINTF("creating remoteproc virtio\r\n");
     /* TODO: can we have a wrapper for the following two functions? */
     vdev = remoteproc_create_virtio(rproc, vdev_index, role, rst_cb);
     if (!vdev) {
-        printf("failed remoteproc_create_virtio\r\n");
+        LPRINTF("failed remoteproc_create_virtio\r\n");
         goto err1;
     }
 
@@ -138,16 +140,16 @@ platform_create_rpmsg_vdev(void *platform, unsigned int vdev_index,
     // rpmsg_virtio_init_shm_pool(&shpool, shbuf,
     //                (SHARED_CH_RAM_SIZE - 0));
 
-    printf("initializing rpmsg vdev\r\n");
+    LPRINTF("initializing rpmsg vdev\r\n");
     /* RPMsg virtio device can set shared buffers pool argument to NULL */
     ret =  rpmsg_init_vdev(rpmsg_vdev, vdev, ns_bind_cb,
                    shbuf_io,
                    NULL);
     if (ret) {
-        printf("failed rpmsg_init_vdev\r\n");
+        LPRINTF("failed rpmsg_init_vdev\r\n");
         goto err2;
     }
-    printf("initializing rpmsg vdev\r\n");
+    LPRINTF("initializing rpmsg vdev\r\n");
     return rpmsg_virtio_get_rpmsg_device(rpmsg_vdev);
 err2:
     remoteproc_remove_virtio(rproc, vdev);
