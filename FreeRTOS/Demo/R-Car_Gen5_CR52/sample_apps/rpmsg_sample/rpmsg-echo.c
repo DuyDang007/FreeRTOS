@@ -160,13 +160,13 @@ void echoTask( void *pvParameters )
 	/* Initialize RPMSG framework */
 	LPRINTF("Try to create rpmsg endpoint.\r\n");
 
-	ret = rpmsg_create_ept(&lept, rpdev, RPMSG_SERVICE_NAME,
-			       RPMSG_ADDR_ANY, RPMSG_ADDR_ANY,
-			       rpmsg_endpoint_cb,
-			       rpmsg_service_unbind);
+	// ret = rpmsg_create_ept(&lept, rpdev, RPMSG_SERVICE_NAME,
+	// 		       RPMSG_ADDR_ANY, RPMSG_ADDR_ANY,
+	// 		       rpmsg_endpoint_cb,
+	// 		       rpmsg_service_unbind);
 	if (ret) {
 		LPERROR("Failed to create endpoint.\r\n");
-		return;
+		// return;
 	}
 
 	LPRINTF("Successfully created rpmsg endpoint.\r\n");
