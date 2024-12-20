@@ -248,5 +248,12 @@ SECTIONS
    __undef_stack = .;
 } > sram_base_addr
 
+#if defined(ENABLE_OPENAMP_)
+.resource_table : {
+	. = ALIGN(4);
+	*(.resource_table)
+} > remote_proc_rsc_table
+#endif
+
 _end = .;
 }

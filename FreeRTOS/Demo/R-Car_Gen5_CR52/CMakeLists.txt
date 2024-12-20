@@ -64,6 +64,7 @@ set(bsp_source
     ${BSP_DIR}/drivers/serial/serial.c
     ${BSP_DIR}/drivers/serial/scif.c
     ${BSP_DIR}/drivers/mpu/mpu.c
+    ${BSP_DIR}/drivers/mfis/mfis.c
     ${BSP_DIR}/common/ARM_CR52/port.c
 )
 
@@ -100,6 +101,7 @@ target_include_directories(freertos_bsp
         $<BUILD_INTERFACE:${BSP_DIR}/drivers/serial>
         $<BUILD_INTERFACE:${BSP_DIR}/drivers/timer>
         $<BUILD_INTERFACE:${BSP_DIR}/drivers/gic>
+        $<BUILD_INTERFACE:${BSP_DIR}/drivers/mfis>
         # POSIX
         $<BUILD_INTERFACE:${BSP_DIR}/common/POSIX_portable>
         $<BUILD_INTERFACE:${POSIX_DIR}/include>

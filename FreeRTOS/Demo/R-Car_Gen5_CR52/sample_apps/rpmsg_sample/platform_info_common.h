@@ -26,7 +26,7 @@ extern "C" {
  *
  * return 0 for success or negative value for failure
  */
-int platform_init(int argc, char *argv[], void **platform);
+int platform_init(int channel, void **platform);
 
 /**
  * platform_create_rpmsg_vdev - create rpmsg vdev

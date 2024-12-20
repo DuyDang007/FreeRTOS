@@ -143,7 +143,7 @@ void echoTask( void *pvParameters )
 	LPRINTF("Starting application...\r\n");
 
 	/* Initialize platform */
-	ret = platform_init(1, "Sample", &platform);
+	ret = platform_init(0, &platform);
 	if (ret) {
 		LPERROR("Failed to initialize platform.\r\n");
 		ret = -1;
@@ -209,4 +209,21 @@ int main(void)
 	/* Don't expect to reach here. */
 
 	return 0;
+}
+
+/*-----------------------------------------------------------*/
+
+int printf_raw(const char *format, ...);
+
+void vMainAssertCalled( const char *pcFileName, uint32_t ulLineNumber )
+{
+    /* Don't use printf as it uses FreeRTOS resources */
+    printf_raw("ASSERT!  Line %d of file %s\n", ulLineNumber, pcFileName);
+    taskENTER_CRITICAL();
+    for( ;; );
+}
+
+void vDeleteCallingTask( void )
+{
+     vTaskDelete( NULL );
 }
