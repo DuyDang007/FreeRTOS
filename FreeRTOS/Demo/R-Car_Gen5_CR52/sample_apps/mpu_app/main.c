@@ -48,7 +48,8 @@
 #include "interrupts.h"
 #include "stdio.h"
 #define main_MPU_TASK_PRIORITY      ( tskIDLE_PRIORITY + 1 )
-#define REGION_SRAM           0x0001000
+extern uint32_t _RAM_START;
+#define REGION_SRAM           ((uint32_t)&_RAM_START + 0x0001000)
 #define REGION_RO             0x50000000
 #define REGION_DEVICE         0xD0000000
 /*-----------------------------------------------------------*/

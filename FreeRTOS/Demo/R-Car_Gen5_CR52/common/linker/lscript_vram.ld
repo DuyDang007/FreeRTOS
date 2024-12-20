@@ -3,11 +3,11 @@ SEARCH_DIR(.)
 INCLUDE lscript_common.ld
 
 /* These values may need changing depending on your app */
-_STACK_SIZE       = 0x180000;
-_IRQ_STACK_SIZE   = 0x180000;
-_FIQ_STACK_SIZE   = 0x18000;
-_SVC_STACK_SIZE   = 0x18000;
-_ABORT_STACK_SIZE = 0x18000;
+_STACK_SIZE       = 0x18000;
+_IRQ_STACK_SIZE   = 0x18000;
+_FIQ_STACK_SIZE   = 0x1800;
+_SVC_STACK_SIZE   = 0x1800;
+_ABORT_STACK_SIZE = 0x1800;
 _UNDEF_STACK_SIZE = 0x18000;
 _HEAP_SIZE        = 0x18000;
 /* Heap uses HeapBase global var, see configTOTAL_HEAP_SIZE */
@@ -21,6 +21,7 @@ _RAM_SIZE = LENGTH(vram_base_addr);
 SECTIONS
 {
 .text (READONLY): {
+   _vector_table = .;
    *(.isr_vector)
    *(.vectors)
    *(.boot)

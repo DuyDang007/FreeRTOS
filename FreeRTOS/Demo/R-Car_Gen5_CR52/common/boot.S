@@ -223,6 +223,9 @@ EL1_Reset_Handler:
 
 	bl 	SystemInit		/* Initialize caches, MPU, etc */
 
+	ldr r0, =(_vector_table)
+	mcr p15, 0, r0, c12, c0, 0 /* Set vector table address */
+
 	bl	main
 
 .Ldone:	b	.Ldone			/* Should never get here */
