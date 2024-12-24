@@ -29,11 +29,13 @@ set(global_definition
 )
 
 ### Set common build flags
-set(CMAKE_ASM_FLAGS "-mfpu=neon-fp-armv8 --specs=nosys.specs -mcpu=cortex-r52 -mtune=cortex-r52 -mfloat-abi=hard")
+set(CMAKE_ASM_FLAGS "--specs=nosys.specs -mfloat-abi=hard")
+set(CMAKE_C_FLAGS "-std=gnu99")
 add_compile_options(
-    -ffreestanding -std=gnu99  -mfpu=neon-fp-armv8 -mcpu=cortex-r52 -mtune=cortex-r52 -mfloat-abi=softfp
+    -ffreestanding -mfpu=neon-fp-armv8 -mcpu=cortex-r52 -mtune=cortex-r52 -mfloat-abi=softfp
     ${global_definition}
 )
+
 add_link_options(
     -lnosys --specs=nosys.specs
     -L${BSP_DIR}/common/linker/ -T ${LDFILE} -Wl,--no-warn-rwx-segments
@@ -188,6 +190,7 @@ add_subdirectory(sample_apps/uart_app)
 add_subdirectory(sample_apps/posix_app)
 add_subdirectory(sample_apps/logging_app)
 add_subdirectory(sample_apps/mpu_app)
+add_subdirectory(sample_apps/cpp_app)
 if(ENABLE_OPENAMP)
     add_subdirectory(sample_apps/rpmsg_sample)
 endif()
