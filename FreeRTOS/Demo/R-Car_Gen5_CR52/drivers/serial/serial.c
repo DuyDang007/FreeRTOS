@@ -5,10 +5,11 @@
  */
  
 #include <stdarg.h>
-#include <stdio.h>
 #include <string.h>
 
 #include "FreeRTOS.h"
+#include "task.h"
+#include "stdio.h"
 
 #include "../Common/include/serial.h"
 #include "CMSIS_5/cmsis_rcar_gen5.h"
@@ -136,4 +137,19 @@ int printf_raw(const char *format, ...)
 	va_end(args);
 
 	return ret;
+}
+
+/* TO DO: Remove when done fix HSCIF issue. */
+int printf_delay(const char *format, ...)
+{
+    va_list args;
+    int ret;
+
+    va_start(args, format);
+    ret = vfprintf(stderr, format, args);
+    va_end(args);
+
+    vTaskDelay(1);
+
+    return ret;
 }
