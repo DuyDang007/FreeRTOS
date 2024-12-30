@@ -159,6 +159,10 @@ install(
     DESTINATION include/POSIX
     FILES_MATCHING PATTERN "*.h"
 )
+install(
+    FILES ${BSP_DIR}/common/POSIX_portable/FreeRTOS_POSIX_portable.h
+    DESTINATION include
+)
 
 # Logging
 install(
