@@ -12,6 +12,7 @@
 #include "CMSIS_5/irq_ctrl.h"
 #include "irq_ctrl.h"
 #include "drivers/gic/gicv3_basic.h"
+#include <stdio.h>
 
 #define MAX_IRQ_NUMBER       1019
 #define DEFAULT_ISR_PRIORITY IPRIORITY(1)
@@ -21,10 +22,82 @@ typedef void (*IrqHandlerFn)(void *data);
 typedef struct
 {
 	IrqHandlerFn Handler;
-	void *Context;
+	Context_t *Context;
 } IvtEntry;
 
+
+
 static IvtEntry HandlerTable[MAX_IRQ_NUMBER];
+
+#define MASK_DMA_RT(x,y)        (0x18A00000U + 0x93C8U + ((x) * 0x20U) + ((y) * 0x4U))
+#define STAT_DMA_RT(x,y)        (0x18A00000U + 0x83C8U + ((x) * 0x20U) + ((y) * 0x4U))
+#define STAT_UCIE(x)            (0x18A00000U + 0x8770U + ((x) * 0x4U))
+#define STAT_UCIE_ERROR(x)      (0x18A00000U + 0x8778U + ((x) * 0x4U))
+#define MASK_UCIE(x)            (0x18A00000U + 0x9770U + ((x) * 0x4U))
+#define MASK_UCIE_ERROR(x)      (0x18A00000U + 0x9778U + ((x) * 0x4U))
+#define STAT_VIN(x)             (0x18A00000U + 0x854CU + ((x) * 0x4U))
+#define MASK_VIN(x)             (0x18A00000U + 0x954CU + ((x) * 0x4U))
+
+typedef struct
+{
+	uint32_t irq;
+	uint32_t mask_val;
+	uint32_t status_reg;
+	uint32_t mask_reg;
+} irq_table;
+
+static const irq_table r8a78000_irq_table[] = {
+	{ 0x112, 0x3, STAT_DMA_RT(0,0), MASK_DMA_RT(0,0) },
+        { 0x113, 0x3, STAT_DMA_RT(0,1), MASK_DMA_RT(0,1) },
+        { 0x114, 0x3, STAT_DMA_RT(0,2), MASK_DMA_RT(0,2) },
+        { 0x115, 0x3, STAT_DMA_RT(0,3), MASK_DMA_RT(0,3) },
+        { 0x116, 0x3, STAT_DMA_RT(0,4), MASK_DMA_RT(0,4) },
+        { 0x117, 0x3, STAT_DMA_RT(0,5), MASK_DMA_RT(0,5) },
+        { 0x118, 0x3, STAT_DMA_RT(0,6), MASK_DMA_RT(0,6) },
+        { 0x119, 0x3, STAT_DMA_RT(0,7), MASK_DMA_RT(0,7) },
+        { 0x11A, 0x3, STAT_DMA_RT(1,0), MASK_DMA_RT(1,0) },
+        { 0x11B, 0x3, STAT_DMA_RT(1,1), MASK_DMA_RT(1,1) },
+        { 0x11C, 0x3, STAT_DMA_RT(1,2), MASK_DMA_RT(1,2) },
+        { 0x11D, 0x3, STAT_DMA_RT(1,3), MASK_DMA_RT(1,3) },
+        { 0x11E, 0x3, STAT_DMA_RT(1,4), MASK_DMA_RT(1,4) },
+        { 0x11F, 0x3, STAT_DMA_RT(1,5), MASK_DMA_RT(1,5) },
+        { 0x120, 0x3, STAT_DMA_RT(1,6), MASK_DMA_RT(1,6) },
+        { 0x121, 0x3, STAT_DMA_RT(1,7), MASK_DMA_RT(1,7) },
+        { 0x122, 0x3, STAT_DMA_RT(2,0), MASK_DMA_RT(2,0) },
+        { 0x123, 0x3, STAT_DMA_RT(2,1), MASK_DMA_RT(2,1) },
+        { 0x124, 0x3, STAT_DMA_RT(2,2), MASK_DMA_RT(2,2) },
+        { 0x125, 0x3, STAT_DMA_RT(2,3), MASK_DMA_RT(2,3) },
+        { 0x126, 0x3, STAT_DMA_RT(2,4), MASK_DMA_RT(2,4) },
+        { 0x127, 0x3, STAT_DMA_RT(2,5), MASK_DMA_RT(2,5) },
+        { 0x128, 0x3, STAT_DMA_RT(2,6), MASK_DMA_RT(2,6) },
+        { 0x129, 0x3, STAT_DMA_RT(2,7), MASK_DMA_RT(2,7) },
+        { 0x12A, 0x3, STAT_DMA_RT(3,0), MASK_DMA_RT(3,0) },
+        { 0x12B, 0x3, STAT_DMA_RT(3,1), MASK_DMA_RT(3,1) },
+        { 0x12C, 0x3, STAT_DMA_RT(3,2), MASK_DMA_RT(3,2) },
+        { 0x12D, 0x3, STAT_DMA_RT(3,3), MASK_DMA_RT(3,3) },
+        { 0x12E, 0x3, STAT_DMA_RT(3,4), MASK_DMA_RT(3,4) },
+        { 0x12F, 0x3, STAT_DMA_RT(3,5), MASK_DMA_RT(3,5) },
+        { 0x130, 0x3, STAT_DMA_RT(3,6), MASK_DMA_RT(3,6) },
+        { 0x131, 0x3, STAT_DMA_RT(3,7), MASK_DMA_RT(3,7) },
+
+        { 0x173, 0xFF, STAT_VIN(0), MASK_VIN(0) },
+        { 0x174, 0xFF, STAT_VIN(1), MASK_VIN(1) },
+        { 0x175, 0xFF, STAT_VIN(2), MASK_VIN(2) },
+        { 0x176, 0xFF, STAT_VIN(3), MASK_VIN(3) },
+        { 0x177, 0xFF, STAT_VIN(4), MASK_VIN(4) },
+        { 0x178, 0xFF, STAT_VIN(5), MASK_VIN(5) },
+        { 0x179, 0xFF, STAT_VIN(6), MASK_VIN(6) },
+        { 0x17A, 0xFF, STAT_VIN(7), MASK_VIN(7) },
+        { 0x17B, 0xFF, STAT_VIN(8), MASK_VIN(8) },
+        { 0x17C, 0xFF, STAT_VIN(9), MASK_VIN(9) },
+        { 0x17D, 0xFF, STAT_VIN(10), MASK_VIN(10) },
+        { 0x17E, 0xFF, STAT_VIN(11), MASK_VIN(11) },
+
+        {0x1FC, 0x1F, STAT_UCIE(0), MASK_UCIE(0) },
+        {0x1FD, 0x1F, STAT_UCIE(1), MASK_UCIE(1) },
+        {0x1FE, 0x1FF, STAT_UCIE_ERROR(0), MASK_UCIE_ERROR(0) },
+        {0x1FF, 0x1FF, STAT_UCIE_ERROR(1), MASK_UCIE_ERROR(1) },
+};
 
 void Irq_Setup(void)
 {
@@ -53,12 +126,17 @@ void Irq_Setup(void)
 }
 
 /* Set up a CR7 or INTC-RT GIC entry */
-void Irq_SetupEntry(unsigned int id, IrqHandlerFn Handler, void *Context)
+void Irq_SetupEntry(unsigned int id, IrqHandlerFn Handler, Context_t *Context)
 {
+	int ret;
 	/* Just in case... */
 	if (id > MAX_IRQ_NUMBER)
 		while (1)
 			;
+
+	ret = Irq_MergeSetup(id);
+	if(!ret)
+		printf("Merged Interrupt setup completed.\n");
 
 	HandlerTable[id].Handler = Handler;
 	HandlerTable[id].Context = Context;
@@ -141,7 +219,60 @@ void vApplicationIRQHandler(uint32_t ulICCIAR)
 		while (1)
 			;
 	}
+
+	if (pEntry->Context) {
+		pEntry->Context->channel_info = Irq_GetMergeStatReg(id);
+	}
 	UxSavedInterruptStatus = taskENTER_CRITICAL_FROM_ISR();
 	pEntry->Handler(pEntry->Context);
 	taskEXIT_CRITICAL_FROM_ISR(UxSavedInterruptStatus);
+}
+
+int Irq_GetTableId(unsigned int id)
+{
+	for (unsigned int i = 0 ; i < sizeof(r8a78000_irq_table) / sizeof(r8a78000_irq_table[0]); i++)
+	{
+		if (id == r8a78000_irq_table[i].irq)
+			return i;
+	}
+
+	/* The irq id is not a merged interrupt */
+	return -1;
+}
+
+uint32_t Irq_RegRead(uint32_t addr)
+{
+	return *((volatile uint32_t *)addr);
+}
+
+void Irq_RegWrite(uint32_t addr, uint32_t val)
+{
+	*((volatile uint32_t *)addr) = val;
+}
+
+int Irq_MergeSetup(unsigned int id)
+{
+	int t_id;
+	uint32_t val;
+
+	t_id = Irq_GetTableId(id);
+	if (t_id < 0)
+		return t_id;
+
+	val = Irq_RegRead(r8a78000_irq_table[t_id].mask_reg);
+	val &= ~r8a78000_irq_table[t_id].mask_val;
+	Irq_RegWrite(r8a78000_irq_table[t_id].mask_reg, val);
+
+	return 0;
+}
+
+int32_t Irq_GetMergeStatReg(unsigned int id)
+{
+	unsigned int t_id;
+
+	t_id = Irq_GetTableId(id);
+	if (t_id < 0)
+		return t_id;
+
+	return Irq_RegRead(r8a78000_irq_table[t_id].status_reg);
 }

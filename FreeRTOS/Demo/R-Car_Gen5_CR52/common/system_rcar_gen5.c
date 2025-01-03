@@ -32,6 +32,9 @@
 #define RT_DMA_PUBLIC		0x19438000
 #define RT_DMA_PUBLIC_SIZE	0x00040000
 
+#define INTC_MEMORY_ADDRESS      0x18A00000
+#define INTC_MEMORY_SIZE         0x0000BDC4
+
 extern const unsigned int __bss_start__;
 extern const unsigned int __bss_end__;
 extern const unsigned int _STACK_SIZE;
@@ -60,6 +63,7 @@ static void Init_MPU(void)
     MPU_SetRegion(REGION_3, REGION_DEVICE_ATTR((uint32_t) DEVICE_MEMORY_ADDRESS, (uint32_t) DEVICE_MEMORY_SIZE));
     MPU_SetRegion(REGION_4, REGION_DEVICE_ATTR((uint32_t) RT_DMA_REGIONS, (uint32_t) RT_DMA_REGIONS_SIZE));
     MPU_SetRegion(REGION_5, REGION_DEVICE_ATTR((uint32_t) RT_DMA_PUBLIC, (uint32_t) RT_DMA_PUBLIC_SIZE));
+    MPU_SetRegion(REGION_6, REGION_DEVICE_ATTR((uint32_t) INTC_MEMORY_ADDRESS, (uint32_t) INTC_MEMORY_SIZE));
 
     /* Enable MPU */
     MPU_Enable();

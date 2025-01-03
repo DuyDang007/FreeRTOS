@@ -23,13 +23,24 @@
 
 typedef void (*IrqHandlerFn)(void *data);
 
+typedef struct
+{
+    void *ctx;
+    int channel_info;
+} Context_t;
+
 void Irq_Setup(void);
-void Irq_SetupEntry(unsigned int id, IrqHandlerFn Handler, void *Context);
+void Irq_SetupEntry(unsigned int id, IrqHandlerFn Handler, Context_t *Context);
 void Irq_RemoveEntry(unsigned int id);
 void Irq_Enable(unsigned int id);
 void Irq_Disable(unsigned int id);
 void Irq_SetPriority(unsigned int id, uint8_t priority);
 unsigned int FreeRTOS_GetActiveIRQ(void);
 void FreeRTOS_EndOfInterrupt(unsigned int id);
+int Irq_GetTableId(unsigned int id);
+uint32_t Irq_RegRead(uint32_t addr);
+void Irq_RegWrite(uint32_t addr, uint32_t val);
+int Irq_MergeSetup(unsigned int id);
+int32_t Irq_GetMergeStatReg(unsigned int id);
 
 #endif /* __INTERRUPTS_H_*/
