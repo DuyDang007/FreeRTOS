@@ -109,7 +109,7 @@ typedef enum ControlMessage
  * @defgroup Configuration constants for the dispatcher-worker demo.
  */
 /**@{ */
-#define MQUEUE_NUMBER_OF_WORKERS    ( 4 )                        /**< The number of worker threads, each thread has one queue which is used as income box. */
+#define MQUEUE_NUMBER_OF_WORKERS    ( 2 )                        /**< The number of worker threads, each thread has one queue which is used as income box. */
 
 #if ( MQUEUE_NUMBER_OF_WORKERS > 10 )
     #error "Please keep MQUEUE_NUMBER_OF_WORKERS < 10."
@@ -124,11 +124,6 @@ typedef enum ControlMessage
 #define MQUEUE_MSG_WORKER_CTRL_MSG_SIZE         sizeof( uint8_t ) /**< Control message size. */
 #define DEMO_ERROR                              ( -1 )            /**< Any non-zero value would work. */
 /**@} */
-
-/**
- * prvCheckTask task must suspend when Posix demo run to avoid override log 
- */
-extern TaskHandle_t prvCheckTaskHandle;
 
 /**
  * @brief Structure used by Worker thread.
@@ -158,7 +153,7 @@ static void * prvWorkerThread( void * pvArgs )
 {
     WorkerThreadResources_t pArgList = *( WorkerThreadResources_t * ) pvArgs;
 
-    printf( "Worker thread #[%d] - start\n", ( int ) pArgList.pxID);
+    printf( "Worker thread #[%d] [prio : %d] - start\n", ( int ) pArgList.pxID, uxTaskPriorityGet(NULL));
 
     struct timespec xReceiveTimeout = { 0 };
 
@@ -175,7 +170,7 @@ static void * prvWorkerThread( void * pvArgs )
                                    pcReceiveBuffer,
                                    MQUEUE_MSG_WORKER_CTRL_MSG_SIZE,
                                    0 );
-
+        usleep(10000); // WA missing log. Remove me when missing serial log is fixed. 
         /* Parse messages */
         if( xMessageSize == MQUEUE_MSG_WORKER_CTRL_MSG_SIZE )
         {
@@ -189,8 +184,8 @@ static void * prvWorkerThread( void * pvArgs )
 
                 case eWORKER_CTRL_MSG_EXIT:
                     printf( "Worker thread #[%d] -- Finished. Exit now.\n", ( int ) pArgList.pxID);
-
-                    return NULL;
+                    break; 
+                    //return NULL;
 
                 default:
                     /* Received a message that we don't care or not defined. */
@@ -201,9 +196,14 @@ static void * prvWorkerThread( void * pvArgs )
         {
             /* Invalid message. Error handling can be done here, if desired. */
         }
-        usleep(500000);
     }
 
+    /* ByPass Create Task check */
+    for(;;) 
+    {
+        sleep(100);
+    }
+    
     /* You should never hit here. */
     /* return NULL; */
 }
@@ -212,9 +212,9 @@ static void * prvWorkerThread( void * pvArgs )
 
 static void * prvDispatcherThread( void * pvArgs )
 {
-    DispatcherThreadResources_t pArgList = *( DispatcherThreadResources_t * ) pvArgs;
-    usleep(100);
-    printf( "Dispatcher thread - start\n");
+    DispatcherThreadResources_t pArgList = *( DispatcherThreadResources_t * ) pvArgs; 
+    printf( "Dispatcher thread [prio : %d] - start \n", uxTaskPriorityGet(NULL));
+    
     struct timespec xSendTimeout = { 0 };
 
     ssize_t xMessageSize = 0;
@@ -248,7 +248,7 @@ static void * prvDispatcherThread( void * pvArgs )
             printf( "An acceptable failure -- dispatcher failed to send eWORKER_CTRL_MSG_CONTINUE to outbox ID: %x. errno %d\n",
                     ( int ) pArgList.pOutboxID[ i % MQUEUE_NUMBER_OF_WORKERS ], errno);
         }   
-        usleep(500000);     
+        usleep(100000); // WA missing log. Remove me when missing serial log is fixed.   
     }
 
     /* Control thread is now done with distributing jobs. Tell workers they are done. */
@@ -263,7 +263,12 @@ static void * prvDispatcherThread( void * pvArgs )
                                 pcSendBuffer,
                                 MQUEUE_MSG_WORKER_CTRL_MSG_SIZE,
                                 0 );
-        usleep(500000);
+        usleep(100000); // WA missing log. Remove me when missing serial log is fixed.
+    }
+   
+   /* ByPass Create Task check */
+    for (;;) {
+        sleep(100);
     }
 
     return NULL;
@@ -286,7 +291,7 @@ void vStartPOSIXDemo( void *pvParameters )
     ( void ) pvParameters;
 
     /* Handles of the threads and related resources. */
-    DispatcherThreadResources_t pxDispatcher = { 0 };
+    DispatcherThreadResources_t pxDispatcher = { 0 }; 
     WorkerThreadResources_t pxWorkers[ MQUEUE_NUMBER_OF_WORKERS ] = { { 0 } };
     mqd_t workerMqueues[ MQUEUE_NUMBER_OF_WORKERS ] = { 0 };
 
@@ -333,6 +338,7 @@ void vStartPOSIXDemo( void *pvParameters )
         for( i = 0; i < MQUEUE_NUMBER_OF_WORKERS; i++ )
         {
             ( void ) pthread_create( &( pxWorkers[ i ].pxID ), NULL, prvWorkerThread, &pxWorkers[ i ] );
+            usleep(10000); // WA missing log. Remove me when missing serial log is fixed.
         }
 
         /* Create and start dispatcher thread. */
@@ -374,10 +380,7 @@ void vStartPOSIXDemo( void *pvParameters )
         printf( "Queues did not get initialized properly. Did not run demo.\n");
     }
 
-    // Resume prvCheckTask task 
-    vTaskResume(prvCheckTaskHandle);
-
 	/* This task was created with the native xTaskCreate() API function, so
 	must not run off the end of its implementing thread. */
-	vTaskDelete( NULL );
+    vTaskDelete(NULL);
 }

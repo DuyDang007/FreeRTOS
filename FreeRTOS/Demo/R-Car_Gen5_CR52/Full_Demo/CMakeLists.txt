@@ -3,6 +3,7 @@ set(app_name "main_full")
 add_executable(${app_name}
     main.c
     main_full.c
+    posix_demo/posix_demo.c
     ${FREERTOS_DIR}/FreeRTOS/Demo/Common/Minimal/EventGroupsDemo.c 
     ${FREERTOS_DIR}/FreeRTOS/Demo/Common/Minimal/blocktim.c 
     ${FREERTOS_DIR}/FreeRTOS/Demo/Common/Minimal/recmutex.c 

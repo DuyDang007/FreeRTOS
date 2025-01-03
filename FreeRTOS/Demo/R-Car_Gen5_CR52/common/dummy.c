@@ -47,3 +47,9 @@ __attribute__((weak)) int _kill (pid_t pid, int sig)
 {
   return 1;
 }
+
+__attribute__((weak)) void vApplicationTickHook( void )
+{
+    /* Weak function  */
+    /* if want to use this function redefine this function */
+}

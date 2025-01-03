@@ -9,7 +9,7 @@ _FIQ_STACK_SIZE   = 0x1800;
 _SVC_STACK_SIZE   = 0x1800;
 _ABORT_STACK_SIZE = 0x1800;
 _UNDEF_STACK_SIZE = 0x18000;
-_HEAP_SIZE        = 0x18000;
+_HEAP_SIZE        = 0x25000;
 /* Heap uses HeapBase global var, see configTOTAL_HEAP_SIZE */
 
 /* Note: See RCAR_VIDEO_BUFFER_START for additional memory used */

@@ -90,7 +90,7 @@
 #include "death.h"
 
 #ifdef configSUPPORT_POSIX
-//#include "posix_demo.h"
+#include "posix_demo.h"
 #endif
 
 /* Logging Function include. */
@@ -115,7 +115,7 @@
 #define mainTIMER_TEST_PERIOD				( 50 )
 
 /*CORTEX M3 DEFINE*/
-#define mainMESSAGE_BUFFER_TASKS_STACK_SIZE	( 100 )
+#define mainMESSAGE_BUFFER_TASKS_STACK_SIZE	( 200 )
 #define mainCREATOR_TASK_PRIORITY  ( configMAX_PRIORITIES - ( UBaseType_t ) 2 )
 
 #define mainPOSIX_DEMO_PRIORITY    ( tskIDLE_PRIORITY + 4 )
@@ -168,7 +168,7 @@ void main_full( void )
         xTaskCreate(UartIrqTriggerTask, "UartIrqTriggerTask", configMINIMAL_STACK_SIZE, NULL, configMAX_PRIORITIES - 1, NULL);
     }
 
-	/* Start all the other standard demo/test tasks.  They have no particular
+       /* Start all the other standard demo/test tasks.  They have no particular
 	functionality, but do demonstrate how to use the FreeRTOS API and test the
 	kernel port. */
 	//vStartInterruptQueueTasks();
@@ -202,7 +202,7 @@ void main_full( void )
 #endif
 
 #ifdef configSUPPORT_POSIX
-//    xTaskCreate( vStartPOSIXDemo, "posix", configMINIMAL_STACK_SIZE, NULL, mainPOSIX_DEMO_PRIORITY, NULL );
+    xTaskCreate( vStartPOSIXDemo, "posix", configMINIMAL_STACK_SIZE, NULL, mainPOSIX_DEMO_PRIORITY, NULL );
 #endif 
 
 	/* Create the task that just adds a little random behaviour. */
@@ -229,9 +229,6 @@ void main_full( void )
 
 static void prvCheckTask( void *pvParameters )
 {
-#ifdef configSUPPORT_POSIX
-//vTaskSuspend(NULL);
-#endif 
 TickType_t xDelayPeriod = mainNO_ERROR_CHECK_TASK_PERIOD;
 TickType_t xLastExecutionTime;
 uint32_t ulErrorFound = pdFALSE;
