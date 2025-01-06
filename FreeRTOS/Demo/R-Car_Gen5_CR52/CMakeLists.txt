@@ -67,6 +67,9 @@ set(bsp_source
     ${BSP_DIR}/drivers/serial/scif.c
     ${BSP_DIR}/drivers/mpu/mpu.c
     ${BSP_DIR}/drivers/mfis/mfis.c
+    ${BSP_DIR}/drivers/i2c/src/r_i2c.c
+    ${BSP_DIR}/drivers/i2c/src/r_i2c_regs.c
+    ${BSP_DIR}/drivers/i2c/r_sci_i2c.c
     ${BSP_DIR}/common/ARM_CR52/port.c
 )
 
@@ -104,6 +107,8 @@ target_include_directories(freertos_bsp
         $<BUILD_INTERFACE:${BSP_DIR}/drivers/timer>
         $<BUILD_INTERFACE:${BSP_DIR}/drivers/gic>
         $<BUILD_INTERFACE:${BSP_DIR}/drivers/mfis>
+        $<BUILD_INTERFACE:${BSP_DIR}/drivers/i2c/lib>
+        $<BUILD_INTERFACE:${BSP_DIR}/drivers/i2c>
         # POSIX
         $<BUILD_INTERFACE:${BSP_DIR}/common/POSIX_portable>
         $<BUILD_INTERFACE:${POSIX_DIR}/include>
@@ -195,6 +200,7 @@ add_subdirectory(sample_apps/posix_app)
 add_subdirectory(sample_apps/logging_app)
 add_subdirectory(sample_apps/mpu_app)
 add_subdirectory(sample_apps/cpp_app)
+add_subdirectory(sample_apps/i2c_app)
 if(ENABLE_OPENAMP)
     add_subdirectory(sample_apps/rpmsg_sample)
 endif()
