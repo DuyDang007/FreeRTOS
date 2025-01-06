@@ -4,10 +4,12 @@
 /* MFIS */
 /* Sender: CR52 - Receiver: CA720 */
 #define MFIS_BASE   (0x18800000)
-#define IICR(i)     (MFIS_BASE + 0x1000 * i)        // Common communication control register Sender core to Receiver core ch[i]
-#define EICR(i)     (MFIS_BASE + 0x1000 * i + 0x04) // Common communication control register Receiver core to Sender core ch[i]
-#define IMBR(i)     (MFIS_BASE + 0x1000 * i + 0x40) // Common communication message register Sender core to Receiver core ch[i]
-#define EMBR(i)     (MFIS_BASE + 0x1000 * i + 0x44) // Common communication message register Receiver core to Sender core ch[i]
+#define IICR(i)     (MFIS_BASE + 0x1000 * (i))        // Common communication control register Sender core to Receiver core ch[i]
+#define EICR(i)     (MFIS_BASE + 0x1000 * (i) + 0x04) // Common communication control register Receiver core to Sender core ch[i]
+#define IMBR(i)     (MFIS_BASE + 0x1000 * (i) + 0x40) // Common communication message register Sender core to Receiver core ch[i]
+#define EMBR(i)     (MFIS_BASE + 0x1000 * (i) + 0x44) // Common communication message register Receiver core to Sender core ch[i]
+
+#define MFIS_UNLOCK_WRITE	(0x189e0900)
 
 /* Interrupt ID of MFIS, i=[0-63] */
 #define INTID_S_R(i)    (0x0056 + i * 2) // Common INTID ch[i] from Sender to Receiver, unused
@@ -16,13 +18,13 @@
 /*--------------------------- MFIS Driver ---------------------------------*/
 
 /* Get interrupt source number of a channel */
-static inline uint16_t mfis_int_source_num(struct mfis_channel *ch)
+uint16_t mfis_get_int_source_num(struct mfis_channel *ch)
 {
     return (volatile uint16_t) EICR(ch->ch);
 }
 
 /* Get message of a channel */
-static inline uint16_t mfis_message(struct mfis_channel *ch)
+uint16_t mfis_get_message(struct mfis_channel *ch)
 {
     return (volatile uint16_t) EMBR(ch->ch);
 }
@@ -31,8 +33,13 @@ static inline uint16_t mfis_message(struct mfis_channel *ch)
 void mfis_interrupt_cb(void* data)
 {
     struct mfis_channel *ch = (struct mfis_channel*) data;
-    ch->int_source = mfis_int_source_num(ch);
-    ch->recv_message = mfis_message(ch);
+    ch->int_source = mfis_get_int_source_num(ch);
+    ch->recv_message = mfis_get_message(ch);
+    if(ch->cb_function != (void*)0)
+        ch->cb_function(ch->arg);
+
+    /* Clear interrupt flag */
+    *(volatile uint32_t *)EICR(ch->ch) = 0;
 }
 
 /* Initialize MFIS */
@@ -41,12 +48,14 @@ int mfis_init(struct mfis_channel *ch)
     /* Initialize */
     ch->int_source = 0;
     ch->recv_message = 0;
-    ch->cb_function = &mfis_interrupt_cb;
     /* Set callback function */
-    Irq_SetupEntry(INTID_R_S(ch->ch), (IrqHandlerFn)ch->cb_function, (void*) ch);
+    Irq_SetupEntry(INTID_R_S(ch->ch), (IrqHandlerFn)mfis_interrupt_cb, (void*) ch);
     /* Enable interrupt from Receiver to Sender */
     Irq_SetPriority(INTID_R_S(ch->ch), IPRIORITY(2));
     Irq_Enable(INTID_R_S(ch->ch));
+
+    /* Unlock MFIS register write protection */
+    *(volatile uint32_t *)(MFIS_UNLOCK_WRITE) = 0xACC00001;
 
     return 0;
 }

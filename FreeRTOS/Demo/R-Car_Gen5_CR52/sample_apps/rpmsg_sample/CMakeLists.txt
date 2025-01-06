@@ -12,6 +12,13 @@ target_compile_options(${app_name}
         -DENABLE_OPENAMP_
 )
 
+target_include_directories(${app_name}
+    PRIVATE
+    ${BSP_DIR}
+    ${BSP_DIR}/CMSIS_5
+    ${BSP_DIR}/CMSIS_5/CMSIS/Core_R/Include
+)
+
 # Essential libraries to link with
 target_link_libraries(${app_name}
     freertos_bsp

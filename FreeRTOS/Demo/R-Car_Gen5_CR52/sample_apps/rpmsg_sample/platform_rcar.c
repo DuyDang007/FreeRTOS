@@ -8,15 +8,16 @@
 
 #define LPRINTF(format, ...) printf(format, ##__VA_ARGS__); vTaskDelay(10);
 
-/* Define shared DRAM area for each channel */
-#define SHARED_CH_RAM_SIZE (0x100000) // 1MB
-#define SHARED_CH_RAM_BASE(ch) (0x60000000 + ch * SHARED_CH_RAM_SIZE) // ch=[0-3]
+/* Define shared DRAM area for each channel.
+ * This is CA/Linux CMA region */
+#define SHARED_CH_RAM_BASE (0x50000000)
+#define SHARED_CH_RAM_SIZE (0x10000000)
 
 /* Remote processor operations from r52 to a720. It defines
  * notification operation and remote processor managementi operations. */
 extern const struct remoteproc_ops x5h_r_a_proc_ops;
 static struct remoteproc rproc_inst;
-static struct mfis_channel mfis_inst = 
+static struct mfis_channel mfis_inst =
 {
     .ch = 0,
     .int_source = 0,
@@ -38,6 +39,7 @@ struct remoteproc * platform_create_proc(int mfis_ch, int rsc_index)
     int rsc_size;
     int ret;
     metal_phys_addr_t pa;
+    void *tmp;
 
     rsc_table = get_resource_table(rsc_index, &rsc_size);
 
@@ -52,17 +54,19 @@ struct remoteproc * platform_create_proc(int mfis_ch, int rsc_index)
                 NULL, rsc_size,
                 NORM_NSHARED_NCACHE|PRIV_RW_USER_RW,
                 &rproc_inst.rsc_io);
+    LPRINTF("%s: mem->io->virt=%lu\r\n", __func__, (uint32_t)rproc_inst.rsc_io->virt);
+    LPRINTF("%s: mem->io->phys=%lu\r\n", __func__, (uint32_t)*rproc_inst.rsc_io->physmap);
     /* mmap shared memory */
-    pa = SHARED_CH_RAM_BASE(mfis_inst.ch);
-    (void *)remoteproc_mmap(&rproc_inst, &pa,
+    pa = SHARED_CH_RAM_BASE;
+    (void *)remoteproc_mmap(&rproc_inst, (void*)&pa,
                 NULL, SHARED_CH_RAM_SIZE,
                 NORM_NSHARED_NCACHE|PRIV_RW_USER_RW,
                 NULL);
 
     /* parse resource table to remoteproc */
-    ret = remoteproc_set_rsc_table(&rproc_inst, rsc_table, rsc_size);
+    ret = remoteproc_set_rsc_table(&rproc_inst, rproc_inst.rsc_io->virt, rsc_size);
     if (ret) {
-        LPRINTF("Failed to initialize remoteproc\r\n");
+        LPRINTF("Failed to initialize remoteproc, ret: %d\r\n", ret);
         remoteproc_remove(&rproc_inst);
         return NULL;
     }
@@ -121,11 +125,14 @@ platform_create_rpmsg_vdev(void *platform, unsigned int vdev_index,
     rpmsg_vdev = metal_allocate_memory(sizeof(*rpmsg_vdev));
     if (!rpmsg_vdev)
         return NULL;
-    shbuf_io = remoteproc_get_io_with_pa(rproc, SHARED_CH_RAM_BASE(mfis_ch->ch));
+    shbuf_io = remoteproc_get_io_with_pa(rproc, SHARED_CH_RAM_BASE);
     if (!shbuf_io)
+    {
+        LPRINTF("failed remoteproc_get_io_with_pa\r\n");
         goto err1;
+    }
     shbuf = metal_io_phys_to_virt(shbuf_io,
-                      SHARED_CH_RAM_BASE(mfis_ch->ch) + 0); // Shared buff offset = 0
+                      SHARED_CH_RAM_BASE); // Shared buff offset = 0
 
     LPRINTF("creating remoteproc virtio\r\n");
     /* TODO: can we have a wrapper for the following two functions? */
@@ -164,7 +171,18 @@ Otherwise return negative value
 */
 int platform_poll(void *platform)
 {
-    return 0;
+    struct remoteproc *rproc = platform;
+    struct mfis_channel* mfis = (struct mfis_channel*)rproc->priv;
+    int ret = -1;
+
+    if (0 != mfis->int_source)
+    {
+	remoteproc_get_notification(rproc, RSC_NOTIFY_ID_ANY);
+        mfis->int_source = 0; // Reset int source to 0
+        ret = 0;
+    }
+
+    return ret;
 }
 
 /* Deinit RPMsg device, call 2 functions:

@@ -2,6 +2,15 @@
 #include <openamp/remoteproc.h>
 #include "platform_info.h"
 #include "mfis.h"
+#include <stdio.h>
+#include "FreeRTOS.h"
+
+#define LPRINTF(format, ...) printf(format, ##__VA_ARGS__); vTaskDelay(10);
+
+void x5h_proc_interrupt_cb(void *arg)
+{
+	return;
+}
 
 /* Implementation of io mem mapping function */
 void *metal_machine_io_mem_map(void *va, metal_phys_addr_t pa,
@@ -34,7 +43,9 @@ x5h_proc_init(struct remoteproc *rproc, const struct remoteproc_ops *ops, void *
     (void)ops;
     if (!rproc)
         return NULL;
-    
+
+    mfis->cb_function = x5h_proc_interrupt_cb;
+    mfis->arg = arg;
     mfis_init(mfis);
 
     rproc->priv = (void*)mfis;
@@ -63,30 +74,43 @@ x5h_proc_mmap(struct remoteproc *rproc, metal_phys_addr_t *pa,
 {
     struct remoteproc_mem *mem;
     struct metal_io_region *tmpio;
+    metal_phys_addr_t lpa, lda;
 
     /* Skip checking valid address of pa, da */
+    lda = *da;
+	lpa = *pa;
+    if (lpa == METAL_BAD_PHYS && lda == METAL_BAD_PHYS)
+        return NULL;
+    if (lpa == METAL_BAD_PHYS)
+        lpa = lda;
+    if (lda == METAL_BAD_PHYS)
+        lda = lpa;
 
     if (!attribute)
         attribute = NORM_SHARED_NCACHE | PRIV_RW_USER_RW;
     mem = metal_allocate_memory(sizeof(*mem));
     if (!mem)
         return NULL;
+    mem->pa = lpa;
     tmpio = metal_allocate_memory(sizeof(*tmpio));
     if(!tmpio)
     {
         metal_free_memory(mem);
         return NULL;
     }
-
-    /* Init the memory object and assign to rproc */
-    remoteproc_init_mem(mem, NULL, *pa, *da, size, tmpio);
     /* va is the same as pa in this platform */
-    metal_io_init(tmpio, (void *)pa, &mem->pa, size,
+    metal_io_init(tmpio, (void *)lpa, &mem->pa, size,
                 sizeof(metal_phys_addr_t) << 3, attribute, NULL);
+    // LPRINTF("%s: tmpio->virt=%p, tmpio->phy=%lu\r\n", __func__, tmpio->virt, *tmpio->physmap);
+    /* Init the memory object and assign to rproc */
+    remoteproc_init_mem(mem, NULL, lpa, lda, size, tmpio);
     remoteproc_add_mem(rproc, mem);
 
     if (io)
         *io = tmpio;
+    *pa = lpa;
+	*da = lda;
+
     return metal_io_phys_to_virt(tmpio, mem->pa);
 }
 
