@@ -30,7 +30,7 @@
 #include "vector_data.h"
 #include <stddef.h>
 /* Includes FSP version macros. */
-//#include "fsp_version.h"
+#include "fsp_version.h"
 
 /*******************************************************************************************************************//**
  * @ingroup RENESAS_COMMON

@@ -220,8 +220,9 @@ void vApplicationIRQHandler(uint32_t ulICCIAR)
 			;
 	}
 
-	if (pEntry->Context) {
-		pEntry->Context->channel_info = Irq_GetMergeStatReg(id);
+    int channel_info = Irq_GetMergeStatReg(id);
+	if (pEntry->Context && channel_info >= 0) {
+        pEntry->Context->channel_info = channel_info;
 	}
 	UxSavedInterruptStatus = taskENTER_CRITICAL_FROM_ISR();
 	pEntry->Handler(pEntry->Context);
@@ -266,9 +267,9 @@ int Irq_MergeSetup(unsigned int id)
 	return 0;
 }
 
-int32_t Irq_GetMergeStatReg(unsigned int id)
+int Irq_GetMergeStatReg(unsigned int id)
 {
-	unsigned int t_id;
+	int t_id;
 
 	t_id = Irq_GetTableId(id);
 	if (t_id < 0)
