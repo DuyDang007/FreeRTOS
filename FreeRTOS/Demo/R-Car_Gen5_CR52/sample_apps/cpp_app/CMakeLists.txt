@@ -1,5 +1,5 @@
 set(app_name "cpp_app")
-
+set(CMAKE_LINKER "arm-none-eabi-g++")
 add_executable(${app_name}
     main.cc
 )

@@ -46,8 +46,8 @@ extern "C" {
     #include "FreeRTOS.h"
     #include "task.h"
     #include "interrupts.h"
-    #include "stdio.h"
 }
+#include "stdio.h"
 
 #define main_Cpp_TASK_PRIORITY        ( tskIDLE_PRIORITY + 1 )
 
@@ -81,16 +81,38 @@ private:
         }
     }
 };
+
+class MyClass {
+public:
+    MyClass() {
+        printf("Constructor called\n") ;
+    }
+    
+    static bool test() {
+        printf("Test function called\n");
+        return 0;
+    }
+   
+    ~MyClass() {
+        printf("Destructor called\n");
+    }
+
+};
+
+MyClass class1;
+MyClass class2;
+bool value = MyClass::test();
 /*-----------------------------------------------------------*/
 
 int main( void )
 {
 	/* Configure the hardware ready to run the demo. */
+    printf("Main called\n"); 
+    class2.~MyClass();
     prvSetupHardware();
-    
+ 
     CppTask cpp;
-    cpp.TaskCreate();
-    
+    cpp.TaskCreate(); 
     /* Start the tasks and timer running. */
     vTaskStartScheduler();
     for( ;; )

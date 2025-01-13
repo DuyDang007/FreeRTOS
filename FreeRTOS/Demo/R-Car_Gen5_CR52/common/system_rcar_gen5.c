@@ -53,6 +53,8 @@ extern uint32_t eth_non_cache_start;
 
 extern int main(void);
 
+extern void __libc_init_array(void) ;
+
 static void Init_MPU(void)
 {
     /* Disable MPU */
@@ -158,6 +160,7 @@ void SystemInit(void)
 //	L1C_EnableCaches();
 //	L1C_EnableBTAC();
 //	bss_init((void *)&__bss_start__, (void *)&__bss_end__);
+    __libc_init_array();
 }
 
 void assert_func(const char *file, int line, const char *func)
