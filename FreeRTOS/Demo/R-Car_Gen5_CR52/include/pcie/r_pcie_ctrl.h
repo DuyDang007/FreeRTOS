@@ -30,6 +30,26 @@ typedef struct
     void * context;                     // Pointer to the context of a callback function
 } pcie_irq_t;
 
+/** Contain PCIe BAR information */
+typedef enum pci_barno
+{
+    PCIE_NO_BAR = -1,
+    PCIE_BAR_0,
+    PCIE_BAR_1,
+    PCIE_BAR_2,
+    PCIE_BAR_3,
+    PCIE_BAR_4,
+    PCIE_BAR_5,
+} pci_barno_t;
+
+struct pcie_bar
+{
+    uintptr_t phys_addr;
+    void *addr;
+    size_t size;
+    pci_barno_t barno;
+};
+
 /*------------------------- PCIe Controller device --------------------*/
 
 /**

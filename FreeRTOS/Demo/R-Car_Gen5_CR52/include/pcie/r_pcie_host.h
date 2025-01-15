@@ -7,6 +7,7 @@
 #define _PCIE_HOST
 
 #include "pcie/r_pcie_ctrl.h"
+#include <stdbool.h>
 
 /*------------------------- PCIe common definition and structure ------*/
 /**

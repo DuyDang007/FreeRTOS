@@ -73,6 +73,9 @@ set(bsp_source
     ${BSP_DIR}/drivers/i2c/src/r_i2c_regs.c
     ${BSP_DIR}/drivers/i2c/r_sci_i2c.c
     ${BSP_DIR}/common/ARM_CR52/port.c
+    ${BSP_DIR}/drivers/ucie/ucie_controller.c
+    ${BSP_DIR}/drivers/ucie/ucie_host.c
+    ${BSP_DIR}/drivers/ucie/ucie_ep.c
 )
 
 set(posix_source
@@ -112,6 +115,7 @@ target_include_directories(freertos_bsp
         $<BUILD_INTERFACE:${BSP_DIR}/drivers/gpio>
         $<BUILD_INTERFACE:${BSP_DIR}/drivers/i2c/lib>
         $<BUILD_INTERFACE:${BSP_DIR}/drivers/i2c>
+        $<BUILD_INTERFACE:${BSP_DIR}/drivers/ucie>
         # POSIX
         $<BUILD_INTERFACE:${BSP_DIR}/common/POSIX_portable>
         $<BUILD_INTERFACE:${POSIX_DIR}/include>
@@ -205,6 +209,7 @@ add_subdirectory(sample_apps/mpu_app)
 add_subdirectory(sample_apps/gpio_app)
 add_subdirectory(sample_apps/cpp_app)
 add_subdirectory(sample_apps/i2c_app)
+add_subdirectory(sample_apps/cxl_app)
 if(ENABLE_OPENAMP)
     add_subdirectory(sample_apps/rpmsg_sample)
 endif()
