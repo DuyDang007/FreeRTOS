@@ -38,6 +38,13 @@
 #define MFIS_REGISTER		0x18800000
 #define MFIS_REGISTER_SIZE	0x00200000
 
+#define WWDT_REGISTER0_19	0x1C100000
+#define WWDT_REGISTER_0_19_SIZE	0x00140000
+
+#define WWDT_REGISTER20		0x1C380000
+#define WWDT_REGISTER20_SIZE	0x00010000
+
+
 extern const unsigned int __bss_start__;
 extern const unsigned int __bss_end__;
 extern const unsigned int _STACK_SIZE;
@@ -70,7 +77,8 @@ static void Init_MPU(void)
     MPU_SetRegion(REGION_5, REGION_DEVICE_ATTR((uint32_t) RT_DMA_PUBLIC, (uint32_t) RT_DMA_PUBLIC_SIZE));
     MPU_SetRegion(REGION_6, REGION_DEVICE_ATTR((uint32_t) INTC_MEMORY_ADDRESS, (uint32_t) INTC_MEMORY_SIZE));
     MPU_SetRegion(REGION_7, REGION_DEVICE_ATTR((uint32_t) MFIS_REGISTER, (uint32_t) MFIS_REGISTER_SIZE));
-
+    MPU_SetRegion(REGION_8, REGION_DEVICE_ATTR((uint32_t) WWDT_REGISTER0_19, (uint32_t)  WWDT_REGISTER_0_19_SIZE));
+    MPU_SetRegion(REGION_9, REGION_DEVICE_ATTR((uint32_t) WWDT_REGISTER20, (uint32_t)  WWDT_REGISTER20_SIZE));
     /* Enable MPU */
     MPU_Enable();
 }
