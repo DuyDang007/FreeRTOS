@@ -69,6 +69,8 @@ set(bsp_source
     ${BSP_DIR}/drivers/gpio/r_gpio_api.c
     ${BSP_DIR}/drivers/gpio/r_ioport.c
     ${BSP_DIR}/drivers/mfis/mfis.c
+    ${BSP_DIR}/drivers/rt-dmac/rdmac_ctrl.c
+    ${BSP_DIR}/drivers/rt-dmac/rdmac_reg.c
     ${BSP_DIR}/drivers/i2c/src/r_i2c.c
     ${BSP_DIR}/drivers/i2c/src/r_i2c_regs.c
     ${BSP_DIR}/drivers/i2c/r_sci_i2c.c
@@ -120,6 +122,7 @@ target_include_directories(freertos_bsp
         $<BUILD_INTERFACE:${BSP_DIR}/drivers/gpio>
         $<BUILD_INTERFACE:${BSP_DIR}/drivers/i2c/lib>
         $<BUILD_INTERFACE:${BSP_DIR}/drivers/i2c>
+        $<BUILD_INTERFACE:${BSP_DIR}/drivers/rt-dmac>
 	$<BUILD_INTERFACE:${BSP_DIR}/drivers/watchdog>
         $<BUILD_INTERFACE:${BSP_DIR}/drivers/ucie>
 	$<BUILD_INTERFACE:${BSP_DIR}/drivers/iommu>
@@ -216,6 +219,7 @@ add_subdirectory(sample_apps/mpu_app)
 add_subdirectory(sample_apps/gpio_app)
 add_subdirectory(sample_apps/cpp_app)
 add_subdirectory(sample_apps/i2c_app)
+add_subdirectory(sample_apps/rt-dmac_app)
 add_subdirectory(sample_apps/swdt_app)
 add_subdirectory(sample_apps/wwdt_app)
 add_subdirectory(sample_apps/cxl_app)
