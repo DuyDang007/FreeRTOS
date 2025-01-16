@@ -280,15 +280,6 @@ extern void * volatile pxCurrentTCB;
 
 BSP_ATTRIBUTE_STACKLESS void freertos_vector_table(void) BSP_PLACE_IN_SECTION(".rtosvec");
 
-/* Generic Timer Registers */
-#define GENERIC_TIMER_CLK    (R_GSC->CNTFID0)
-#define CNTFRQ_READ()         __get_CNTFRQ()
-#define CNTPCT_READ()         __get_CNTPCT()
-#define CNTP_CTL_WRITE(v)     __set_CNTP_CTL(v)
-#define CNTP_CVAL_READ()      __get_CNTP_CVAL()
-#define CNTP_CVAL_WRITE(v)    __set_CNTP_CVAL(v)
-static uint32_t g_timer_delay;
-
 /*
  * Exception handlers.
  */
