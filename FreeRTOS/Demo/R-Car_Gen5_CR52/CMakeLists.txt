@@ -72,6 +72,7 @@ set(bsp_source
     ${BSP_DIR}/drivers/i2c/src/r_i2c.c
     ${BSP_DIR}/drivers/i2c/src/r_i2c_regs.c
     ${BSP_DIR}/drivers/i2c/r_sci_i2c.c
+    ${BSP_DIR}/drivers/watchdog/r_swdt.c
     ${BSP_DIR}/drivers/watchdog/r_wwdt.c
     ${BSP_DIR}/drivers/watchdog/r_wwdt_reg.c
     ${BSP_DIR}/common/ARM_CR52/port.c
@@ -215,6 +216,7 @@ add_subdirectory(sample_apps/mpu_app)
 add_subdirectory(sample_apps/gpio_app)
 add_subdirectory(sample_apps/cpp_app)
 add_subdirectory(sample_apps/i2c_app)
+add_subdirectory(sample_apps/swdt_app)
 add_subdirectory(sample_apps/wwdt_app)
 add_subdirectory(sample_apps/cxl_app)
 add_subdirectory(sample_apps/viommufe_app)
