@@ -78,6 +78,7 @@ set(bsp_source
     ${BSP_DIR}/drivers/ucie/ucie_controller.c
     ${BSP_DIR}/drivers/ucie/ucie_host.c
     ${BSP_DIR}/drivers/ucie/ucie_ep.c
+    ${BSP_DIR}/drivers/iommu/virtio_mmu.c
 )
 
 set(posix_source
@@ -109,6 +110,7 @@ target_include_directories(freertos_bsp
     PUBLIC
         $<BUILD_INTERFACE:${KERNEL_DIR}/include>
         $<BUILD_INTERFACE:${BSP_DIR}/include>
+	$<BUILD_INTERFACE:${BSP_DIR}/include/iommu>
         $<BUILD_INTERFACE:${BSP_DIR}/drivers/mpu>
         $<BUILD_INTERFACE:${BSP_DIR}/drivers/serial>
         $<BUILD_INTERFACE:${BSP_DIR}/drivers/timer>
@@ -119,6 +121,7 @@ target_include_directories(freertos_bsp
         $<BUILD_INTERFACE:${BSP_DIR}/drivers/i2c>
 	$<BUILD_INTERFACE:${BSP_DIR}/drivers/watchdog>
         $<BUILD_INTERFACE:${BSP_DIR}/drivers/ucie>
+	$<BUILD_INTERFACE:${BSP_DIR}/drivers/iommu>
         # POSIX
         $<BUILD_INTERFACE:${BSP_DIR}/common/POSIX_portable>
         $<BUILD_INTERFACE:${POSIX_DIR}/include>
@@ -214,6 +217,7 @@ add_subdirectory(sample_apps/cpp_app)
 add_subdirectory(sample_apps/i2c_app)
 add_subdirectory(sample_apps/wwdt_app)
 add_subdirectory(sample_apps/cxl_app)
+add_subdirectory(sample_apps/viommufe_app)
 if(ENABLE_OPENAMP)
     add_subdirectory(sample_apps/rpmsg_sample)
 endif()
