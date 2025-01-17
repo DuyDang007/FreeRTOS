@@ -13,48 +13,24 @@
 
 #define SYSTEM_CLOCK_COUNTER_DEFAULT 25000000
 
-#define CA_CMA_ADDRESS		0x50000000
-#define CA_CMA_SIZE		0x10000000
+// Define all peripheral address regions
+#define PERIPHERAL_START_0          0x18800000
+#define PERIPHERAL_SIZE_0           0x00080000  // to 0x1888_0000
 
-#define OSAL_MEMORY_ADDRESS     0x60000000
-#define OSAL_MEMORY_SIZE        0x20000000
+#define PERIPHERAL_START_1          0x188C0000
+#define PERIPHERAL_SIZE_1           0x07740000  // to 0x2000_0000
 
-#define DEVICE_MEMORY_ADDRESS   0x80000000
-#define DEVICE_MEMORY_SIZE      0x80000000
+#define CA_CMA_ADDRESS              0x50000000
+#define CA_CMA_SIZE                 0x0FF00000  // to 0x5FF0_0000
 
-/* RT-DMA memory:
- * 1. RT-DMAC0 Region 0 to RT-DMAC3 Region 15.
- * 2. RT-DMAC0 (public) to RT-DMAC3 (public).
- */
-#define RT_DMA_REGIONS		0x18900000
-#define RT_DMA_REGIONS_SIZE	0x00040000
+#define OSAL_MEMORY_ADDRESS         0x60000000
+#define OSAL_MEMORY_SIZE            0x20000000  // to 0x8000_0000
 
-#define RT_DMA_PUBLIC		0x19438000
-#define RT_DMA_PUBLIC_SIZE	0x00004000
+#define SHARED_DRAM_ADDRESS         0x80000000
+#define SHARED_DRAM_SIZE            0x20000000  // to 0xA000_0000
 
-#define INTC_MEMORY_ADDRESS      0x18A00000
-#define INTC_MEMORY_SIZE         0x0000BDC4
-
-#define MFIS_REGISTER		0x18800000
-#define MFIS_REGISTER_SIZE	0x00080000
-
-#define MFIS_COMMON         0x189E0000
-#define MFIS_COMMON_SIZE    0x00001000
-
-// To perform DMA debugging, will remove in the future
-#define DMA_CHECK   		0x189E7000
-#define DMA_CHECK_SIZE		0x00001000
-
-
-#define SWDT_REGISTER		0x1C050000
-#define SWDT_REGISTER_SIZE	0xC
-
-#define WWDT_REGISTER0_19	0x1C100000
-#define WWDT_REGISTER_0_19_SIZE	0x00140000
-
-#define WWDT_REGISTER20		0x1C380000
-#define WWDT_REGISTER20_SIZE	0x00010000
-
+#define PERIPHERAL_START_2          0xC0000000
+#define PERIPHERAL_SIZE_2           0x40000000  // to 0x1_0000_0000
 
 extern const unsigned int __bss_start__;
 extern const unsigned int __bss_end__;
@@ -83,16 +59,10 @@ static void Init_MPU(void)
     MPU_SetRegion(REGION_0, REGION_SRAM_ATTR((uint32_t) &_RAM_START, (uint32_t) &_RAM_SIZE));
     MPU_SetRegion(REGION_1, REGION_DEVICE_ATTR((uint32_t) CA_CMA_ADDRESS, (uint32_t) CA_CMA_SIZE));
     MPU_SetRegion(REGION_2, REGION_DEVICE_ATTR((uint32_t) OSAL_MEMORY_ADDRESS, (uint32_t) OSAL_MEMORY_SIZE));
-    MPU_SetRegion(REGION_3, REGION_DEVICE_ATTR((uint32_t) DEVICE_MEMORY_ADDRESS, (uint32_t) DEVICE_MEMORY_SIZE));
-    MPU_SetRegion(REGION_4, REGION_DEVICE_ATTR((uint32_t) RT_DMA_REGIONS, (uint32_t) RT_DMA_REGIONS_SIZE));
-    MPU_SetRegion(REGION_5, REGION_DEVICE_ATTR((uint32_t) RT_DMA_PUBLIC, (uint32_t) RT_DMA_PUBLIC_SIZE));
-    MPU_SetRegion(REGION_6, REGION_DEVICE_ATTR((uint32_t) INTC_MEMORY_ADDRESS, (uint32_t) INTC_MEMORY_SIZE));
-    MPU_SetRegion(REGION_7, REGION_DEVICE_ATTR((uint32_t) MFIS_REGISTER, (uint32_t) MFIS_REGISTER_SIZE));
-    MPU_SetRegion(REGION_8, REGION_DEVICE_ATTR((uint32_t) MFIS_COMMON, (uint32_t) MFIS_COMMON_SIZE));
-    MPU_SetRegion(REGION_9, REGION_DEVICE_ATTR((uint32_t) DMA_CHECK, (uint32_t) DMA_CHECK_SIZE));
-    MPU_SetRegion(REGION_10, REGION_DEVICE_ATTR((uint32_t) WWDT_REGISTER0_19, (uint32_t)  WWDT_REGISTER_0_19_SIZE));
-    MPU_SetRegion(REGION_11, REGION_DEVICE_ATTR((uint32_t) WWDT_REGISTER20, (uint32_t)  WWDT_REGISTER20_SIZE));
-    MPU_SetRegion(REGION_12, REGION_DEVICE_ATTR((uint32_t) SWDT_REGISTER, (uint32_t) SWDT_REGISTER_SIZE));
+    MPU_SetRegion(REGION_3, REGION_DEVICE_ATTR((uint32_t) SHARED_DRAM_ADDRESS, (uint32_t) SHARED_DRAM_SIZE));
+    MPU_SetRegion(REGION_4, REGION_DEVICE_ATTR((uint32_t) PERIPHERAL_START_0, (uint32_t) PERIPHERAL_SIZE_0));
+    MPU_SetRegion(REGION_5, REGION_DEVICE_ATTR((uint32_t) PERIPHERAL_START_1, (uint32_t) PERIPHERAL_SIZE_1));
+    MPU_SetRegion(REGION_6, REGION_DEVICE_ATTR((uint32_t) PERIPHERAL_START_2, (uint32_t) PERIPHERAL_SIZE_2));
 
     /* Enable MPU */
     MPU_Enable();
@@ -130,59 +100,59 @@ static void FPU_Enable()
 
 static void system_counter_init(uint32_t clock_rate) {
 #if 0 // Fix me later
-	__set_CNTFRQ(clock_rate);
+    __set_CNTFRQ(clock_rate);
 #endif
 }
 
 void SystemInit(void)
 {
-//	uint32_t tmp;
+//    uint32_t tmp;
 //
-//	tmp = __get_SCTLR();
-//	tmp &= ~SCTLR_M_Msk;			/* Disable MPU (M bit) */
-//	tmp &= ~SCTLR_C_Msk;			/* Disable data cache (C bit) */
-//	tmp &= ~SCTLR_Z_Msk;			/* Disable branch prediction (Z bit) */
-//	tmp &= ~SCTLR_I_Msk;			/* Disable instruction cache (I bit) */
-//	__DSB();
-//	__set_SCTLR(tmp);
-//	__ISB();
+//    tmp = __get_SCTLR();
+//    tmp &= ~SCTLR_M_Msk;            /* Disable MPU (M bit) */
+//    tmp &= ~SCTLR_C_Msk;            /* Disable data cache (C bit) */
+//    tmp &= ~SCTLR_Z_Msk;            /* Disable branch prediction (Z bit) */
+//    tmp &= ~SCTLR_I_Msk;            /* Disable instruction cache (I bit) */
+//    __DSB();
+//    __set_SCTLR(tmp);
+//    __ISB();
 //
-//	/* Enable Floating point hardware */
+//    /* Enable Floating point hardware */
 #if (defined(__FPU_USED) && (__FPU_USED == 1U))
     FPU_Enable();
 #endif
     // Init system counter.
     system_counter_init(SYSTEM_CLOCK_COUNTER_DEFAULT);
 //
-//	/*
-//	 * Do not use global variables because this function is called before
-//	 * reaching pre-main. RW section may be overwritten afterwards.
-//	 */
+//    /*
+//     * Do not use global variables because this function is called before
+//     * reaching pre-main. RW section may be overwritten afterwards.
+//     */
 //
-//	/* Invalidate instruction cache and flush branch target cache */
-//	__set_ICIALLU(0);
-//	__DSB();
-//	__ISB();
+//    /* Invalidate instruction cache and flush branch target cache */
+//    __set_ICIALLU(0);
+//    __DSB();
+//    __ISB();
 //
-//	L1C_InvalidateDCacheAll();
+//    L1C_InvalidateDCacheAll();
 //
-//	/*
-//	 * R-Car specific
-//	 * Set the address of the vector table using RBAR. Note that although
-//	 * we can change the address of the vector table using RBAR, as far as
-//	 * the MPU is concerned, the vector table is still at address 0x0.
-//	 */
-//#define CR7BAR	0xE6160070U
-//	writel((uint32_t)&_Reset, CR7BAR);
-//	__ISB();
-//	/* Enable BAREN */
-//	writel((uint32_t)&_Reset | BIT(4), CR7BAR);
+//    /*
+//     * R-Car specific
+//     * Set the address of the vector table using RBAR. Note that although
+//     * we can change the address of the vector table using RBAR, as far as
+//     * the MPU is concerned, the vector table is still at address 0x0.
+//     */
+//#define CR7BAR    0xE6160070U
+//    writel((uint32_t)&_Reset, CR7BAR);
+//    __ISB();
+//    /* Enable BAREN */
+//    writel((uint32_t)&_Reset | BIT(4), CR7BAR);
 //
-	Init_MPU();
+    Init_MPU();
 //
-//	L1C_EnableCaches();
-//	L1C_EnableBTAC();
-//	bss_init((void *)&__bss_start__, (void *)&__bss_end__);
+//    L1C_EnableCaches();
+//    L1C_EnableBTAC();
+//    bss_init((void *)&__bss_start__, (void *)&__bss_end__);
     __libc_init_array();
 }
 
