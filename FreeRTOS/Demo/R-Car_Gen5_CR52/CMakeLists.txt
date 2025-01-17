@@ -33,6 +33,7 @@ set(CMAKE_ASM_FLAGS "--specs=nosys.specs -mfloat-abi=hard")
 set(CMAKE_C_FLAGS "-std=gnu99")
 add_compile_options(
     -ffreestanding -mfpu=neon-fp-armv8 -mcpu=cortex-r52 -mtune=cortex-r52 -mfloat-abi=softfp
+    -Wno-unknown-pragmas
     ${global_definition}
 )
 
@@ -52,6 +53,10 @@ set(kernel_source
     ${KERNEL_DIR}/tasks.c
     ${KERNEL_DIR}/timers.c
 )
+
+file(GLOB SCMI_SRC_LIST
+    ${BSP_DIR}/drivers/firmware/scmi/src/*.c
+    )
 
 set(bsp_source
     ${BSP_DIR}/common/boot.S
@@ -81,6 +86,7 @@ set(bsp_source
     ${BSP_DIR}/drivers/ucie/ucie_host.c
     ${BSP_DIR}/drivers/ucie/ucie_ep.c
     ${BSP_DIR}/drivers/iommu/virtio_mmu.c
+    ${SCMI_SRC_LIST}
 )
 
 set(posix_source
@@ -125,6 +131,7 @@ target_include_directories(freertos_bsp
 	$<BUILD_INTERFACE:${BSP_DIR}/drivers/watchdog>
         $<BUILD_INTERFACE:${BSP_DIR}/drivers/ucie>
 	$<BUILD_INTERFACE:${BSP_DIR}/drivers/iommu>
+        $<BUILD_INTERFACE:${BSP_DIR}/drivers/firmware>
         # POSIX
         $<BUILD_INTERFACE:${BSP_DIR}/common/POSIX_portable>
         $<BUILD_INTERFACE:${POSIX_DIR}/include>
