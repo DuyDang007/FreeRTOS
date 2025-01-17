@@ -1,3 +1,9 @@
+#
+# Copyright (c) 2025 Renesas Electronics Corporation
+#
+# SPDX-License-Identifier: MIT
+#
+
 include(ExternalProject)
 
 set (C_FLAGS

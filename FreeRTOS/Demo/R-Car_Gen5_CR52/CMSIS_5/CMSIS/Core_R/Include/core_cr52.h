@@ -4,13 +4,15 @@
  * @date     31. August 2021
  ******************************************************************************/
 /*
- * Copyright [2020-2021] Renesas Electronics Corporation and/or its affiliates. All Rights Reserved.
+ * Copyright [2020-2025] Renesas Electronics Corporation and/or its affiliates. All Rights Reserved.
  *
  * This file is based on the "\CMSIS\Core\Include\core_armv8mml.h"
  *
  * Changes:
  * Renesas Electronics Corporation on 2021-08-31
  *    - Changed to be related to Cortex-R52 by
+ * Renesas Electronics Corporation on 2025-01-17
+ *    - Disabled unused functions and added some functions for Cortex-R52
  */
 /*
  * Copyright (c) 2009-2020 Arm Limited. All rights reserved.

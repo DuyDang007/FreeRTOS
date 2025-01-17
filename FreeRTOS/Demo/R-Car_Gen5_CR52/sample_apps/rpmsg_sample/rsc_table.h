@@ -3,6 +3,7 @@
  * All rights reserved.
  *
  * Copyright (C) 2015 Xilinx, Inc.  All rights reserved.
+ * Copyright (c) 2025 Renesas Electronics Corporation
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */

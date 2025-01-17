@@ -1,3 +1,9 @@
+#
+# Copyright (c) 2025 Renesas Electronics Corporation
+#
+# SPDX-License-Identifier: MIT
+#
+
 cmake_minimum_required(VERSION 3.21.0)
 
 project(rcar-freertos-bsp VERSION 1.0.0)

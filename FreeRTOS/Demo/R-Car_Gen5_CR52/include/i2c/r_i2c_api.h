@@ -1,9 +1,9 @@
 /*************************************************************************************************************
 * i2c_api_h
 * Copyright (c) [2021-2022] Renesas Electronics Corporation
-* Copyright (c) [2019-2020] Renesas Electronics (Europe) GmbH.
 * This software is released under the MIT License
 * http://opensource.org/licenses/mit-license.php
+* SPDX-License-Identifier: MIT
 *************************************************************************************************************/
 
 #ifndef R_I2C_API_H_

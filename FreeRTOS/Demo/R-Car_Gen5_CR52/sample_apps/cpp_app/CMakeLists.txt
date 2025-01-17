@@ -1,3 +1,9 @@
+#
+# Copyright (c) 2025 Renesas Electronics Corporation
+#
+# SPDX-License-Identifier: MIT
+#
+
 set(app_name "cpp_app")
 set(CMAKE_LINKER "arm-none-eabi-g++")
 add_executable(${app_name}

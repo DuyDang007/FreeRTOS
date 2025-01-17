@@ -1,3 +1,9 @@
+#
+# Copyright (c) 2025 Renesas Electronics Corporation
+#
+# SPDX-License-Identifier: MIT
+#
+
 # The CMAKE_SYSTEM_NAME  define system name for cross compiling
 set(CMAKE_SYSTEM_NAME       Generic)
 set(CMAKE_SYSTEM_PROCESSOR  arm)

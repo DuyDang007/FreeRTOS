@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2024 Texas Instruments, Inc.
+ * Copyright (c) 2025 Renesas Electronics Corporation
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */

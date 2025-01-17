@@ -1,6 +1,6 @@
 /*************************************************************************************************************
 * dmac_reg_c
-* Copyright (c) [2017-2022] Renesas Electronics Corporation
+* Copyright (c) 2025 Renesas Electronics Corporation
 * This software is released under the MIT License
 * http://opensource.org/licenses/mit-license.php
 *************************************************************************************************************/

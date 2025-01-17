@@ -1,8 +1,9 @@
-/**********************************************************/
-/* Sample program : Virtio MMU Function                   */
-/* File Name      : virtio_mmu.c                          */
-/* Copyright (C) Renesas Electronics Corp. 2025.          */
-/**********************************************************/
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: MIT
+ *
+ */
 
 #include <errno.h>
 #include "virtio_mmu.h"

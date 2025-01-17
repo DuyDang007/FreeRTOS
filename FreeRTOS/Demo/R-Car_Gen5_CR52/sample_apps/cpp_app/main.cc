@@ -1,6 +1,8 @@
 /*
- * FreeRTOS Kernel V10.2.1
- * Copyright (C) 2019 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
+ * FreeRTOS Kernel V11.1.0
+ * Copyright (C) 2021 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
+ *
+ * SPDX-License-Identifier: MIT
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -20,25 +22,8 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  *
  * http://www.FreeRTOS.org
- * http://aws.amazon.com/freertos
+ * http://github.com/FreeRTOS
  *
- * 1 tab == 4 spaces!
- */
-
-/******************************************************************************
- * This project provides two demo applications.  A simple blinky style project,
- * and a more comprehensive test and demo application.  The
- * mainCREATE_SIMPLE_BLINKY_DEMO_ONLY setting (defined in this file) is used to
- * select between the two.  The simply blinky demo is implemented and described
- * in main_blinky.c.  The more comprehensive test and demo application is
- * implemented and described in main_full.c.
- *
- * This file implements the code that is not demo specific, including the
- * hardware setup and standard FreeRTOS hook functions.
- *
- * ENSURE TO READ THE DOCUMENTATION PAGE FOR THIS PORT AND DEMO APPLICATION ON
- * THE http://www.FreeRTOS.org WEB SITE FOR FULL INFORMATION ON USING THIS DEMO
- * APPLICATION, AND ITS ASSOCIATE FreeRTOS ARCHITECTURE PORT!
  */
 
 extern "C" {

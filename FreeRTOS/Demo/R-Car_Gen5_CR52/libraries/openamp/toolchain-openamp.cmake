@@ -1,3 +1,9 @@
+#
+# Copyright (c) 2025 Renesas Electronics Corporation
+#
+# SPDX-License-Identifier: MIT
+#
+
 set(CMAKE_SYSTEM_NAME       FreeRTOS)
 set(CMAKE_SYSTEM_PROCESSOR  arm)
 set(MACHINE                 "metal" CACHE STRING "")

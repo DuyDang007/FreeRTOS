@@ -1,8 +1,9 @@
-/**********************************************************/
-/* Sample program : Virtio MMU Module Header              */
-/* File Name      : virtio_mmu.h                          */
-/* Copyright (C) Renesas Electronics Corp. 2025.          */
-/**********************************************************/
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: MIT
+ *
+ */
 
 #ifndef __VIRTIO_MMU_H__
 #define __VIRTIO_MMU_H__
