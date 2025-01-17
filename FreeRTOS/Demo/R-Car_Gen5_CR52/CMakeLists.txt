@@ -60,6 +60,7 @@ set(bsp_source
     ${BSP_DIR}/common/system_rcar_gen5.c
     ${BSP_DIR}/common/interrupts.c
     ${BSP_DIR}/common/heap_useNewlib.c
+    ${BSP_DIR}/common/idle_task.c
     ${BSP_DIR}/CMSIS_5/irq_ctrl_gic.c
     ${BSP_DIR}/drivers/gic/gicv3_cpuif.S
     ${BSP_DIR}/drivers/gic/gicv3_basic.c
