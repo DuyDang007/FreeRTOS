@@ -7,7 +7,7 @@
 *************************************************************************************************************/
 #include "FreeRTOS.h"
 #include "task.h"
-#include "r_i2c_api.h"
+#include "i2c/r_i2c_api.h"
 #include "r_i2c_regs.h"
 #include <stdio.h>
 

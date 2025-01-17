@@ -7,8 +7,6 @@ extern "C" {
 
 #include <stdint.h>
 #include <stdbool.h>
-#include "fsp/fsp_common_api.h"
-#include "fsp/r_transfer_api.h"
 /**
  * List of WWDT channels
  */

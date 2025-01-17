@@ -48,12 +48,8 @@
 
 #include "interrupts.h"
 #include "stdio.h"
-#include "gpio/r_ioport.h"
+#include "gpio/r_gpio_api.h"
 #define main_GPIO_TASK_PRIORITY        ( tskIDLE_PRIORITY + 1 )
-
-//#define printf_delay(fmt, ...)		\
-//	vTaskDelay(10);			\
-//        printf(fmt, ##__VA_ARGS__);	\
 
 extern int printf_delay(const char *format, ...);
 
@@ -67,158 +63,111 @@ static void prvSetupHardware( void );
 static void prvGPIOTask( void *pvParameters );
 
 static void gpioUserCallback(void *data);
-/*-----------------------------------------------------------*/
-
-/*
- * Declare some structs used for FSP GPIO API.
- */
-/**** Config GPIO output/input general mode ****/
-ioport_pin_cfg_t g_gpio_pin_cfg[] =
-{
-	{	
-		.pin_cfg = BSP_IO_DIRECTION_INPUT,
-		.pin = BSP_IO_PORT_00_PIN_0
-	},
-
-	{	
-		.pin_cfg = BSP_IO_DIRECTION_OUTPUT,
-		.pin = BSP_IO_PORT_00_PIN_1
-	},
-};
-
-ioport_cfg_t g_gpio_cfg =
-{
-	.number_of_pins = sizeof(g_gpio_pin_cfg)/sizeof(g_gpio_pin_cfg[0]),
-	.p_pin_cfg_data = &g_gpio_pin_cfg[0],
-	.p_extend = NULL
-};
-
-ioport_instance_ctrl_t g_gpio_instance_ctrl;
-
-/**** Config GPIO interrupt input mode ****/
-ioport_pin_cfg_t g_gpio_pin_cfg_irq =
-{
-
-	.pin_cfg = BSP_INTERRUPT_INPUT_BOTH_EDGE,
-	.pin = BSP_IO_PORT_00_PIN_9
-};
-
-ioport_cfg_t g_gpio_cfg_irq =
-{
-	.number_of_pins = 1,
-	.p_pin_cfg_data = &g_gpio_pin_cfg_irq,
-	.p_extend = NULL
-};
-
-ioport_instance_ctrl_t g_gpio_instance_ctrl_irq;
 
 /*-----------------------------------------------------------*/
 int main( void )
 {
-	/* Configure the hardware ready to run the demo. */
-	prvSetupHardware();
+    /* Configure the hardware ready to run the demo. */
+    prvSetupHardware();
 
-	xTaskCreate( prvGPIOTask, "GPIO", configMINIMAL_STACK_SIZE, NULL, main_GPIO_TASK_PRIORITY, NULL );
-	/* Start the tasks and timer running. */
-	vTaskStartScheduler();
-	for( ;; )
-	{
-	}
-	/* Don't expect to reach here. */
-	return 0;
+    xTaskCreate( prvGPIOTask, "GPIO", configMINIMAL_STACK_SIZE, NULL, main_GPIO_TASK_PRIORITY, NULL );
+    /* Start the tasks and timer running. */
+    vTaskStartScheduler();
+    for( ;; )
+    {
+    }
+    /* Don't expect to reach here. */
+    return 0;
 }
 /*-----------------------------------------------------------*/
 
 static void prvSetupHardware( void )
 {
-	/* Ensure no interrupts execute while the scheduler is in an inconsistent
-	state.  Interrupts are automatically enabled when the scheduler is
-	started. */
-	portDISABLE_INTERRUPTS();
+    /* Ensure no interrupts execute while the scheduler is in an inconsistent
+    state.  Interrupts are automatically enabled when the scheduler is
+    started. */
+    portDISABLE_INTERRUPTS();
 
-	Irq_Setup();
+    Irq_Setup();
 }
 
 static void prvGPIOTask( void *pvParameters )
 {
-	uint8_t ret;
-	int i;
-	bsp_io_level_t lv = BSP_IO_LEVEL_LOW;
+    int i;
+    uint8_t lv = 0;
 
-	bsp_io_level_t readLevel;
+    uint8_t readLevel;
 
-	/* Remove compiler warning about unused parameter. */
-	( void ) pvParameters;
+    /* Remove compiler warning about unused parameter. */
+    ( void ) pvParameters;
 
-	printf_delay("\n********** TEST: Output/Input General Mode **********\n");
+    printf_delay("\n********** TEST: Output/Input General Mode **********\n");
 
-	ret = R_IOPORT_Open(&g_gpio_instance_ctrl, &g_gpio_cfg);
-	printf_delay("Open : ret = %d\n", ret);
+    // Configure GPIO group 0 pin 0 as input
+    R_GPIO_PinConfigMode(RCAR_GPIO_GROUP_00, RCAR_PIN_00, RCAR_IO_DIRECTION_INPUT);
 
-	ret = R_IOPORT_PinRead(&g_gpio_instance_ctrl, BSP_IO_PORT_00_PIN_1, &readLevel);
-	printf_delay("PinRead: Before PIN_1=%d\n", readLevel);
-	ret |= R_IOPORT_PinRead(&g_gpio_instance_ctrl, BSP_IO_PORT_00_PIN_0, &readLevel);
-	printf_delay("PinRead: Before PIN_0=%d\n", readLevel);
-	printf_delay("--- PAUSE VDK ---\n");
-	vTaskDelay(1000);
+    // Configure GPIO group 0 pin 1 as ouput
+    R_GPIO_PinConfigMode(RCAR_GPIO_GROUP_00, RCAR_PIN_01, RCAR_IO_DIRECTION_OUTPUT);
 
-	for (i = 0; i < 2; i++)
-	{
-		lv = !lv;
-		if(lv == BSP_IO_LEVEL_LOW)
-			printf("PinWrite: LOW\n");
-		else
-			printf("PinWrite: HIGH\n");
-		ret = R_IOPORT_PinWrite(&g_gpio_instance_ctrl, BSP_IO_PORT_00_PIN_1, lv);
+    readLevel = R_GPIO_PinReadInput(RCAR_GPIO_GROUP_00, RCAR_PIN_01);
+    printf_delay("PinRead: Before PIN_1=%d\n", readLevel);
+    readLevel = R_GPIO_PinReadInput(RCAR_GPIO_GROUP_00, RCAR_PIN_00);
+    printf_delay("PinRead: Before PIN_0=%d\n", readLevel);
+    printf_delay("--- PAUSE VDK ---\n");
+    vTaskDelay(1000);
 
-		ret = R_IOPORT_PinRead(&g_gpio_instance_ctrl, BSP_IO_PORT_00_PIN_1, &readLevel);
-		printf_delay("PinRead: After PIN_1=%d\n", readLevel);
-		ret |= R_IOPORT_PinRead(&g_gpio_instance_ctrl, BSP_IO_PORT_00_PIN_0, &readLevel);
-		printf_delay("PinRead: After PIN_0=%d\n", readLevel);
-		printf_delay("--- PAUSE VDK ---\n");
-		vTaskDelay(1000);
-	}
+    for (i = 0; i < 2; i++)
+    {
+        lv = !lv;
+        if(lv == 0)
+            printf("PinWrite: LOW\n");
+        else
+            printf("PinWrite: HIGH\n");
+        R_GPIO_PinWriteOutput(RCAR_GPIO_GROUP_00, RCAR_PIN_01, lv);
 
-	ret = R_IOPORT_Close(&g_gpio_instance_ctrl);
-	printf_delay("Close: ret = %d\n", ret);
+        readLevel = R_GPIO_PinReadInput(RCAR_GPIO_GROUP_00, RCAR_PIN_01);
+        printf_delay("PinRead: After PIN_1=%d\n", readLevel);
+        readLevel = R_GPIO_PinReadInput(RCAR_GPIO_GROUP_00, RCAR_PIN_00);
+        printf_delay("PinRead: After PIN_0=%d\n", readLevel);
+        printf_delay("--- PAUSE VDK ---\n");
+        vTaskDelay(1000);
+    }
 
-	printf_delay("\n********** TEST: Interrupt Input Mode **********\n");
-	ret = R_IOPORT_Open(&g_gpio_instance_ctrl_irq, &g_gpio_cfg_irq);
-	printf_delay("Open : ret = %d\n", ret);
+    printf_delay("\n********** TEST: Interrupt Input Mode **********\n");
 
-	//printf_delay("Addr: &lv=0x%x\n", &lv);
 
-	//ret = R_IOPORT_CallbackSet(&g_gpio_instance_ctrl_irq, gpioUserCallback, &lv);
-	ret = R_IOPORT_CallbackSet(&g_gpio_instance_ctrl_irq, gpioUserCallback, &g_gpio_instance_ctrl_irq);
-	printf_delay("CallbackSet: ret = %d\n", ret);
+    rcar_gpio_data_t info = {
+        .group = RCAR_GPIO_GROUP_00,
+        .pin   = RCAR_PIN_09
+    };
+    R_GPIO_PinConfigInterruptMode(info.group, info.pin, RCAR_INTERRUPT_INPUT_BOTH_EDGE);
+    R_GPIO_SetInterruptCallback(info.group, gpioUserCallback, &info);
+    printf_delay("CallbackSet\n");
 
-	ret = R_IOPORT_PinCfg(&g_gpio_instance_ctrl_irq, BSP_IO_PORT_00_PIN_17, BSP_IO_DIRECTION_OUTPUT);
-	printf_delay("PinCfg: ret = %d\n", ret);
+    R_GPIO_PinConfigMode(RCAR_GPIO_GROUP_00, RCAR_PIN_17, RCAR_IO_DIRECTION_OUTPUT);
+    printf_delay("PinCfg\n");
 
-	/* Create signal to test interrupt */
-	for(i = 0; i < 4; i++)
-	{
-		lv = !lv;
-		if(lv == BSP_IO_LEVEL_LOW)
-			printf("Out: 0\n");
-		else
-			printf("Out: 1\n");
-		ret = R_IOPORT_PinWrite(&g_gpio_instance_ctrl_irq, BSP_IO_PORT_00_PIN_17, lv);
-		vTaskDelay(500);
-	}
+    /* Create signal to test interrupt */
+    for(i = 0; i < 4; i++)
+    {
+        lv = !lv;
+        printf("Out: %d\n", lv);
+        R_GPIO_PinWriteOutput(RCAR_GPIO_GROUP_00, RCAR_PIN_17, lv);
+        vTaskDelay(500);
+    }
 
-	ret = R_IOPORT_Close(&g_gpio_instance_ctrl_irq);
-	printf_delay("Close: ret = %d\n", ret);
 
-	for( ;; )
-	{
-	}
+    for( ;; )
+    {
+    }
 }
 
 /*-----------------------------------------------------------*/
 
 void gpioUserCallback(void *data) {
-    ioport_instance_ctrl_t * p_instance_ctrl = (ioport_instance_ctrl_t *) data;
+    
+    rcar_gpio_data_t *info = (rcar_gpio_data_t* )data;
+    R_GPIO_ClearInterrupt(info->group, info->pin);
     printf("Handle GPIO interrupt\n");
 }
 

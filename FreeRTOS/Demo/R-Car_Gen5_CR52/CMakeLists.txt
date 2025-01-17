@@ -68,13 +68,11 @@ set(bsp_source
     ${BSP_DIR}/drivers/serial/scif.c
     ${BSP_DIR}/drivers/mpu/mpu.c
     ${BSP_DIR}/drivers/gpio/r_gpio_api.c
-    ${BSP_DIR}/drivers/gpio/r_ioport.c
     ${BSP_DIR}/drivers/mfis/mfis.c
     ${BSP_DIR}/drivers/rt-dmac/rdmac_ctrl.c
     ${BSP_DIR}/drivers/rt-dmac/rdmac_reg.c
     ${BSP_DIR}/drivers/i2c/src/r_i2c.c
     ${BSP_DIR}/drivers/i2c/src/r_i2c_regs.c
-    ${BSP_DIR}/drivers/i2c/r_sci_i2c.c
     ${BSP_DIR}/drivers/watchdog/r_swdt.c
     ${BSP_DIR}/drivers/watchdog/r_wwdt.c
     ${BSP_DIR}/drivers/watchdog/r_wwdt_reg.c
