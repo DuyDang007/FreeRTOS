@@ -1,10 +1,9 @@
-/*************************************************************************************************************
-* i2c_regs_c
-* Copyright (c) [2021-2025] Renesas Electronics Corporation
-* This software is released under the MIT License
-* http://opensource.org/licenses/mit-license.php
-* SPDX-License-Identifier: MIT
-*************************************************************************************************************/
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: MIT
+ *
+ */
 
 #include "r_i2c_regs.h"
 //#include "r_print_api.h"

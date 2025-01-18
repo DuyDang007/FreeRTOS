@@ -1,3 +1,10 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: MIT
+ *
+ */
+
 #include "scif.h"
 #include "CMSIS_5/cmsis_rcar_gen5.h"
 

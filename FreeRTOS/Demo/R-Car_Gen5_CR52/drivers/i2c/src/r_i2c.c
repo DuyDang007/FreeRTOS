@@ -1,10 +1,10 @@
-/*************************************************************************************************************
-* i2c_c
-* Copyright (c) [2021-2025] Renesas Electronics Corporation
-* This software is released under the MIT License
-* http://opensource.org/licenses/mit-license.php
-* SPDX-License-Identifier: MIT
-*************************************************************************************************************/
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: MIT
+ *
+ */
+
 #include "FreeRTOS.h"
 #include "task.h"
 #include "i2c/r_i2c_api.h"

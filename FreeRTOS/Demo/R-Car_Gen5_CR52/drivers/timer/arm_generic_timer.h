@@ -1,3 +1,10 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: MIT
+ *
+ */
+
 #ifndef __arm_generic_timer_h
 #define __arm_generic_timer_h
 

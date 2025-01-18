@@ -1,9 +1,9 @@
-/*************************************************************************************************************
-* dmac_ctrl_c
-* Copyright (c) 2025 Renesas Electronics Corporation
-* This software is released under the MIT License
-* http://opensource.org/licenses/mit-license.php
-*************************************************************************************************************/
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: MIT
+ *
+ */
 
 #include <stdint.h>
 #include <stddef.h>

@@ -1,9 +1,9 @@
-/*************************************************************************************************************
-* dmac_reg_h
-* Copyright (c) 2025 Renesas Electronics Corporation
-* This software is released under the MIT License
-* http://opensource.org/licenses/mit-license.php
-*************************************************************************************************************/
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: MIT
+ *
+ */
 
 #ifndef _RDMAC_REG_H_
 #define _RDMAC_REG_H_

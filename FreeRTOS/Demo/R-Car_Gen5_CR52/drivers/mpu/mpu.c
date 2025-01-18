@@ -1,3 +1,10 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: MIT
+ *
+ */
+
 #include "mpu.h"
 
 void MPU_Enable(void) {

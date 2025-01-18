@@ -1,8 +1,9 @@
-/*************************************************************************************************************
-* Copyright (c) 2025 Renesas Electronics Corporation
-*
-* SPDX-License-Identifier: MIT
-*************************************************************************************************************/
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: MIT
+ *
+ */
 
 #include "stdio.h"
 #include "gpio/r_gpio_api.h"

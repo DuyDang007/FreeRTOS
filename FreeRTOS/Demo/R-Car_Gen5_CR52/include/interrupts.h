@@ -1,4 +1,11 @@
 /*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: MIT
+ *
+ */
+
+/*
  * CMSIS GIC wrapper
  *
  * The CMSIS GIC code does most of what we need, with the exception of

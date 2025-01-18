@@ -1,9 +1,10 @@
-/*************************************************************************************************************
-* Copyright (c) [2025] Renesas Electronics Corporation
-* This software is released under the MIT License
-* http://opensource.org/licenses/mit-license.php
-* SPDX-License-Identifier: MIT
-*************************************************************************************************************/
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: MIT
+ *
+ */
+
 #ifndef R_WWDT_REGS_H_
 #define R_WWDT_REGS_H_
 

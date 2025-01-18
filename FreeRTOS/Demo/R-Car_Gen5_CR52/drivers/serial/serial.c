@@ -1,7 +1,8 @@
 /*
- * Copyright (c) 2019-2020 Renesas Electronics Europe Ltd. All rights reserved.
+ * Copyright (c) 2025 Renesas Electronics Corporation
  *
  * SPDX-License-Identifier: MIT
+ *
  */
  
 #include <stdarg.h>

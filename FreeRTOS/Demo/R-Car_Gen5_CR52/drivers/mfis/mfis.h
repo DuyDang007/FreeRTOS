@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: MIT
+ *
+ */
 
 #ifndef MFIS_H_
 #define MFIS_H_
