@@ -8,19 +8,42 @@
 #ifndef R_GPIO_H
 #define R_GPIO_H
 
-#include <stdint.h>
 /***********************************************************************************************************************
  * Includes
  **********************************************************************************************************************/
+#include <stdint.h>
 
 
 /***********************************************************************************************************************
  * Macro definitions
  **********************************************************************************************************************/
+/**
+ * @brief Mask for GPIO port bits.
+ */
+#define GPIO_PRV_PORT_BITS       (0xFF00U)
+
+/**
+ * @brief Mask for GPIO pin bits.
+ */
+#define GPIO_PRV_PIN_BITS        (0x00FFU)
+
+/**
+ * @brief Offset for GPIO port bits.
+ */
+#define GPIO_PRV_PORT_OFFSET     (8U)
 
 /***********************************************************************************************************************
  * Typedef definitions
  **********************************************************************************************************************/
+
+/**
+ * @defgroup GPIO_Module GPIO Module
+ * @{
+ * @brief This module provides functions to configure and control GPIO pins.
+ *
+ * The GPIO module allows for the configuration and control of General Purpose Input/Output (GPIO) pins.
+ * It provides functions to open, close, configure, read, and write GPIO pins and ports.
+ */
 
 /**
  * @brief Enumeration for GPIO pin direction.
@@ -102,21 +125,9 @@ typedef enum e_gpio_pin
 } gpio_pin_t;
 
 /**
- * @brief Mask for GPIO port bits.
+ * @brief Superset list of all possible IO port pins
+ *
  */
-#define GPIO_PRV_PORT_BITS       (0xFF00U)
-
-/**
- * @brief Mask for GPIO pin bits.
- */
-#define GPIO_PRV_PIN_BITS        (0x00FFU)
-
-/**
- * @brief Offset for GPIO port bits.
- */
-#define GPIO_PRV_PORT_OFFSET     (8U)
-
-/** Superset list of all possible IO port pins. */
 typedef enum e_bsp_io_port_pin
 {
     GPIO_PORT_00_PIN_0  = 0x0000,     ///< IO port 0 pin 0
@@ -648,5 +659,7 @@ int R_GPIO_PortRead(gpio_ctrl_t * const p_ctrl, gpio_port_t port, uint32_t * p_p
  * @retval error code on failure.
  */
 int R_GPIO_PortWrite(gpio_ctrl_t * const p_ctrl, gpio_port_t port, uint32_t value, uint32_t mask);
+
+/** @} */ // end of GPIO_Module
 
 #endif // R_GPIO_H
