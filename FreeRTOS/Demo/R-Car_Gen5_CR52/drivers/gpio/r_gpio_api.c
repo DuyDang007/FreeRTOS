@@ -6,7 +6,7 @@
  */
 
 #include "stdio.h"
-#include "gpio/r_gpio_api.h"
+#include "r_gpio_api.h"
 
 #define PINS_EACH_GROUP 32
 
@@ -155,7 +155,7 @@ bool R_GPIO_PinReadInput(rcar_gpio_group_t grp, rcar_pin_t pin)
     return pin_val;
 }
 
-uint32_t R_GPIO_PortReadInput(rcar_gpio_group_t grp)
+uint32_t R_GPIO_GroupRead(rcar_gpio_group_t grp)
 {
     uint32_t pin_val;
 
@@ -182,7 +182,7 @@ int R_GPIO_PinConfigMode(rcar_gpio_group_t grp, rcar_pin_t pin,
     return 0;
 }
 
-int R_GPIO_PortConfigMode(rcar_gpio_group_t grp, uint32_t mask_directions,
+int R_GPIO_GroupConfigMode(rcar_gpio_group_t grp, uint32_t mask_directions,
                uint32_t mask_pins)
 {
     uint32_t pin_num, mask_pos;

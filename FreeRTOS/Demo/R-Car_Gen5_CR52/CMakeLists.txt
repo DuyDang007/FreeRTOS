@@ -79,6 +79,7 @@ set(bsp_source
     ${BSP_DIR}/drivers/serial/scif.c
     ${BSP_DIR}/drivers/mpu/mpu.c
     ${BSP_DIR}/drivers/gpio/r_gpio_api.c
+    ${BSP_DIR}/drivers/gpio/r_gpio.c
     ${BSP_DIR}/drivers/mfis/mfis.c
     ${BSP_DIR}/drivers/rt-dmac/rdmac_ctrl.c
     ${BSP_DIR}/drivers/rt-dmac/rdmac_reg.c

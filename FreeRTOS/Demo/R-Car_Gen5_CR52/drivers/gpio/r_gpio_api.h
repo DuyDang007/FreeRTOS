@@ -139,7 +139,7 @@ bool R_GPIO_PinReadInput(rcar_gpio_group_t grp, rcar_pin_t pin);
  * @retval 0 if successful
  *
  */
-uint32_t R_GPIO_GroupReadOutput(rcar_gpio_group_t grp);
+uint32_t R_GPIO_GroupRead(rcar_gpio_group_t grp);
 
 /**
  * Configures the settings of a pin.
