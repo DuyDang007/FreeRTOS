@@ -13,7 +13,7 @@ extern "C" {
 #endif
 
 #include <stdint.h>
-#include "i2c/r_i2c_api.h"
+#include "r_i2c_api.h"
 
 #define R_I2C_IF0_BASE    0xc11d0000
 #define R_I2C_IF1_BASE    0xc06c0000

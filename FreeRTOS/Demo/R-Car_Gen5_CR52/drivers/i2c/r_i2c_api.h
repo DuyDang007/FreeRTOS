@@ -1,10 +1,9 @@
-/*************************************************************************************************************
-* i2c_api_h
-* Copyright (c) [2021-2022] Renesas Electronics Corporation
-* This software is released under the MIT License
-* http://opensource.org/licenses/mit-license.php
-* SPDX-License-Identifier: MIT
-*************************************************************************************************************/
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: MIT
+ *
+ */
 
 #ifndef R_I2C_API_H_
 #define R_I2C_API_H_
@@ -54,7 +53,7 @@ typedef enum {
  * @retval 0 if successful
  *
  */
-uint32_t R_I2C_Write(r_i2c_Unit_t Unit, uint32_t SlaveAddr, const uint8_t *Bytes,
+uint32_t RCar_I2C_Write(r_i2c_Unit_t Unit, uint32_t SlaveAddr, const uint8_t *Bytes,
                      uint32_t NumBytes);
 
 /**
@@ -68,7 +67,7 @@ uint32_t R_I2C_Write(r_i2c_Unit_t Unit, uint32_t SlaveAddr, const uint8_t *Bytes
  * @retval 0 if successful
  *
  */
-uint32_t R_I2C_Read(r_i2c_Unit_t Unit, uint32_t SlaveAddr, uint8_t *Bytes,
+uint32_t RCar_I2C_Read(r_i2c_Unit_t Unit, uint32_t SlaveAddr, uint8_t *Bytes,
                     uint32_t NumBytes);
 
 /**
@@ -85,6 +84,7 @@ uint32_t R_I2C_Read(r_i2c_Unit_t Unit, uint32_t SlaveAddr, uint8_t *Bytes,
 uint32_t R_I2C_ReadRegMap(r_i2c_Unit_t Unit, uint32_t SlaveAddr, uint32_t SlaveReg,
                           uint8_t *Bytes, uint32_t NumBytes);
 
+void RCar_I2C_Init(r_i2c_Unit_t Unit);
 /** @} */ /* end of group I2Cgroup */
 
 #ifdef __cplusplus

@@ -7,7 +7,7 @@
 
 #include "FreeRTOS.h"
 #include "task.h"
-#include "i2c/r_i2c_api.h"
+#include "r_i2c_api.h"
 #include "r_i2c_regs.h"
 #include <stdio.h>
 
@@ -16,7 +16,6 @@
 printf(fmt, ##__VA_ARGS__);         \
 
 static int32_t  loc_WaitMsrEvent(r_i2c_Unit_t Unit, uint32_t EventMask);
-static void     loc_Init(r_i2c_Unit_t Unit);
 static uint32_t loc_ReadCommon(r_i2c_Unit_t Unit, uint32_t SlaveAddr,
                                uint8_t *Bytes, uint32_t NumBytes);
 
@@ -40,7 +39,7 @@ static int32_t loc_WaitMsrEvent(r_i2c_Unit_t Unit, uint32_t EventMask)
     return (val & R_I2C_MNR_BIT) ? -1 : 0;
 }
 
-static void loc_Init(r_i2c_Unit_t Unit)
+void RCar_I2C_Init(r_i2c_Unit_t Unit)
 {
     uintptr_t i2c_base_addr = R_I2C_PRV_GetRegbase(Unit);
 
@@ -169,14 +168,12 @@ static uint32_t loc_ReadCommon(r_i2c_Unit_t Unit, uint32_t SlaveAddr,
  * Note: the slave address is 7 bits long, i.e. does not include the
  * direction bit.
  */
-uint32_t R_I2C_Write(r_i2c_Unit_t Unit, uint32_t SlaveAddr, const uint8_t *Bytes,
+uint32_t RCar_I2C_Write(r_i2c_Unit_t Unit, uint32_t SlaveAddr, const uint8_t *Bytes,
                      uint32_t NumBytes)
 {
     uintptr_t i2c_base_addr = R_I2C_PRV_GetRegbase(Unit);
     uint32_t val;
     int r;
-
-    loc_Init(Unit);
 
     /* Clear Master Status register */
     R_I2C_PRV_RegWrite32(i2c_base_addr + R_I2C_ICMSR, 0);
@@ -279,12 +276,10 @@ uint32_t R_I2C_Write(r_i2c_Unit_t Unit, uint32_t SlaveAddr, const uint8_t *Bytes
     }
 }
 
-uint32_t R_I2C_Read(r_i2c_Unit_t Unit, uint32_t SlaveAddr, uint8_t *Bytes, uint32_t NumBytes)
+uint32_t RCar_I2C_Read(r_i2c_Unit_t Unit, uint32_t SlaveAddr, uint8_t *Bytes, uint32_t NumBytes)
 {
     uintptr_t i2c_base_addr = R_I2C_PRV_GetRegbase(Unit);
     uint32_t val;
-
-    loc_Init(Unit);
 
     /* Clear Master Status register */
     R_I2C_PRV_RegWrite32(i2c_base_addr + R_I2C_ICMSR, 0);
@@ -310,8 +305,6 @@ uint32_t R_I2C_ReadRegMap(r_i2c_Unit_t Unit, uint32_t SlaveAddr, uint32_t SlaveR
     uintptr_t i2c_base_addr = R_I2C_PRV_GetRegbase(Unit);
     uint32_t val;
     int r;
-
-    loc_Init(Unit);
 
     /* Clear Master Status register */
     R_I2C_PRV_RegWrite32(i2c_base_addr + R_I2C_ICMSR, 0);

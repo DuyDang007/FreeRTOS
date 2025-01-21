@@ -31,7 +31,7 @@
 #include "task.h"
 #include "interrupts.h"
 #include "stdio.h"
-#include "i2c/r_i2c_api.h"
+#include "i2c/r_i2c.h"
 #define main_I2C_TASK_PRIORITY        ( tskIDLE_PRIORITY + 1 )
 extern int printf_delay(const char *format, ...);
 /*-----------------------------------------------------------*/
@@ -77,26 +77,38 @@ static void prvI2CTask( void *pvParameters )
 	/* Remove compiler warning about unused parameter. */
 	( void ) pvParameters;
 
-	uint8_t send_data[] = { 0x01, 0x02}; 
-	uint8_t received_data[1];
+	uint8_t send_data[] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07};
+	uint8_t result[10];
 	/* Remove compiler warning about unused parameter. */
 	( void ) pvParameters;
 
 	/* Device driver part */
-	printf_delay("PROGRAM START\r\n");
-	printf_delay("WRITE DATA\r\n");
-	uint32_t result = R_I2C_Write(R_I2C_IF1, 0x6d, send_data, 2);
+	i2c_instance_ctrl_t g_i2c_device_ctrl_1;
+	i2c_master_cfg_t        g_i2c_device_cfg_1 =
+	{
+	    .channel       = 0,
+	    .rate          = I2C_MASTER_RATE_FAST,
+	    .slave         = 0x6d,
+	    .addr_mode     = I2C_MASTER_ADDR_MODE_7BIT,
+	    .p_callback    = NULL,     // Callback
+	    .p_context     = &g_i2c_device_ctrl_1,
+	};
+	    printf_delay("PROGRAM START\r\n");
+	    R_I2C_Open(&g_i2c_device_ctrl_1, &g_i2c_device_cfg_1);
 
-	printf_delay("READ DATA:\r\n");
-	uint32_t recv_result = R_I2C_Read(R_I2C_IF1, 0x6d, received_data, sizeof(received_data));
-	//printf("recv_result: %u\n", recv_result);
-	for (uint32_t i = 0; i < sizeof(received_data); i++) {
-		printf_delay("0x%02X ", received_data[i]);
-	}
-	printf_delay("PROGRAM END\r\n");
+	    printf_delay("WRITE DATA \r\n");
+	    R_I2C_Write(&g_i2c_device_ctrl_1, send_data, sizeof(send_data), 0);
+	    printf_delay("WRITE DONE\r\n");
+
+	    R_I2C_Read(&g_i2c_device_ctrl_1, (uint8_t *)&result, 1, 0);
+	    printf_delay("READ DATA: 0x%x\r\n", result[0]);
+	    R_I2C_Close(&g_i2c_device_ctrl_1);
+	    printf_delay("PROGRAM END\r\n");
+
 	for( ;; )
 	{
 	}
+
 }
 
 /*-----------------------------------------------------------*/
