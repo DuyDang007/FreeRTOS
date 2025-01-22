@@ -8,6 +8,15 @@
 #ifndef R_GPIO_H
 #define R_GPIO_H
 
+/**
+ * @defgroup GPIO_Module GPIO Module
+ * @{
+ * @brief This module provides functions to configure and control GPIO pins.
+ *
+ * The GPIO module allows for the configuration and control of General Purpose Input/Output (GPIO) pins.
+ * It provides functions to open, close, configure, read, and write GPIO pins and ports.
+ */
+
 /***********************************************************************************************************************
  * Includes
  **********************************************************************************************************************/
@@ -18,6 +27,7 @@
  * Macro definitions
  **********************************************************************************************************************/
 /**
+ * @def GPIO_PRV_PORT_BITS
  * @brief Mask for GPIO port bits.
  */
 #define GPIO_PRV_PORT_BITS       (0xFF00U)
@@ -35,43 +45,37 @@
 /***********************************************************************************************************************
  * Typedef definitions
  **********************************************************************************************************************/
-
-/**
- * @defgroup GPIO_Module GPIO Module
- * @{
- * @brief This module provides functions to configure and control GPIO pins.
- *
- * The GPIO module allows for the configuration and control of General Purpose Input/Output (GPIO) pins.
- * It provides functions to open, close, configure, read, and write GPIO pins and ports.
- */
-
 /**
  * @brief Enumeration for GPIO pin direction.
  */
 typedef enum e_gpio_direction
 {
-    GPIO_DIRECTION_INPUT = 0x0,
-    GPIO_DIRECTION_OUTPUT,
+    GPIO_DIRECTION_INPUT = 0x0,     ///< input.
+    GPIO_DIRECTION_OUTPUT,          ///< output.
 } gpio_direction_t;
 
-/** Input event edge detection
- *
+/** 
+ * @brief Input event edge detection.
  */
 typedef enum e_gpio_interrupt_input
 {
-    GPIO_INTERRUPT_INPUT_RISING_EDGE = 10,        ///< Rising Edge
-    GPIO_INTERRUPT_INPUT_FALLING_EDGE,		///< Falling Edge
-    GPIO_INTERRUPT_INPUT_BOTH_EDGE		///< Both Edge
+    GPIO_INTERRUPT_INPUT_RISING_EDGE = 10,  ///< Rising Edge.
+    GPIO_INTERRUPT_INPUT_FALLING_EDGE,      ///< Falling Edge.
+    GPIO_INTERRUPT_INPUT_BOTH_EDGE          ///< Both Edge.
 } gpio_interrupt_input_t;
 
-/** Levels that can be set and read for individual pins */
+/** 
+ * @brief Levels that can be set and read for individual pins.
+ */
 typedef enum e_gpio_level
 {
-    GPIO_LEVEL_LOW = 0,              ///< Low
-    GPIO_LEVEL_HIGH                  ///< High
+    GPIO_LEVEL_LOW = 0,              ///< Low.
+    GPIO_LEVEL_HIGH                  ///< High.
 } gpio_level_t;
 
-/** Superset list of all possible IO pins. */
+/** 
+ * @brief Superset list of all possible IO pins.
+ */
 typedef enum e_gpio_port
 {
     GPIO_PORT_00 = 0x00,           ///< GPIO Port 00
@@ -87,7 +91,9 @@ typedef enum e_gpio_port
     GPIO_PORT_10 = 0x0A,           ///< GPIO Port 10
 } gpio_port_t;
 
-/** Superset list of all possible IO pins. */
+/** 
+ * @brief Superset list of all possible IO pins.
+ */
 typedef enum e_gpio_pin
 {
     GPIO_PIN_00 = 0x00,           ///< GPIO Pin  00
@@ -125,8 +131,7 @@ typedef enum e_gpio_pin
 } gpio_pin_t;
 
 /**
- * @brief Superset list of all possible IO port pins
- *
+ * @brief Superset list of all possible IO port pins.
  */
 typedef enum e_bsp_io_port_pin
 {
@@ -499,16 +504,18 @@ typedef enum e_bsp_io_port_pin
  */
 typedef struct st_gpio_pin_cfg
 {
-    uint32_t pin_cfg;
-    gpio_port_pin_t pin;
+    uint32_t pin_cfg;       ///< Pin configuration.
+    gpio_port_pin_t pin;    ///< Pin identifier.
 } gpio_pin_cfg_t;
 
-/** Multiple pin configuration data for loading into registers by R_GPIO_Open() */
+/** 
+ * @brief Multiple pin configuration data for loading into registers by R_GPIO_Open().
+ */
 typedef struct st_gpio_cfg
 {
-    uint16_t                 number_of_pins; ///< Number of pins for which there is configuration data
-    gpio_pin_cfg_t const * p_pin_cfg_data; ///< Pin configuration data
-    const void             * p_extend;       ///< Pointer to hardware extend configuration
+    uint16_t                 number_of_pins; ///< Number of pins for which there is configuration data.
+    gpio_pin_cfg_t const * p_pin_cfg_data; ///< Pin configuration data.
+    const void             * p_extend;       ///< Pointer to hardware extend configuration.
 } gpio_cfg_t;
 
 /**
@@ -521,10 +528,10 @@ typedef void gpio_ctrl_t;
  */
 typedef struct st_gpio_instance_ctrl
 {
-    uint32_t open;
-    void (* p_callback)(void *);
-    void *p_context;
-    gpio_cfg_t const * p_cfg;
+    uint32_t open;                  ///< Whether or not ioport is open.
+    void (* p_callback)(void *);    ///< Pointer to the callback function.
+    void *p_context;                ///< Pointer to context to be passed into callback.
+    gpio_cfg_t const * p_cfg;       ///< Pointer to the configuration block.
 } gpio_instance_ctrl_t;
 
 /***********************************************************************************************************************
@@ -537,7 +544,7 @@ typedef struct st_gpio_instance_ctrl
  * @param[in] p_cfg Pointer to the configuration structure.
  *
  * @retval 0 on success.
- * @retval error code on failure.
+ * @retval Error code on failure.
  */
 int R_GPIO_Open(gpio_ctrl_t * const p_ctrl, const gpio_cfg_t * p_cfg);
 
