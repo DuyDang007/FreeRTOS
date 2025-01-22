@@ -7,6 +7,26 @@
 #ifndef R_SCMI_POWER_DOMAIN_ID_H_
 #define R_SCMI_POWER_DOMAIN_ID_H_
 
+/**
+ * @defgroup SCMI_Power_Domain_ID_Module SCMI Power Domain ID Module
+ * @{
+ * @brief SCMI Power Domain ID Module.
+ *
+ * SCMI Power Domain Module ID.
+ */
+
+/**
+ * @brief Power domain on.
+ */
+#define X5H_PD_POWER_STATE_ON  (0x00000000U)
+/**
+ * @brief Power domain off.
+ */
+#define X5H_PD_POWER_STATE_OFF (0x40000000U)
+
+/**
+ * @brief Power domain ID.
+ */
 typedef enum {
     X5H_POWER_DOMAIN_ID_VIPN,
     X5H_POWER_DOMAIN_ID_VCN,
@@ -265,6 +285,8 @@ typedef enum {
     X5H_POWER_DOMAIN_ID_Q_APU_P07,
     X5H_POWER_DOMAIN_ID_COUNT
 } e_scmi_power_domain_id_t;
+
+/** @} */ // end of SCMI_Power_Domain_Module_ID
 
 #endif /* R_SCMI_POWER_DOMAIN_ID_H_ */
 
