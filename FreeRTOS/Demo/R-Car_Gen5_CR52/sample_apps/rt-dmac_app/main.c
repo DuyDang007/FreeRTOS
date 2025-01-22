@@ -95,7 +95,6 @@ static void prvRDMACTask( void *pvParameters )
 	*(volatile uint32_t*)cfg.mSrcAddr = 0x123;
 	printf_delay("Value at SrcAddr: 0x%x \n",*(volatile uint32_t*)cfg.mSrcAddr);
         cfg.mTransferCount = 1;
-	cfg.mResource = DRV_RTDMAC_MEMORY;
         cfg.mDMAMode = DRV_DMAC_DMA_NO_DESCRIPTOR; // Assuming DRV_DMAC_DMA_NO_DESCRIPTOR is defined
         cfg.mSrcAddrMode = DRV_RTDMAC_ADDR_FIXED; // Assuming ADDR_MODE_FIXED is defined
         cfg.mDestAddrMode = DRV_RTDMAC_ADDR_FIXED; // Assuming ADDR_MODE_FIXED is defined
@@ -109,12 +108,6 @@ static void prvRDMACTask( void *pvParameters )
 	// Check DMA execution status
 	if (dmaStatus != 0)
 		printf_delay("DMA execution failed with status: %d\n", dmaStatus);
-
-	uint32_t rdmtcr = *(volatile uint32_t*)0x18911008;
-	if ( rdmtcr != 0)
-		printf_delay("DMA transfer count not updated: 0x%x\n", rdmtcr);
-	else 
-		printf_delay("DMA transfer count updated successfully: 0x%x\n", rdmtcr);
 
 	// Verify destination data
 	uint32_t destData = *(volatile uint32_t*)cfg.mDestAddr;

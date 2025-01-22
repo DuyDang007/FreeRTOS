@@ -7,10 +7,19 @@
 
 #ifndef _RDMAC_CTRL_H_
 #define _RDMAC_CTRL_H_
+
+/**
+ * @defgroup RTDMAC_Module RT-DMAC Module
+ * @{
+ * @brief This module provides functions to configure and control the operation of RT-DMAC.
+ *
+ * The RT-DMAC module allows for the configuration and control the operation of RT-DMAC.
+ * It provides functions to open, close, configure, read, and write of RT-DMAC.
+ */
+
 #include "rt_dmac/rdmac_common.h"
 
-
-/*!
+/**
  *  @brief          DMA intialize
  *  @details
  *  @param[in]      mode
@@ -20,7 +29,7 @@
 */
 uint16_t R_RTDMAC_RcarDmacCtrlInit(DMAC_t dev, rDmacPriorityMode_t mode);
 
-/*!
+/**
  *  @brief          DMA Execute
  *  @details
  *  @param[in]      cfg
@@ -34,7 +43,7 @@ uint16_t R_RTDMAC_RcarDmacCtrlInit(DMAC_t dev, rDmacPriorityMode_t mode);
 */
 uint16_t R_RTDMAC_RcarDmacExec(DMAC_t dev, uint8_t ch, rDmacCfg_t *cfg, rDmacDescCfg_t *descCfg);
 
-/*!
+/**
  *  @brief          DMA Stop
  *  @details
  *  @return         drv_OK
@@ -43,5 +52,7 @@ uint16_t R_RTDMAC_RcarDmacExec(DMAC_t dev, uint8_t ch, rDmacCfg_t *cfg, rDmacDes
  *  @par    Modify  (none)
 */
 uint16_t R_RTDMAC_RcarDmacStop(DMAC_t dev, uint8_t ch);
+
+/** @} */ // end of RTDMAC_Module
 
 #endif  /* _RDMAC_CTRL_H_ */
