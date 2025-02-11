@@ -15,10 +15,9 @@
 
 #define LPRINTF(format, ...) printf(format, ##__VA_ARGS__); vTaskDelay(10);
 
-/* Define shared DRAM area for each channel.
- * This is CA/Linux CMA region */
-#define SHARED_CH_RAM_BASE (0x50000000)
-#define SHARED_CH_RAM_SIZE (0x10000000)
+/* Define shared DRAM area for each channel. */
+#define SHARED_CH_RAM_BASE (0x40000000UL)
+#define SHARED_CH_RAM_SIZE (0x80000000UL)
 
 /* Remote processor operations from r52 to a720. It defines
  * notification operation and remote processor managementi operations. */
@@ -61,8 +60,8 @@ struct remoteproc * platform_create_proc(int mfis_ch, int rsc_index)
                 NULL, rsc_size,
                 NORM_NSHARED_NCACHE|PRIV_RW_USER_RW,
                 &rproc_inst.rsc_io);
-    LPRINTF("%s: mem->io->virt=%lu\r\n", __func__, (uint32_t)rproc_inst.rsc_io->virt);
-    LPRINTF("%s: mem->io->phys=%lu\r\n", __func__, (uint32_t)*rproc_inst.rsc_io->physmap);
+    LPRINTF("%s: mem->io->virt=0x%lx\r\n", __func__, (uint32_t)rproc_inst.rsc_io->virt);
+    LPRINTF("%s: mem->io->phys=0x%lx\r\n", __func__, (uint32_t)*rproc_inst.rsc_io->physmap);
     /* mmap shared memory */
     pa = SHARED_CH_RAM_BASE;
     (void *)remoteproc_mmap(&rproc_inst, (void*)&pa,

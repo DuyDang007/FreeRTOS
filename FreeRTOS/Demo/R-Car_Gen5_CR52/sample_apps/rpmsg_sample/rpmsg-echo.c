@@ -32,7 +32,8 @@
 static struct rpmsg_endpoint lept;
 static int shutdown_req = 0;
 
-void sendToRemoteTask();
+#define hello_msg "Hello world from CR52/Free-RTOS!"
+#define goodbye_msg "Good bye!"
 
 /*-----------------------------------------------------------------------------*
  *  RPMSG endpoint callbacks
@@ -40,8 +41,12 @@ void sendToRemoteTask();
 static int rpmsg_endpoint_cb(struct rpmsg_endpoint *ept, void *data, size_t len,
                  uint32_t src, void *priv)
 {
+    char payload[RPMSG_BUFFER_SIZE];
     (void)priv;
     (void)src;
+
+    memset(payload, 0, RPMSG_BUFFER_SIZE);
+    memcpy(payload, data, len);
 
     /* On reception of a shutdown we signal the application to terminate */
     if ((*(unsigned int *)data) == SHUTDOWN_MSG) {
@@ -50,7 +55,9 @@ static int rpmsg_endpoint_cb(struct rpmsg_endpoint *ept, void *data, size_t len,
         return RPMSG_SUCCESS;
     }
 
-    printf("Incoming msg: %s\r\n", (char *)data);
+    LPRINTF("Incoming msg: %s\r\n", payload);
+
+    rpmsg_send(ept, hello_msg, strlen(hello_msg));
 
     return RPMSG_SUCCESS;
 }
@@ -129,8 +136,6 @@ void echoTask( void *pvParameters )
     LPRINTF("RPMsg device TX buffer size: %#x\r\n", rpmsg_get_tx_buffer_size(&lept));
     LPRINTF("RPMsg device RX buffer size: %#x\r\n", rpmsg_get_rx_buffer_size(&lept));
 
-    xTaskCreate( sendToRemoteTask, "sendToRemoteTask", configMINIMAL_STACK_SIZE, NULL, ( tskIDLE_PRIORITY + 2 ), NULL );
-
     while(1) {
         platform_poll(platform);
         vTaskDelay(1);
@@ -151,27 +156,6 @@ task_end:
     {
         vTaskDelay(10);
     }
-}
-
-void sendToRemoteTask()
-{
-    const char *hello_msg = "Hello world from CR52/Free-RTOS!";
-    const char *goodbye_msg = "Good bye!";
-    int i, ret;
-
-    LPRINTF("Wait until the remote endpoint is ready.\r\n");
-
-    while (!is_rpmsg_ept_ready(&lept)) {
-            vTaskDelay(100);
-    }
-
-    LPRINTF("The remote endpoint is ready!\r\n")
-    for (i = 0; i < 50; i++) {
-        rpmsg_send(&lept, hello_msg, strlen(hello_msg) + 1);
-	vTaskDelay(1000);
-    }
-
-    rpmsg_send(&lept, goodbye_msg, strlen(goodbye_msg) + 1);
 }
 
 /*-----------------------------------------------------------------------------*
