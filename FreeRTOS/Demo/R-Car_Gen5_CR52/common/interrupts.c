@@ -13,6 +13,7 @@
 #include "irq_ctrl.h"
 #include "drivers/gic/gicv3_basic.h"
 #include <stdio.h>
+#include "cmsis_cp15.h"
 
 #define MAX_IRQ_NUMBER       1019
 #define DEFAULT_ISR_PRIORITY IPRIORITY(1)
@@ -99,16 +100,44 @@ static const irq_table r8a78000_irq_table[] = {
         {0x1FF, 0x1FF, STAT_UCIE_ERROR(1), MASK_UCIE_ERROR(1) },
 };
 
+/**
+ * @brief Get CPU ID that program is currently running.
+ *
+ * @param None.
+ *
+ * @return CPU ID: Affinity level 0 - read and parse from MPIDR.
+ */
+static uint8_t Irq_GetCpuId(void);
+
+/**
+ * @brief Get GICR Address based on CPU is currently running.
+ *
+ * @param None.
+ *
+ * @return GICR Address.
+ */
+static uint32_t Irq_GetGICRAddr(void);
+
+/**
+ * @brief Get Affinity that indicate CPU ID and Cluster ID.
+ *
+ * @param None.
+ *
+ * @return Affinity (level 0 and level 1) read from MPIDR.
+ */
+static uint32_t Irq_GetAffinity(void);
+
 void Irq_Setup(void)
 {
-	uint32_t rd, affinity;
-	affinity = 0;
+	uint32_t rd, affinity, gicr_addr;
+	affinity = Irq_GetAffinity();
+	gicr_addr = Irq_GetGICRAddr();
 	
 	//
 	// Configure the interrupt controller
 	//
 	// Set location of GIC
-	setGICAddr(CR52_GICD_ADDR, CR52_GICR_ADDR);
+	setGICAddr(CR52_GICD_ADDR, (void*)gicr_addr);
 	
 	// Enable GIC
 	enableGIC();
@@ -168,8 +197,9 @@ void Irq_Enable(unsigned int id)
 {
     uint32_t rd, affinity;
 
-    affinity = 0;
+    affinity = Irq_GetAffinity();
     rd = getRedistID(affinity);
+    setIntRoute(id, 0, affinity);
     setIntGroup(id, rd, GICV3_GROUP1_NON_SECURE);
     enableInt(id, rd);
 }
@@ -182,7 +212,8 @@ int32_t IRQ_Enable (IRQn_ID_t irqn)
 
 void Irq_Disable(unsigned int id)
 {
-	disableInt(id, CR52_CPU_ID);
+	uint32_t cpu_id = (uint32_t)Irq_GetCpuId();
+	disableInt(id, cpu_id);
 }
 /* Legacy: IRQ_Disable should not be used */
 int32_t IRQ_Disable (IRQn_ID_t irqn)
@@ -192,8 +223,8 @@ int32_t IRQ_Disable (IRQn_ID_t irqn)
 }
 
 void Irq_SetPriority(unsigned int id, uint8_t priority)
-{	
-	setIntPriority(id, CR52_CPU_ID, priority);
+{	uint32_t cpu_id = (uint32_t)Irq_GetCpuId();
+	setIntPriority(id, cpu_id, priority);
 }
 
 
@@ -276,4 +307,26 @@ int Irq_GetMergeStatReg(unsigned int id)
 		return t_id;
 
 	return Irq_RegRead(r8a78000_irq_table[t_id].status_reg);
+}
+
+static uint8_t Irq_GetCpuId(void)
+{
+        uint32_t mpidr = __get_MPIDR();
+        uint8_t cpu_id = mpidr & 0xFF;
+        return cpu_id;
+}
+
+static uint32_t Irq_GetGICRAddr(void)
+{
+	uint8_t cpu_id = Irq_GetCpuId();
+	uint32_t gicr_addr = CR52_GIC_BASE_ADDR + gicr_offset_table[cpu_id];
+	return gicr_addr;
+
+}
+
+static uint32_t Irq_GetAffinity(void)
+{
+        uint32_t mpidr = __get_MPIDR();
+        uint32_t affinity = mpidr & 0xFFFF; // Get Affinity level 0 & 1
+        return affinity;
 }

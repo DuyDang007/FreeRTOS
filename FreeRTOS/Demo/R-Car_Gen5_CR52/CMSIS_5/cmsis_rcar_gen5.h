@@ -42,6 +42,7 @@
 #define CR52_GICD_ADDR          ((void *)0xF0000000U)
 #define CR52_GICR_ADDR          ((void *)0xF0100000U)
 #define CR52_CPU_ID             0
+#define CR52_GIC_BASE_ADDR      (0xF0000000U)
 
 #define BIT(nr)                   (1UL << (nr))
 /* Not going to list all the interrupts */
@@ -50,6 +51,9 @@ typedef	unsigned int IRQn_Type;
 #include "core_cr52.h"
 
 typedef uintptr_t mem_addr_t;
+
+/*GICR memory map table*/
+static const uint32_t gicr_offset_table[4] = {0x100000, 0x120000, 0x140000, 0x160000};
 
 static void barrier_dmem_fence_full() {
     // Todo
