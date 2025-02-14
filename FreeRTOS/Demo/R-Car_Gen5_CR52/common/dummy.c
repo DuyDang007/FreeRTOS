@@ -10,6 +10,11 @@
 #include <errno.h>
 
 //Dummy for these function when using newlib
+__attribute__((weak)) int _open(int fd)
+{
+  return (0);
+}
+
 __attribute__((weak)) int _close(int fd)
 {
 //  (void)fd;
