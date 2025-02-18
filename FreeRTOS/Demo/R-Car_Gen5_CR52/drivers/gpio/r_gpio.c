@@ -67,9 +67,9 @@ int R_GPIO_CallbackSet(gpio_ctrl_t * const p_ctrl, void ( *p_callback)(void *), 
     p_instance_ctrl->p_callback        = p_callback;
     p_instance_ctrl->p_context         = p_context;
 
-	/* Get port and pin number */
-	uint32_t port_pin = p_instance_ctrl->p_cfg->p_pin_cfg_data->pin;
-    uint32_t port_num = (GPIO_PRV_PORT_BITS & (uint32_t)port_pin) >> GPIO_PRV_PORT_OFFSET;
+    /* Get port and pin number */
+    uint32_t port_pin = p_instance_ctrl->p_cfg->p_pin_cfg_data->pin;
+    uint32_t port_num = (GPIO_PRV_PORT_BITS & port_pin) >> GPIO_PRV_PORT_OFFSET;
 
     R_GPIO_SetInterruptCallback(port_num, (void *)r_gpio_isr_handler, p_context);
 }
@@ -78,7 +78,7 @@ int R_GPIO_PinRead(gpio_ctrl_t * const p_ctrl, gpio_port_pin_t pin, gpio_level_t
 
     uint32_t port_num = (GPIO_PRV_PORT_BITS & (uint32_t)pin) >> GPIO_PRV_PORT_OFFSET;
     uint32_t pin_num  = (GPIO_PRV_PIN_BITS & (uint32_t)pin);
-	*p_pin_value = R_GPIO_PinReadInput(port_num, pin_num);
+    *p_pin_value = R_GPIO_PinReadInput(port_num, pin_num);
 
     return 0;
 }
@@ -95,7 +95,7 @@ int R_GPIO_PortDirectionSet(gpio_ctrl_t * const p_ctrl,
                                     gpio_port_t         port,
                                     uint32_t            direction_values,
                                     uint32_t            mask) {
-	R_GPIO_GroupConfigMode(port, direction_values, mask);
+    R_GPIO_GroupConfigMode(port, direction_values, mask);
     return 0;
 
 }
@@ -107,6 +107,14 @@ int R_GPIO_PortRead(gpio_ctrl_t * const p_ctrl, gpio_port_t port, uint32_t * p_p
 
 int R_GPIO_PortWrite(gpio_ctrl_t * const p_ctrl, gpio_port_t port, uint32_t value, uint32_t mask) {
     R_GPIO_GroupWriteOutput(port, value, mask);
+    return 0;
+}
+
+int R_GPIO_PinSetPull(gpio_ctrl_t * const p_ctrl, gpio_port_pin_t pin, gpio_request_pull_t option) {
+
+    uint32_t port_num = (GPIO_PRV_PORT_BITS & (uint32_t)pin) >> GPIO_PRV_PORT_OFFSET;
+    uint32_t pin_num  = (GPIO_PRV_PIN_BITS & (uint32_t)pin);
+    (void)R_GPIO_PinRequestPinFunction(port_num, pin_num, option);
     return 0;
 }
 

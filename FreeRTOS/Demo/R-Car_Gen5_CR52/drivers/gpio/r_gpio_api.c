@@ -6,11 +6,12 @@
  */
 
 #include "stdio.h"
+#include "r_pfc_api.h"
 #include "r_gpio_api.h"
 
 #define PINS_EACH_GROUP 32
 
-#define BASE_ADDR_ERR           0xABCD
+#define GPIO_BASE_ADDR_ERR           0xABCD
 
 /* GPIO Bus Domain:
  * By default: use Bus Domain 0.
@@ -28,65 +29,37 @@
 #define CLR_AREA            0x400
 
 /* GPIO base adrress */
-#define GPIO_GR_0           0xC1080000
-#define GPIO_GR_1           0xC1080800
-#define GPIO_GR_2           0xC1081000
-#define GPIO_GR_3           0xC0800000
-#define GPIO_GR_4           0xC0800800
-#define GPIO_GR_5           0xC0400000
-#define GPIO_GR_6           0xC0400800
-#define GPIO_GR_7           0xC0401000
-#define GPIO_GR_8           0xC0401800
-#define GPIO_GR_9           0xC9B00000
-#define GPIO_GR_10          0xC9B00800
-
-#define BIT(nr)             (1UL << (nr))
+#define GPIO_BASE_OFFSET    0x100
+#define GPIO_GR_0           (0xC1080000 + GPIO_BASE_OFFSET)
+#define GPIO_GR_1           (0xC1080800 + GPIO_BASE_OFFSET)
+#define GPIO_GR_2           (0xC1081000 + GPIO_BASE_OFFSET)
+#define GPIO_GR_3           (0xC0800000 + GPIO_BASE_OFFSET)
+#define GPIO_GR_4           (0xC0800800 + GPIO_BASE_OFFSET)
+#define GPIO_GR_5           (0xC0400000 + GPIO_BASE_OFFSET)
+#define GPIO_GR_6           (0xC0400800 + GPIO_BASE_OFFSET)
+#define GPIO_GR_7           (0xC0401000 + GPIO_BASE_OFFSET)
+#define GPIO_GR_8           (0xC0401800 + GPIO_BASE_OFFSET)
+#define GPIO_GR_9           (0xC9B00000 + GPIO_BASE_OFFSET)
+#define GPIO_GR_10          (0xC9B00800 + GPIO_BASE_OFFSET)
 
 /* GPIO register: offset address */
-#define GP_PMMR             0x000
-#define GP_PMMER            0x004
-#define GP_PSER             0x008
-#define GP_PSSR0            0x00C
-#define GP_PSSR1            0x010
-#define GP_DMPR0            0x020
-#define GP_DMPR1            0x024
-#define GP_DMPR2            0x028
-#define GP_DMPR3            0x02C
-#define GP_GPSR             0x040
-#define GP_ALTSEL0          0x060
-#define GP_ALTSEL1          0x064
-#define GP_ALTSEL2          0x068
-#define GP_ALTSEL3          0x06C
-#define GP_DRVCTRL0         0x080
-#define GP_DRVCTRL1         0x084
-#define GP_DRVCTRL2         0x088
-#define GP_TDSEL0           0x094
-#define GP_TDSEL1           0x098
-#define GP_PULLEN           0x0C0
-#define GP_PUDSEL           0x0C4
-#define GP_MODSEL           0x100
-#define GP_IOINTSEL         0x110
-#define GP_INOUTSEL         0x114
-#define GP_OUTDT            0x118
-#define GP_OUTDTSEL         0x11C
-#define GP_OUTDTH           0x120
-#define GP_OUTDTL           0x124
-#define GP_INEN             0x128
-#define GP_INDT             0x12C
-#define GP_INTDT            0x190
-#define GP_INTCLR           0x194
-#define GP_INTMSK           0x198
-#define GP_MSKCLR           0x19C
-#define GP_POSNEG           0x1A0
-#define GP_EDGLEVEL         0x1A4
-#define GP_FILONOFF         0x1A8
-#define GP_FILCLKSEL            0x1AC
-#define GP_BOTHEDGE         0x1CC
-
-enum e_pfc_mode {
-    PFC_PERIPHERAL = 0,
-    PFC_GPIO
-};
+#define GP_IOINTSEL         0x010
+#define GP_INOUTSEL         0x014
+#define GP_OUTDT            0x018
+#define GP_OUTDTSEL         0x01C
+#define GP_OUTDTH           0x020
+#define GP_OUTDTL           0x024
+#define GP_INEN             0x028
+#define GP_INDT             0x02C
+#define GP_INTDT            0x090
+#define GP_INTCLR           0x094
+#define GP_INTMSK           0x098
+#define GP_MSKCLR           0x09C
+#define GP_POSNEG           0x0A0
+#define GP_EDGLEVEL         0x0A4
+#define GP_FILONOFF         0x0A8
+#define GP_FILCLKSEL        0x0AC
+#define GP_BOTHEDGE         0x0CC
 
 static void writel(const uint32_t value, const uintptr_t address);
 
@@ -99,14 +72,6 @@ static uint32_t getbit_l(uint32_t addr, uint32_t pos);
 static void clearbit_l(uint32_t addr, uint32_t pos);
 
 static uint32_t getGpioRegister(rcar_gpio_group_t grp, uint32_t offset);
-
-static void pfcWrite(rcar_gpio_group_t grp, uint32_t addr, uint32_t val);
-
-static void pfcSetGPSR(uint8_t gpio, rcar_gpio_group_t grp, rcar_pin_t pin);
-
-static void pfcSetPeripheral(rcar_gpio_group_t grp, rcar_pin_t pin);
-
-static void pfcSetGPIO(rcar_gpio_group_t grp, rcar_pin_t pin);
 
 static void gpioSetGeneralOutputMode(rcar_gpio_group_t grp, rcar_pin_t pin);
 
@@ -182,6 +147,26 @@ int R_GPIO_PinConfigMode(rcar_gpio_group_t grp, rcar_pin_t pin,
     return 0;
 }
 
+int R_GPIO_PinRequestPinFunction(rcar_gpio_group_t grp, rcar_pin_t pin,
+                                rcar_req_pfc_functions_t option)
+{
+    switch (option) {
+    case RCAR_IO_REQ_PFC_PULL_DOWN:
+        pfcSetPullDown(grp, pin);
+        break;
+    case RCAR_IO_REQ_PFC_PULL_UP:
+        pfcSetPullUp(grp, pin);
+        break;
+    case RCAR_IO_REQ_PFC_NO_PULL:
+        pfcSetNoPull(grp, pin);
+        break;
+    default:
+        return -1;
+    }
+
+    return 0;
+}
+
 int R_GPIO_GroupConfigMode(rcar_gpio_group_t grp, uint32_t mask_directions,
                uint32_t mask_pins)
 {
@@ -200,10 +185,10 @@ int R_GPIO_GroupConfigMode(rcar_gpio_group_t grp, uint32_t mask_directions,
 }
 
 int R_GPIO_PinConfigInterruptMode(rcar_gpio_group_t grp, rcar_pin_t pin,
-                        rcar_interrupt_input_t trigger_mode)
+                                 rcar_interrupt_input_t trigger_mode)
 {
     /* Set Peripheral Function to GPIO */
-    pfcSetGPIO(grp, pin);
+    (void)pfcSetGPIO(grp, pin);
 
     /* (1) Set the positive or negative logic as the interrupt
      *     input condition in POSNEG.
@@ -380,7 +365,7 @@ static uint32_t getGpioRegister(rcar_gpio_group_t grp, uint32_t offset)
         base_addr = GPIO_GR_10;
         break;
     default:
-        base_addr = BASE_ADDR_ERR;
+        base_addr = GPIO_BASE_ADDR_ERR;
         goto hang_drive;
     }
 
@@ -393,38 +378,12 @@ hang_drive:
     while(1);
 }
 
-static void pfcWrite(rcar_gpio_group_t grp, uint32_t addr, uint32_t val)
-{
-    writel(~val, getGpioRegister(grp, GP_PMMR));
-    writel(val, addr);
-}
-
-static void pfcSetGPIO(rcar_gpio_group_t grp, rcar_pin_t pin)
-{
-    pfcSetGPSR(PFC_GPIO, grp, pin);
-}
-
-static void pfcSetGPSR(uint8_t gpio, rcar_gpio_group_t grp, rcar_pin_t pin)
-{
-    uint32_t val, reg_addr;
-
-    reg_addr = getGpioRegister(grp, GP_GPSR);
-    val = readl(reg_addr);
-    val = gpio ? val & ~BIT(pin) : val | BIT(pin);
-    pfcWrite(grp, reg_addr, val);
-}
-
-static void pfcSetPeripheral(rcar_gpio_group_t grp, rcar_pin_t pin)
-{
-    pfcSetGPSR(PFC_PERIPHERAL, grp, pin);
-}
-
 static void gpioSetGeneralOutputMode(rcar_gpio_group_t grp, rcar_pin_t pin)
 {
     uint8_t lvl = 0;
 
     /* Set Peripheral Function to GPIO */
-    pfcSetGPIO(grp, pin);
+    (void)pfcSetGPIO(grp, pin);
 
     /* (1) Set the initial values of the output ports in OUTDT.  
      *     Set the positive or negative logic in POSNEG.
@@ -450,7 +409,7 @@ static void gpioSetGeneralOutputMode(rcar_gpio_group_t grp, rcar_pin_t pin)
 static void gpioSetGeneralInputMode(rcar_gpio_group_t grp, rcar_pin_t pin)
 {
     /* Set Peripheral Function to GPIO */
-    pfcSetGPIO(grp, pin);
+    (void)pfcSetGPIO(grp, pin);
 
     /* (1) Set the positive (not inverted) or negative (inverted)
      *     logic for processing the input signals in POSNEG.
@@ -466,4 +425,3 @@ static void gpioSetGeneralInputMode(rcar_gpio_group_t grp, rcar_pin_t pin)
     /* (3) Set general input mode in INOUTSEL. */
     clearbit_l(getGpioRegister(grp, GP_INOUTSEL), pin);
 }
-

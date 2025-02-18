@@ -74,6 +74,16 @@ typedef enum e_gpio_level
 } gpio_level_t;
 
 /** 
+ * @brief Enumeration for GPIO requets PFC.
+ */
+typedef enum e_gpio_request_pull
+{
+    GPIO_REQ_PULL_DOWN = 0,         ///< Pull down.
+    GPIO_REQ_PULL_UP,               ///< Pull up.
+    GPIO_REQ_NO_PULL                ///< No pull.
+} gpio_request_pull_t;
+
+/** 
  * @brief Superset list of all possible IO pins.
  */
 typedef enum e_gpio_port
@@ -592,6 +602,18 @@ int R_GPIO_PinCfg(gpio_ctrl_t * const p_ctrl, gpio_port_pin_t pin, uint32_t cfg)
  * @retval error code on failure.
  */
 int R_GPIO_PinInterruptInput(gpio_ctrl_t * const p_ctrl, gpio_port_pin_t pin, gpio_interrupt_input_t option);
+
+/**
+ * @brief GPIO requests pin function control.
+ *
+ * @param[in] p_ctrl Pointer to the control structure.
+ * @param[in] pin GPIO pin to configure.
+ * @param[in] option Pin function control.
+ *
+ * @retval 0 on success.
+ * @retval error code on failure.
+ */
+int R_GPIO_PinSetPull(gpio_ctrl_t * const p_ctrl, gpio_port_pin_t pin, gpio_request_pull_t option);
 
 /**
  * @brief Set a callback function for GPIO events.

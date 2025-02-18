@@ -92,6 +92,7 @@ set(bsp_source
     ${BSP_DIR}/drivers/mpu/mpu.c
     ${BSP_DIR}/drivers/gpio/r_gpio_api.c
     ${BSP_DIR}/drivers/gpio/r_gpio.c
+    ${BSP_DIR}/drivers/pfc/r_pfc_api.c
     ${BSP_DIR}/drivers/mfis/mfis.c
     ${BSP_DIR}/drivers/rt-dmac/rdmac_ctrl.c
     ${BSP_DIR}/drivers/rt-dmac/rdmac_reg.c
@@ -138,18 +139,19 @@ target_include_directories(freertos_bsp
     PUBLIC
         $<BUILD_INTERFACE:${KERNEL_DIR}/include>
         $<BUILD_INTERFACE:${BSP_DIR}/include>
-	$<BUILD_INTERFACE:${BSP_DIR}/include/iommu>
+        $<BUILD_INTERFACE:${BSP_DIR}/include/iommu>
         $<BUILD_INTERFACE:${BSP_DIR}/drivers/mpu>
         $<BUILD_INTERFACE:${BSP_DIR}/drivers/serial>
         $<BUILD_INTERFACE:${BSP_DIR}/drivers/timer>
         $<BUILD_INTERFACE:${BSP_DIR}/drivers/gic>
         $<BUILD_INTERFACE:${BSP_DIR}/drivers/mfis>
+        $<BUILD_INTERFACE:${BSP_DIR}/drivers/pfc>
         $<BUILD_INTERFACE:${BSP_DIR}/drivers/gpio>
         $<BUILD_INTERFACE:${BSP_DIR}/drivers/i2c>
         $<BUILD_INTERFACE:${BSP_DIR}/drivers/rt-dmac>
-	$<BUILD_INTERFACE:${BSP_DIR}/drivers/watchdog>
+        $<BUILD_INTERFACE:${BSP_DIR}/drivers/watchdog>
         $<BUILD_INTERFACE:${BSP_DIR}/drivers/ucie>
-	$<BUILD_INTERFACE:${BSP_DIR}/drivers/iommu>
+        $<BUILD_INTERFACE:${BSP_DIR}/drivers/iommu>
         $<BUILD_INTERFACE:${BSP_DIR}/drivers/firmware/scmi/inc>
         # POSIX
         $<BUILD_INTERFACE:${BSP_DIR}/common/POSIX_portable>
