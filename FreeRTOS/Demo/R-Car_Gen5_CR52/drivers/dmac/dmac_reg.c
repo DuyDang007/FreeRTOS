@@ -8,8 +8,8 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdio.h>
-#include "rt_dmac/rdmac_common.h"
-#include "rdmac_reg.h"
+#include "dmac/dmac_common.h"
+#include "dmac_reg.h"
 
 extern int printf_delay(const char *format, ...);
 
@@ -40,7 +40,15 @@ static volatile uint32_t fBaseAddress[DRV_RTDMAC_UNIT_NUM] = {
     DRV_RTDMAC_REG_ADDR_DMACP0,
     DRV_RTDMAC_REG_ADDR_DMACP1,
     DRV_RTDMAC_REG_ADDR_DMACP2,
-    DRV_RTDMAC_REG_ADDR_DMACP3
+    DRV_RTDMAC_REG_ADDR_DMACP3,
+    DRV_SYSDMAC_REG_ADDR_DMAC0,
+    DRV_SYSDMAC_REG_ADDR_DMAC1,
+    DRV_SYSDMAC_REG_ADDR_DMAC2,
+    DRV_SYSDMAC_REG_ADDR_DMAC3,
+    DRV_SYSDMAC_REG_ADDR_DMACP0,
+    DRV_SYSDMAC_REG_ADDR_DMACP1,
+    DRV_SYSDMAC_REG_ADDR_DMACP2,
+    DRV_SYSDMAC_REG_ADDR_DMACP3
 };
 
 const uint32_t rDmacCH_MaskTable[] = {

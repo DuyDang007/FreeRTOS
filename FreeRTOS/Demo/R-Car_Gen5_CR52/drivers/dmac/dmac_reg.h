@@ -19,6 +19,17 @@
 #define DRV_RTDMAC_REG_ADDR_DMACP2          (0x1943A000U)      /* RTDMACP2 */
 #define DRV_RTDMAC_REG_ADDR_DMACP3          (0x1943B000U)      /* RTDMACP3 */
 
+/* Definition of SYSDMAC address */
+#define DRV_SYSDMAC_REG_ADDR_DMAC0			(0xC0900000U)      /* SYSDMAC0 */
+#define DRV_SYSDMAC_REG_ADDR_DMAC1			(0xC0480000U)      /* SYSDMAC1 */
+#define DRV_SYSDMAC_REG_ADDR_DMAC2			(0xC0490000U)      /* SYSDMAC2 */
+#define DRV_SYSDMAC_REG_ADDR_DMAC3			(0xC04A0000U)      /* SYSDMAC3 */
+
+#define DRV_SYSDMAC_REG_ADDR_DMACP0			(0xC0940000U)      /* SYSDMACP0 */
+#define DRV_SYSDMAC_REG_ADDR_DMACP1			(0xC05C4000U)      /* SYSDMACP1 */
+#define DRV_SYSDMAC_REG_ADDR_DMACP2			(0xC05C5000U)      /* SYSDMACP2 */
+#define DRV_SYSDMAC_REG_ADDR_DMACP3			(0xC05C6000U)      /* SYSDMACP3 */
+
 #define DRV_RTDMAC_REG_MASK_CH0             (0x00000001U)      /* CH0 use bit mask */
 #define DRV_RTDMAC_REG_MASK_CH1             (0x00000002U)      /* CH1 use bit mask */
 #define DRV_RTDMAC_REG_MASK_CH2             (0x00000004U)      /* CH2 use bit mask */
@@ -61,6 +72,23 @@
 #define DRV_RTDMAC_REG_RDMCHCR_DPM_REP      (0x20000000U)
 #define DRV_RTDMAC_REG_RDMCHCR_DPM_READ     (0x30000000U)
 
+#define MID_RID_I2C1_MST_RX                 (0x92U)	/* I2C1 DMARS ID Master RX */
+#define MID_RID_I2C1_MST_TX                 (0x93U)	/* I2C1 DMARS ID Master TX*/
+#define MID_RID_I2C2_MST_RX                 (0x94U)	/* I2C2 DMARS ID Master RX */
+#define MID_RID_I2C2_MST_TX                 (0x95U)	/* I2C2 DMARS ID Master TX*/
+#define MID_RID_I2C3_MST_RX                 (0x96U)	/* I2C3 DMARS ID Master RX */
+#define MID_RID_I2C3_MST_TX                 (0x97U)	/* I2C3 DMARS ID Master TX*/
+#define MID_RID_I2C4_MST_RX                 (0x98U)	/* I2C4 DMARS ID Master RX */
+#define MID_RID_I2C4_MST_TX                 (0x99U)	/* I2C4 DMARS ID Master TX*/
+#define MID_RID_I2C5_MST_RX                 (0x9AU)	/* I2C5 DMARS ID Master RX */
+#define MID_RID_I2C5_MST_TX                 (0x9BU)	/* I2C5 DMARS ID Master TX*/
+#define MID_RID_I2C6_MST_RX                 (0x9CU)	/* I2C6 DMARS ID Master RX */
+#define MID_RID_I2C6_MST_TX                 (0x9DU)	/* I2C6 DMARS ID Master TX*/
+#define MID_RID_I2C7_MST_RX                 (0x9EU)	/* I2C7 DMARS ID Master RX */
+#define MID_RID_I2C7_MST_TX                 (0x9FU)	/* I2C7 DMARS ID Master TX*/
+#define MID_RID_I2C8_MST_RX                 (0xB0U)	/* I2C8 DMARS ID Master RX */
+#define MID_RID_I2C8_MST_TX                 (0xB1U)	/* I2C8 DMARS ID Master TX*/
+
 #define DRV_RTDMAC_REG_PRIO_FIX             0U
 #define DRV_RTDMAC_REG_PRIO_RR              3U
 
@@ -96,7 +124,7 @@
 enum REGISTER {
     DRV_RTDMAC_REG0,
     DRV_RTDMAC_REG1,
-    DRV_RTDMAC_UNIT_NUM = 8
+    DRV_RTDMAC_UNIT_NUM = 16
 };
 
 /* Structure of register access definitions */

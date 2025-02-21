@@ -1,5 +1,5 @@
 /*************************************************************************************************************
-* dmac_ctrl_h
+* rtdmac_ctrl_h
 * Copyright (c) 2025 Renesas Electronics Corporation
 * This software is released under the MIT License
 * http://opensource.org/licenses/mit-license.php
@@ -11,16 +11,16 @@
 /**
  * @defgroup RTDMAC_Module RT-DMAC Module
  * @{
- * @brief This module provides functions to configure and control the operation of RT-DMAC.
+ * @brief This module provides functions to configure and control the operation of RT-DMAC/SYS-DMAC.
  *
  * The RT-DMAC module allows for the configuration and control the operation of RT-DMAC.
  * It provides functions to open, close, configure, read, and write of RT-DMAC.
  */
 
-#include "rt_dmac/rdmac_common.h"
+#include "dmac/dmac_common.h"
 
 /**
- *  @brief          DMA intialize
+ *  @brief          RT-DMA intialize
  *  @details
  *  @param[in]      mode
  *  @return         drv_OK
@@ -30,7 +30,7 @@
 uint16_t R_RTDMAC_RcarDmacCtrlInit(DMAC_t dev, rDmacPriorityMode_t mode);
 
 /**
- *  @brief          DMA Execute
+ *  @brief          RT-DMA Execute
  *  @details
  *  @param[in]      cfg
  *  @param[in]      descCfg
@@ -44,7 +44,7 @@ uint16_t R_RTDMAC_RcarDmacCtrlInit(DMAC_t dev, rDmacPriorityMode_t mode);
 uint16_t R_RTDMAC_RcarDmacExec(DMAC_t dev, uint8_t ch, rDmacCfg_t *cfg, rDmacDescCfg_t *descCfg);
 
 /**
- *  @brief          DMA Stop
+ *  @brief          RT-DMA Stop
  *  @details
  *  @return         drv_OK
  *  @return         drv_ERR_NOT_INITIALIZED
@@ -52,6 +52,18 @@ uint16_t R_RTDMAC_RcarDmacExec(DMAC_t dev, uint8_t ch, rDmacCfg_t *cfg, rDmacDes
  *  @par    Modify  (none)
 */
 uint16_t R_RTDMAC_RcarDmacStop(DMAC_t dev, uint8_t ch);
+
+/**
+ * @brief Set a callback function for RT-DMAC events.
+ *
+ * @param[in] p_ctrl Pointer to the control structure.
+ * @param[in] p_callback Pointer to the callback function.
+ * @param[in] p_context Pointer to the user context.
+ *
+ * @retval 0 on success.
+ * @retval error code on failure.
+*/
+uint16_t R_RTDMAC_RcarCallBackSet(dmac_ctrl_t * const p_ctrl, void ( *p_callback)(void *), void * const p_context);
 
 /** @} */ // end of RTDMAC_Module
 

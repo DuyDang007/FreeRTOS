@@ -71,6 +71,174 @@
 #define INTID_GPIO_NO_EXIST    0x0
 
 /**
+ * @brief Interrupt IDs of SYS-DMAC group 1
+ */
+#define INTID_SYSDMA1_CH0                0x013A
+#define INTID_SYSDMA1_CH1                0x013A
+#define INTID_SYSDMA1_CH2                0x013B
+#define INTID_SYSDMA1_CH3                0x013B
+#define INTID_SYSDMA1_CH4                0x013C
+#define INTID_SYSDMA1_CH5                0x013C
+#define INTID_SYSDMA1_CH6                0x013D
+#define INTID_SYSDMA1_CH7                0x013D
+#define INTID_SYSDMA1_CH8                0x013E
+#define INTID_SYSDMA1_CH9                0x013E
+#define INTID_SYSDMA1_CH10               0x013F
+#define INTID_SYSDMA1_CH11               0x013F
+#define INTID_SYSDMA1_CH12               0x0140
+#define INTID_SYSDMA1_CH13               0x0140
+#define INTID_SYSDMA1_CH14               0x0141
+#define INTID_SYSDMA1_CH15               0x0141
+#define INTID_SYSDMA1_NO_EXIST           0x0
+
+/**
+ * @brief Interrupt IDs of SYS-DMAC group 2
+ */
+#define INTID_SYSDMA2_CH0                0x0142
+#define INTID_SYSDMA2_CH1                0x0142
+#define INTID_SYSDMA2_CH2                0x0143
+#define INTID_SYSDMA2_CH3                0x0143
+#define INTID_SYSDMA2_CH4                0x0144
+#define INTID_SYSDMA2_CH5                0x0144
+#define INTID_SYSDMA2_CH6                0x0145
+#define INTID_SYSDMA2_CH7                0x0145
+#define INTID_SYSDMA2_CH8                0x0146
+#define INTID_SYSDMA2_CH9                0x0146
+#define INTID_SYSDMA2_CH10               0x0147
+#define INTID_SYSDMA2_CH11               0x0147
+#define INTID_SYSDMA2_CH12               0x0148
+#define INTID_SYSDMA2_CH13               0x0148
+#define INTID_SYSDMA2_CH14               0x0149
+#define INTID_SYSDMA2_CH15               0x0149
+#define INTID_SYSDMA2_NO_EXIST           0x0
+
+/**
+ * @brief Interrupt IDs of SYS-DMAC group 3
+ */
+#define INTID_SYSDMA3_CH0                0x014A
+#define INTID_SYSDMA3_CH1                0x014A
+#define INTID_SYSDMA3_CH2                0x014B
+#define INTID_SYSDMA3_CH3                0x014B
+#define INTID_SYSDMA3_CH4                0x014C
+#define INTID_SYSDMA3_CH5                0x014C
+#define INTID_SYSDMA3_CH6                0x014D
+#define INTID_SYSDMA3_CH7                0x014D
+#define INTID_SYSDMA3_CH8                0x014E
+#define INTID_SYSDMA3_CH9                0x014E
+#define INTID_SYSDMA3_CH10               0x014F
+#define INTID_SYSDMA3_CH11               0x014F
+#define INTID_SYSDMA3_CH12               0x0150
+#define INTID_SYSDMA3_CH13               0x0150
+#define INTID_SYSDMA3_CH14               0x0151
+#define INTID_SYSDMA3_CH15               0x0151
+#define INTID_SYSDMA3_NO_EXIST           0x0
+
+/**
+ * @brief Interrupt IDs of SYS-DMAC group 0
+ */
+#define INTID_SYSDMA0_CH0                0x0152
+#define INTID_SYSDMA0_CH1                0x0152
+#define INTID_SYSDMA0_CH2                0x0153
+#define INTID_SYSDMA0_CH3                0x0153
+#define INTID_SYSDMA0_CH4                0x0154
+#define INTID_SYSDMA0_CH5                0x0154
+#define INTID_SYSDMA0_CH6                0x0155
+#define INTID_SYSDMA0_CH7                0x0155
+#define INTID_SYSDMA0_CH8                0x0156
+#define INTID_SYSDMA0_CH9                0x0156
+#define INTID_SYSDMA0_CH10               0x0157
+#define INTID_SYSDMA0_CH11               0x0157
+#define INTID_SYSDMA0_CH12               0x0158
+#define INTID_SYSDMA0_CH13               0x0158
+#define INTID_SYSDMA0_CH14               0x0159
+#define INTID_SYSDMA0_CH15               0x0159
+#define INTID_SYSDMA0_NO_EXIST           0x0
+
+/**
+ * @brief Interrupt IDs of RT-DMAC group 0
+ */
+#define INTID_RTDMA0_CH0                0x0112
+#define INTID_RTDMA0_CH1                0x0112
+#define INTID_RTDMA0_CH2                0x0113
+#define INTID_RTDMA0_CH3                0x0113
+#define INTID_RTDMA0_CH4                0x0114
+#define INTID_RTDMA0_CH5                0x0114
+#define INTID_RTDMA0_CH6                0x0115
+#define INTID_RTDMA0_CH7                0x0115
+#define INTID_RTDMA0_CH8                0x0116
+#define INTID_RTDMA0_CH9                0x0116
+#define INTID_RTDMA0_CH10               0x0117
+#define INTID_RTDMA0_CH11               0x0117
+#define INTID_RTDMA0_CH12               0x0118
+#define INTID_RTDMA0_CH13               0x0118
+#define INTID_RTDMA0_CH14               0x0119
+#define INTID_RTDMA0_CH15               0x0119
+#define INTID_RTDMA0_NO_EXIST           0x0
+
+/**
+ * @brief Interrupt IDs of RT-DMAC group 1
+ */
+#define INTID_RTDMA1_CH0                0x011A
+#define INTID_RTDMA1_CH1                0x011A
+#define INTID_RTDMA1_CH2                0x011B
+#define INTID_RTDMA1_CH3                0x011B
+#define INTID_RTDMA1_CH4                0x011C
+#define INTID_RTDMA1_CH5                0x011C
+#define INTID_RTDMA1_CH6                0x011D
+#define INTID_RTDMA1_CH7                0x011D
+#define INTID_RTDMA1_CH8                0x011E
+#define INTID_RTDMA1_CH9                0x011E
+#define INTID_RTDMA1_CH10               0x011F
+#define INTID_RTDMA1_CH11               0x011F
+#define INTID_RTDMA1_CH12               0x0120
+#define INTID_RTDMA1_CH13               0x0120
+#define INTID_RTDMA1_CH14               0x0121
+#define INTID_RTDMA1_CH15               0x0121
+#define INTID_RTDMA1_NO_EXIST           0x0
+
+/**
+ * @brief Interrupt IDs of RT-DMAC group 2
+ */
+#define INTID_RTDMA2_CH0                0x0122
+#define INTID_RTDMA2_CH1                0x0122
+#define INTID_RTDMA2_CH2                0x0123
+#define INTID_RTDMA2_CH3                0x0123
+#define INTID_RTDMA2_CH4                0x0124
+#define INTID_RTDMA2_CH5                0x0124
+#define INTID_RTDMA2_CH6                0x0125
+#define INTID_RTDMA2_CH7                0x0125
+#define INTID_RTDMA2_CH8                0x0126
+#define INTID_RTDMA2_CH9                0x0126
+#define INTID_RTDMA2_CH10               0x0127
+#define INTID_RTDMA2_CH11               0x0127
+#define INTID_RTDMA2_CH12               0x0128
+#define INTID_RTDMA2_CH13               0x0128
+#define INTID_RTDMA2_CH14               0x0128
+#define INTID_RTDMA2_CH15               0x0129
+#define INTID_RTDMA2_NO_EXIST           0x0
+
+/**
+ * @brief Interrupt IDs of RT-DMAC group 3
+ */
+#define INTID_RTDMA3_CH0                0x012A
+#define INTID_RTDMA3_CH1                0x012A
+#define INTID_RTDMA3_CH2                0x012B
+#define INTID_RTDMA3_CH3                0x012B
+#define INTID_RTDMA3_CH4                0x012C
+#define INTID_RTDMA3_CH5                0x012C
+#define INTID_RTDMA3_CH6                0x012D
+#define INTID_RTDMA3_CH7                0x012D
+#define INTID_RTDMA3_CH8                0x012E
+#define INTID_RTDMA3_CH9                0x012E
+#define INTID_RTDMA3_CH10               0x012F
+#define INTID_RTDMA3_CH11               0x012F
+#define INTID_RTDMA3_CH12               0x0130
+#define INTID_RTDMA3_CH13               0x0130
+#define INTID_RTDMA3_CH14               0x0131
+#define INTID_RTDMA3_CH15               0x0131
+#define INTID_RTDMA3_NO_EXIST           0x0
+
+/**
  * @defgroup Interrupt_Controller Interrupt Controller
  * @{
  * @brief This module provides functions and structures for managing interrupts.

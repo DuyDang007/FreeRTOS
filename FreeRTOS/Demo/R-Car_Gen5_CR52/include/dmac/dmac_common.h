@@ -27,11 +27,15 @@
  *  @note          Each instance corresponds to a specific DMA controller in the system.
  */
 typedef enum {
-    RT_DMAC0, /*!< DMA Controller Instance 0 */
-    RT_DMAC1, /*!< DMA Controller Instance 1 */
-    RT_DMAC2, /*!< DMA Controller Instance 2 */
-    RT_DMAC3, /*!< DMA Controller Instance 3 */
-    RT_DMAC_MAX /*!< Maximum number of DMA Controller Instances */
+    RT_DMAC0, /*!< RT-DMA Controller Instance 0 */
+    RT_DMAC1, /*!< RT-DMA Controller Instance 1 */
+    RT_DMAC2, /*!< RT-DMA Controller Instance 2 */
+    RT_DMAC3, /*!< RT-DMA Controller Instance 3 */
+    SYS_DMAC0 = 8, /*!< SYS-DMA Controller Instance 0 */
+    SYS_DMAC1 = 9, /*!< SYS-DMA Controller Instance 1 */
+    SYS_DMAC2 = 10, /*!< SYS-DMA Controller Instance 2 */
+    SYS_DMAC3 = 11, /*!< SYS-DMA Controller Instance 3 */
+    DMAC_MAX /*!< Maximum number of DMA Controller Instances */
 } DMAC_t;
 
 /**
@@ -40,23 +44,23 @@ typedef enum {
  *  @note          Each channel corresponds to a specific DMA channel within a DMA controller instance.
  */
 typedef enum {
-    RT_DMAC_CH0,  /*!< DMA Channel 0 */
-    RT_DMAC_CH1,  /*!< DMA Channel 1 */
-    RT_DMAC_CH2,  /*!< DMA Channel 2 */
-    RT_DMAC_CH3,  /*!< DMA Channel 3 */
-    RT_DMAC_CH4,  /*!< DMA Channel 4 */
-    RT_DMAC_CH5,  /*!< DMA Channel 5 */
-    RT_DMAC_CH6,  /*!< DMA Channel 6 */
-    RT_DMAC_CH7,  /*!< DMA Channel 7 */
-    RT_DMAC_CH8,  /*!< DMA Channel 8 */
-    RT_DMAC_CH9,  /*!< DMA Channel 9 */
-    RT_DMAC_CH10, /*!< DMA Channel 10 */
-    RT_DMAC_CH11, /*!< DMA Channel 11 */
-    RT_DMAC_CH12, /*!< DMA Channel 12 */
-    RT_DMAC_CH13, /*!< DMA Channel 13 */
-    RT_DMAC_CH14, /*!< DMA Channel 14 */
-    RT_DMAC_CH15, /*!< DMA Channel 15 */
-    RT_DMAC_CH_MAX /*!< Maximum number of DMA Channels */
+    DMAC_CH0,  /*!< DMA Channel 0 */
+    DMAC_CH1,  /*!< DMA Channel 1 */
+    DMAC_CH2,  /*!< DMA Channel 2 */
+    DMAC_CH3,  /*!< DMA Channel 3 */
+    DMAC_CH4,  /*!< DMA Channel 4 */
+    DMAC_CH5,  /*!< DMA Channel 5 */
+    DMAC_CH6,  /*!< DMA Channel 6 */
+    DMAC_CH7,  /*!< DMA Channel 7 */
+    DMAC_CH8,  /*!< DMA Channel 8 */
+    DMAC_CH9,  /*!< DMA Channel 9 */
+    DMAC_CH10, /*!< DMA Channel 10 */
+    DMAC_CH11, /*!< DMA Channel 11 */
+    DMAC_CH12, /*!< DMA Channel 12 */
+    DMAC_CH13, /*!< DMA Channel 13 */
+    DMAC_CH14, /*!< DMA Channel 14 */
+    DMAC_CH15, /*!< DMA Channel 15 */
+    DMAC_CH_MAX /*!< Maximum number of DMA Channels */
 } DMAC_ch_t;
 
 /***********************************************************
@@ -169,6 +173,31 @@ typedef enum e_rDmacLowSpeedMode {
     DRV_RTDMAC_SPEED_MAX        /*!< Maximum number of speed modes */
 } rDmacLowSpeedMode_t;
 
+
+/**
+ *  @brief         DMA Transfer Request ID
+ *  @details       Specify DMA transfer request ID for each channel.
+ *
+ */
+typedef enum e_rDmacTransferRequest {
+    MID_RID_I2C1_MST_RX,   /*!< I2C1 DMARS ID Master RX */
+    MID_RID_I2C1_MST_TX,   /*!< I2C1 DMARS ID Master TX*/
+    MID_RID_I2C2_MST_RX,   /*!< I2C2 DMARS ID Master RX */
+    MID_RID_I2C2_MST_TX,   /*!< I2C2 DMARS ID Master TX*/
+    MID_RID_I2C3_MST_RX,   /*!< I2C3 DMARS ID Master RX */
+    MID_RID_I2C3_MST_TX,   /*!< I2C3 DMARS ID Master TX*/
+    MID_RID_I2C4_MST_RX,   /*!< I2C4 DMARS ID Master RX */
+    MID_RID_I2C4_MST_TX,   /*!< I2C4 DMARS ID Master TX*/
+    MID_RID_I2C5_MST_RX,   /*!< I2C5 DMARS ID Master RX */
+    MID_RID_I2C5_MST_TX,   /*!< I2C5 DMARS ID Master TX*/
+    MID_RID_I2C6_MST_RX,   /*!< I2C6 DMARS ID Master RX */
+    MID_RID_I2C6_MST_TX,   /*!< I2C6 DMARS ID Master TX*/
+    MID_RID_I2C7_MST_RX,   /*!< I2C7 DMARS ID Master RX */
+    MID_RID_I2C7_MST_TX,   /*!< I2C7 DMARS ID Master TX*/
+    MID_RID_I2C8_MST_RX,   /*!< I2C8 DMARS ID Master RX */
+    MID_RID_I2C8_MST_TX,   /*!< I2C8 DMARS ID Master TX*/
+} rDmacTransferRequest_t;
+
 /**
  *  @struct st_rDmacCfg
  *  @brief         Configuration structure for the DMA controller.
@@ -184,6 +213,7 @@ typedef struct st_rDmacCfg {
     rDmacTransferUnit_t mTransferUnit; /*!< Transfer unit */
     rDmacResource_t mResource;         /*!< Resource */
     rDmacLowSpeedMode_t mLowSpeed;     /*!< Low speed mode */
+    rDmacTransferRequest_t mSourceRequest;	/*!< Source request */
     uint8_t mPrioLevel;                /*!< Priority level */
 } rDmacCfg_t;
 
@@ -199,6 +229,11 @@ typedef struct st_rDmacDescUpdate {
 } rDmacDescUpdate_t;
 
 /**
+ * @brief Control structure for Dmac operations.
+ */
+typedef void dmac_ctrl_t;
+
+/**
  *  @struct st_rDmacDescCfg
  *  @brief         Config DMA descriptor
  *  @details    This structure is used to configure the DMA descriptor.
@@ -211,6 +246,19 @@ typedef struct st_rDmacDescCfg {
     uint8_t mDescCount;     /*!< Descriptor count */
     uint8_t mDescIndex;    /*!< Descriptor index */
 } rDmacDescCfg_t;
+
+/**
+ *  @struct st_DmacIrqHandler
+ *  @brief  Handle structure for DMAC.
+ *  @details This structure is used to manage the DMAC Irq handle.
+ */
+typedef struct st_rDmacIrqCfg {
+    void                (* p_callback)(void *);    /*!<  Pointer to the callback function */
+    void                *p_context;                /*!<  Pointer to context to be passed into callback */
+    uint8_t             Unit;      /*!< Unit number */
+    uint8_t             SubCh;     /*!< Sub-channel number */
+    uint16_t            irq_channel; /*!< IRQ channel */
+} rDmacIrqCfg_t;
 
 /** @} */ // end of RTDMAC_Module
 

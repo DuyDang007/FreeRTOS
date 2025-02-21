@@ -32,6 +32,8 @@ static IvtEntry HandlerTable[MAX_IRQ_NUMBER];
 
 #define MASK_DMA_RT(x,y)        (0x18A00000U + 0x93C8U + ((x) * 0x20U) + ((y) * 0x4U))
 #define STAT_DMA_RT(x,y)        (0x18A00000U + 0x83C8U + ((x) * 0x20U) + ((y) * 0x4U))
+#define MASK_SYS_DMA(x,y)       (0x18A00000U + 0x9468U + ((x) * 0x20U) + ((y) * 0x4U))
+#define STAT_SYS_DMA(x,y)       (0x18A00000U + 0x8468U + ((x) * 0x20U) + ((y) * 0x4U))
 #define STAT_UCIE(x)            (0x18A00000U + 0x8770U + ((x) * 0x4U))
 #define STAT_UCIE_ERROR(x)      (0x18A00000U + 0x8778U + ((x) * 0x4U))
 #define MASK_UCIE(x)            (0x18A00000U + 0x9770U + ((x) * 0x4U))
@@ -80,6 +82,39 @@ static const irq_table r8a78000_irq_table[] = {
         { 0x12F, 0x3, STAT_DMA_RT(3,5), MASK_DMA_RT(3,5) },
         { 0x130, 0x3, STAT_DMA_RT(3,6), MASK_DMA_RT(3,6) },
         { 0x131, 0x3, STAT_DMA_RT(3,7), MASK_DMA_RT(3,7) },
+
+        { 0x13A, 0x3, STAT_SYS_DMA(0,0), MASK_SYS_DMA(0,0) },
+        { 0x13B, 0x3, STAT_SYS_DMA(0,1), MASK_SYS_DMA(0,1) },
+        { 0x13C, 0x3, STAT_SYS_DMA(0,2), MASK_SYS_DMA(0,2) },
+        { 0x13D, 0x3, STAT_SYS_DMA(0,3), MASK_SYS_DMA(0,3) },
+        { 0x13E, 0x3, STAT_SYS_DMA(0,4), MASK_SYS_DMA(0,4) },
+        { 0x13F, 0x3, STAT_SYS_DMA(0,5), MASK_SYS_DMA(0,5) },
+        { 0x140, 0x3, STAT_SYS_DMA(0,6), MASK_SYS_DMA(0,6) },
+        { 0x141, 0x3, STAT_SYS_DMA(0,7), MASK_SYS_DMA(0,7) },
+        { 0x142, 0x3, STAT_SYS_DMA(1,0), MASK_SYS_DMA(1,0) },
+        { 0x143, 0x3, STAT_SYS_DMA(1,1), MASK_SYS_DMA(1,1) },
+        { 0x144, 0x3, STAT_SYS_DMA(1,2), MASK_SYS_DMA(1,2) },
+        { 0x145, 0x3, STAT_SYS_DMA(1,3), MASK_SYS_DMA(1,3) },
+        { 0x146, 0x3, STAT_SYS_DMA(1,4), MASK_SYS_DMA(1,4) },
+        { 0x147, 0x3, STAT_SYS_DMA(1,5), MASK_SYS_DMA(1,5) },
+        { 0x148, 0x3, STAT_SYS_DMA(1,6), MASK_SYS_DMA(1,6) },
+        { 0x149, 0x3, STAT_SYS_DMA(1,7), MASK_SYS_DMA(1,7) },
+        { 0x14A, 0x3, STAT_SYS_DMA(2,0), MASK_SYS_DMA(2,0) },
+        { 0x14B, 0x3, STAT_SYS_DMA(2,1), MASK_SYS_DMA(2,1) },
+        { 0x14C, 0x3, STAT_SYS_DMA(2,2), MASK_SYS_DMA(2,2) },
+        { 0x14D, 0x3, STAT_SYS_DMA(2,3), MASK_SYS_DMA(2,3) },
+        { 0x14E, 0x3, STAT_SYS_DMA(2,4), MASK_SYS_DMA(2,4) },
+        { 0x14F, 0x3, STAT_SYS_DMA(2,5), MASK_SYS_DMA(2,5) },
+        { 0x150, 0x3, STAT_SYS_DMA(2,6), MASK_SYS_DMA(2,6) },
+        { 0x151, 0x3, STAT_SYS_DMA(2,7), MASK_SYS_DMA(2,7) },
+        { 0x152, 0x3, STAT_SYS_DMA(3,0), MASK_SYS_DMA(3,0) },
+        { 0x153, 0x3, STAT_SYS_DMA(3,1), MASK_SYS_DMA(3,1) },
+        { 0x154, 0x3, STAT_SYS_DMA(3,2), MASK_SYS_DMA(3,2) },
+        { 0x155, 0x3, STAT_SYS_DMA(3,3), MASK_SYS_DMA(3,3) },
+        { 0x156, 0x3, STAT_SYS_DMA(3,4), MASK_SYS_DMA(3,4) },
+        { 0x157, 0x3, STAT_SYS_DMA(3,5), MASK_SYS_DMA(3,5) },
+        { 0x158, 0x3, STAT_SYS_DMA(3,6), MASK_SYS_DMA(3,6) },
+        { 0x159, 0x3, STAT_SYS_DMA(3,7), MASK_SYS_DMA(3,7) },
 
         { 0x173, 0xFF, STAT_VIN(0), MASK_VIN(0) },
         { 0x174, 0xFF, STAT_VIN(1), MASK_VIN(1) },
