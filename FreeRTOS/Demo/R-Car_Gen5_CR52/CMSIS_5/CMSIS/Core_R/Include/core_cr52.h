@@ -701,7 +701,7 @@ __STATIC_INLINE void L1C_CleanInvalidateDCacheAll(void) {
 /*@} end of group Cortex_R52 */
 
 
-#if 0 // define GIC interface in drivers
+#if 1 // define GIC interface in drivers
 /*******************************************************************************
  *                 Register Abstraction
   Core Register contain:
@@ -730,28 +730,35 @@ __STATIC_INLINE void L1C_CleanInvalidateDCacheAll(void) {
   \brief  Structure type to access the Generic Interrupt Controller (GIC) for GICD.
  */
 typedef struct
-{
+{ 
   __IOM uint32_t GICD_CTLR;                  /*!< Offset: 0x0000 (R/W)  Distributor Control Register */
   __IM  uint32_t GICD_TYPER;                 /*!< Offset: 0x0004 (R/ )  Interrupt Controller Type Register */
   __IM  uint32_t GICD_IIDR;                  /*!< Offset: 0x0008 (R/ )  Distributor Implementer Identification Register */
-        uint32_t RESERVED0[30U];
-  __IOM uint32_t GICD_IGROUPR[30U];          /*!< Offset: 0x0084 (R/W)  Interrupt Group Registers 1 - 30 */
-        uint32_t RESERVED1[2U];
-  __IOM uint32_t GICD_ISENABLER[30U];        /*!< Offset: 0x0104 (R/W)  Interrupt Set-Enable Registers 1 - 30 */
-        uint32_t RESERVED2[2U];
-  __IOM uint32_t GICD_ICENABLER[30U];        /*!< Offset: 0x0184 (R/W)  Interrupt Clear-Enable Registers 1 - 30 */
-        uint32_t RESERVED3[2U];
-  __IOM uint32_t GICD_ISPENDR[30U];          /*!< Offset: 0x0204 (R/W)  Interrupt Set-Pending Registers 1 - 30 */
-        uint32_t RESERVED4[2U];
-  __IOM uint32_t GICD_ICPENDR[30U];          /*!< Offset: 0x0284 (R/W)  Interrupt Clear-Pending Registers 1 - 30 */
-        uint32_t RESERVED5[2U];
-  __IOM uint32_t GICD_ISACTIVER[30U];        /*!< Offset: 0x0304 (R/W)  Interrupt Set-Active Registers 1 - 30 */
-        uint32_t RESERVED6[2U];
-  __IOM uint32_t GICD_ICACTIVER[30U];        /*!< Offset: 0x0384 (R/W)  Interrupt Clear-Active Registers 1 - 30 */
-        uint32_t RESERVED7[9U];
-  __IOM uint32_t GICD_IPRIORITYR[240U];      /*!< Offset: 0x0420 (R/W)  Interrupt Priority Registers 8 - 247 */
-        uint32_t RESERVED8[266U];
-  __IOM uint32_t GICD_ICFGR[60U];            /*!< Offset: 0x0C08 (R/W)  Interrupt Configuration Registers 2 - 61 */
+        uint32_t RESERVED0[29U];
+  __IOM uint32_t GICD_IGROUPR[32U];          /*!< Offset: 0x0080 (R/W)  Interrupt Group Registers 0 - 31 */
+  __IOM uint32_t GICD_ISENABLER[32U];        /*!< Offset: 0x0100 (R/W)  Interrupt Set-Enable Registers 0 - 31 */
+  __IOM uint32_t GICD_ICENABLER[32U];        /*!< Offset: 0x0180 (R/W)  Interrupt Clear-Enable Registers 0 - 31 */
+  __IOM uint32_t GICD_ISPENDR[32U];          /*!< Offset: 0x0200 (R/W)  Interrupt Set-Pending Registers 0 - 31 */
+  __IOM uint32_t GICD_ICPENDR[32U];          /*!< Offset: 0x0280 (R/W)  Interrupt Clear-Pending Registers 0 - 31 */
+  __IOM uint32_t GICD_ISACTIVER[32U];        /*!< Offset: 0x0300 (R/W)  Interrupt Set-Active Registers 0 - 31 */
+  __IOM uint32_t GICD_ICACTIVER[32U];        /*!< Offset: 0x0380 (R/W)  Interrupt Clear-Active Registers 0 - 31 */
+  __IOM uint8_t  GICD_IPRIORITYR[1020U];     /*!< Offset: 0x0400 (R/W)  Interrupt Priority Registes 0 - 254 */
+        uint32_t RESERVED1;
+  __IOM uint32_t GICD_ITARGETSR[255U];       /*!< Offset: 0x0800 (R/W)  Interrupt Processor Targets Registes 0 - 254 */
+        uint32_t RESERVED2;
+  __IOM uint32_t GICD_ICFGR[64U];            /*!< Offset: 0x0C00 (R/W)  Interrupt Configuration Registers 0 - 63 */
+  __IOM uint32_t GICD_IGRPMODR[32U];         /*!< Offset: 0x0D00 (R/W)  Interrupt Group Modifier Registers 0 - 31 */
+        uint32_t RESERVED3[32];
+  __IOM uint32_t GICD_NSACR[64];	     /*!< Offset: 0x0E00 (R/W)  Interrupt Group Modifier Registers 0 - 31 */
+  __OM  uint32_t GICD_SGIR;                  /*!< Offset: 0x0F00 (R/W)  Interrupt Software Generated Registers*/
+        uint32_t RESERVED4[3];
+  __IOM uint32_t GICD_CPENDSGIR[4];          /*!< Offset: 0x0F10 (R/W)  Interrupt SGI Clear Pending Registers*/
+  __IOM uint32_t GICD_SPENDSGIR[4];          /*!< Offset: 0x0F20 (R/W)  Interrupt SGI Set Pending Registers*/
+        uint32_t RESERVED5[5236];
+  __IOM uint64_t GICD_IROUTER[960U];         /*!< Offset: 0x6100 (R/ )  Interrupt Routing Registers 32 - 991 */
+        uint32_t RESERVED6[2035U];           /* Reserved space from 0x7EFC to 0xFFCF */
+  __IM  uint32_t GICD_PIDR[8U];              /*!< Offset: 0xFFD0 (R/ )  Identification Registers 4 - 7, Offset: 0xFFE0 (R/ )  Identification Registers 0 - 3 */
+  __IM  uint32_t GICD_CIDR[4U];              /*!< Offset: 0xFFF0 (R/ )  Identification Registers 0 - 3 */
 }  GICD_Type;
 
  /**
@@ -759,11 +766,12 @@ typedef struct
  */
 typedef struct
 {
-  __IM  uint32_t GICR_CTLR;                  /*!< Offset: 0x0000 (R/ )  Redistributor Control Register */
+  __IOM  uint32_t GICR_CTLR;                  /*!< Offset: 0x0000 (R/W )  Redistributor Control Register */
   __IM  uint32_t GICR_IIDR;                  /*!< Offset: 0x0004 (R/ )  Redistributor Implementer Identification Register */
   __IM  uint32_t GICR_TYPER[2];              /*!< Offset: 0x0008 (R/ )  Redistributor Type Register */
         uint32_t RESERVED0;
   __IOM uint32_t GICR_WAKER;                 /*!< Offset: 0x0014 (R/W)  Redistributor Wake Register */
+        uint32_t RESERVED1[16370];           /* Reserved space from 0x0018 to 0xFFDF */
 }  GICR_CONTROL_TARGET_Type;
 
  /**
@@ -772,16 +780,15 @@ typedef struct
 typedef struct
 {
         uint32_t RESERVED0[32];
-  __IOM uint32_t GICR_IGROUPR0;              /*!< Offset: 0x0080 (R/W)  Interrupt Group Register 0 */
-        uint32_t RESERVED1[31];
-  __IOM uint32_t GICR_ISENABLER0;            /*!< Offset: 0x0100 (R/W)  Interrupt Set-Enable Register 0 */
-        uint32_t RESERVED2[31];
-  __IOM uint32_t GICR_ICENABLER0;            /*!< Offset: 0x0180 (R/W)  Interrupt Clear-Enable Register 0 */
-        uint32_t RESERVED3[31];
-  __IOM uint32_t GICR_ISPENDR0;              /*!< Offset: 0x0200 (R/W)  Interrupt Set-Pending Register 0 */
-        uint32_t RESERVED4[31];
-  __IOM uint32_t GICR_ICPENDR0;              /*!< Offset: 0x0280 (R/W)  Interrupt Clear-Pending Register 0 */
-        uint32_t RESERVED5[31];
+  __IOM uint32_t GICR_IGROUPR[32];             /*!< Offset: 0x0080 (R/W)  Interrupt Group Register 0 */
+  __IOM uint32_t GICR_ISENABLER[3];            /*!< Offset: 0x0100 (R/W)  Interrupt Set-Enable Register 0 */
+        uint32_t RESERVED2[29];
+  __IOM uint32_t GICR_ICENABLER[3];            /*!< Offset: 0x0180 (R/W)  Interrupt Clear-Enable Register 0 */
+        uint32_t RESERVED3[29];
+  __IOM uint32_t GICR_ISPENDR[3];              /*!< Offset: 0x0200 (R/W)  Interrupt Set-Pending Register 0 */
+        uint32_t RESERVED4[29];
+  __IOM uint32_t GICR_ICPENDR[3];              /*!< Offset: 0x0280 (R/W)  Interrupt Clear-Pending Register 0 */
+        uint32_t RESERVED5[29];
   __IOM uint32_t GICR_ISACTIVER0;            /*!< Offset: 0x0300 (R/W)  Interrupt Set-Active Register 0 */
         uint32_t RESERVED6[31];
   __IOM uint32_t GICR_ICACTIVER0;            /*!< Offset: 0x0380 (R/W)  Interrupt Clear-Active Register 0 */
@@ -790,7 +797,16 @@ typedef struct
         uint32_t RESERVED8[504];
   __IM  uint32_t GICR_ICFGR0;                /*!< Offset: 0x0C00 (R/ )  Interrupt Configuration Register 0 */
   __IOM uint32_t GICR_ICFGR1;                /*!< Offset: 0x0C04 (R/W)  Interrupt Configuration Register 1 */
+        uint32_t RESERVED9[62];
+        uint32_t GICR_IGRPMODR[3];           /*!< Offset: 0x0D00 (R/W)  Interrupt Group Modifier Registers */
 }  GICR_SGI_PPI_Type;
+
+
+typedef struct
+{
+  GICR_CONTROL_TARGET_Type   lpis  __attribute__((aligned (0x10000)));
+  GICR_SGI_PPI_Type          sgis  __attribute__((aligned (0x10000)));
+} GICR_Type;
 
 /*@} end of group CMSIS_GIC */
 

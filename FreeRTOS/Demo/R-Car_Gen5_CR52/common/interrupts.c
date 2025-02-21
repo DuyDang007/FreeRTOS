@@ -11,7 +11,7 @@
 #include "core_cr52.h"
 #include "CMSIS_5/irq_ctrl.h"
 #include "irq_ctrl.h"
-#include "drivers/gic/gicv3_basic.h"
+#include "drivers/gic/gic.h"
 #include <stdio.h>
 #include "cmsis_cp15.h"
 
@@ -137,21 +137,21 @@ void Irq_Setup(void)
 	// Configure the interrupt controller
 	//
 	// Set location of GIC
-	setGICAddr(CR52_GICD_ADDR, (void*)gicr_addr);
+	R_GIC_SetAddr(CR52_GICD_ADDR, (void*)gicr_addr);
 	
 	// Enable GIC
-	enableGIC();
+	R_GIC_Enable();
 	
 	// Get the ID of the Redistributor connected to this PE
-	rd = getRedistID(affinity);
+	rd = R_GIC_GetRedistID(affinity);
 	// Mark this core as being active
-	wakeUpRedist(rd);
+	R_GIC_WakeUpRedist(rd);
 	
 	// Configure the CPU interface
 	// This assumes that the SRE bits are already set
-	setPriorityMask(0xFF);
-	enableGroup0Ints();
-	enableGroup1Ints();
+	R_GIC_SetPriorityMask(0xFF);
+	R_GIC_EnableGroup0Ints();
+	R_GIC_EnableGroup1Ints();
 }
 
 /* Set up a CR7 or INTC-RT GIC entry */
@@ -198,10 +198,10 @@ void Irq_Enable(unsigned int id)
     uint32_t rd, affinity;
 
     affinity = Irq_GetAffinity();
-    rd = getRedistID(affinity);
-    setIntRoute(id, 0, affinity);
-    setIntGroup(id, rd, GICV3_GROUP1_NON_SECURE);
-    enableInt(id, rd);
+    R_GIC_SetIntRoute(id, 0, affinity);
+    rd = R_GIC_GetRedistID(affinity);
+    R_GIC_SetIntGroup(id, rd, GICV3_GROUP1_NON_SECURE);
+    R_GIC_EnableInt(id, rd);
 }
 /* Legacy: IRQ_Enable should not be used */
 int32_t IRQ_Enable (IRQn_ID_t irqn)
@@ -213,7 +213,7 @@ int32_t IRQ_Enable (IRQn_ID_t irqn)
 void Irq_Disable(unsigned int id)
 {
 	uint32_t cpu_id = (uint32_t)Irq_GetCpuId();
-	disableInt(id, cpu_id);
+	R_GIC_DisableInt(id, cpu_id);
 }
 /* Legacy: IRQ_Disable should not be used */
 int32_t IRQ_Disable (IRQn_ID_t irqn)
@@ -223,8 +223,9 @@ int32_t IRQ_Disable (IRQn_ID_t irqn)
 }
 
 void Irq_SetPriority(unsigned int id, uint8_t priority)
-{	uint32_t cpu_id = (uint32_t)Irq_GetCpuId();
-	setIntPriority(id, cpu_id, priority);
+{
+    uint32_t cpu_id = (uint32_t)Irq_GetCpuId();
+    R_GIC_SetIntPriority(id, cpu_id, priority);
 }
 
 

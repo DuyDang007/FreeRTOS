@@ -85,8 +85,7 @@ set(bsp_source
     ${BSP_DIR}/common/heap_useNewlib.c
     ${BSP_DIR}/common/idle_task.c
     ${BSP_DIR}/CMSIS_5/irq_ctrl_gic.c
-    ${BSP_DIR}/drivers/gic/gicv3_cpuif.S
-    ${BSP_DIR}/drivers/gic/gicv3_basic.c
+    ${BSP_DIR}/drivers/gic/gic.c
     ${BSP_DIR}/drivers/serial/serial.c
     ${BSP_DIR}/drivers/serial/scif.c
     ${BSP_DIR}/drivers/mpu/mpu.c

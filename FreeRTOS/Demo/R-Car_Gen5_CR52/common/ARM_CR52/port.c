@@ -37,8 +37,7 @@
 
 #define __FPU_PRESENT 1
 #include "cmsis_rcar_gen5.h"
-#include "drivers/gic/gicv3_registers.h"
-#include "drivers/gic/gicv3_basic.h"
+#include "drivers/gic/gic.h"
 
 #define BSP_ATTRIBUTE_STACKLESS           __attribute__((naked))
 #define BSP_TARGET_ARM                    __attribute__((target("arm")))
@@ -134,7 +133,7 @@
 #define portCLEAR_INTERRUPT_MASK()       \
     {                                    \
         portCPU_IRQ_DISABLE();                                \
-	setPriorityMask(portUNMASK_VALUE); 		      \
+	R_GIC_SetPriorityMask(portUNMASK_VALUE); 		      \
 	__asm volatile ( "DSB       \n"                       \
                          "ISB       \n");                     \
 	portCPU_IRQ_ENABLE();				      \
@@ -442,7 +441,7 @@ BaseType_t xPortStartScheduler( void )
     {
         uint32_t         ulCycles = portBITS_PER_BYTE;
         volatile uint8_t ucOriginalPriority;
-        struct GICv3_dist_if* dist = CR52_GICD_ADDR;
+        GICD_Type* dist = CR52_GICD_ADDR;
         volatile uint8_t * const pucFirstUserPriorityRegister = (uint8_t *) (dist->GICD_IPRIORITYR + 0x20); // Register 8
         volatile uint8_t ucMaxPriorityValue;
 
@@ -494,9 +493,9 @@ BaseType_t xPortStartScheduler( void )
         /* Only continue if the binary point value is set to its lowest possible
          * setting.  See the comments in vPortValidateInterruptPriority() below for
          * more information. */
-        configASSERT(portMAX_BINARY_POINT_VALUE >= (getAliasedBinaryPoint() & portBINARY_POINT_BITS));
+        configASSERT(portMAX_BINARY_POINT_VALUE >= (R_GIC_GetAliasedBinaryPoint() & portBINARY_POINT_BITS));
 
-        if (portMAX_BINARY_POINT_VALUE >= (getAliasedBinaryPoint() & portBINARY_POINT_BITS))
+        if (portMAX_BINARY_POINT_VALUE >= (R_GIC_GetAliasedBinaryPoint() & portBINARY_POINT_BITS))
         {
             /* Interrupts are turned off in the CPU itself to ensure tick does
              * not execute	while the scheduler is being started.  Interrupts are
@@ -582,7 +581,7 @@ void FreeRTOS_Tick_Handler( void )
      * necessary to turn off interrupts in the CPU itself while the ICCPMR is being
      * updated. */
     portCPU_IRQ_DISABLE();
-    setPriorityMask((uint32_t) (configMAX_API_CALL_INTERRUPT_PRIORITY << portPRIORITY_SHIFT));
+    R_GIC_SetPriorityMask((uint32_t) (configMAX_API_CALL_INTERRUPT_PRIORITY << portPRIORITY_SHIFT));
     __asm volatile ("dsb		\n"
                     "isb		\n"::: "memory");
     portCPU_IRQ_ENABLE();
@@ -630,7 +629,7 @@ uint32_t ulPortSetInterruptMask( void )
     /* Interrupt in the CPU must be turned off while the ICCPMR is being
      * updated. */
     portCPU_IRQ_DISABLE();
-    if (getPriorityMask() == (uint32_t) (configMAX_API_CALL_INTERRUPT_PRIORITY << portPRIORITY_SHIFT))
+    if (R_GIC_GetPriorityMask() == (uint32_t) (configMAX_API_CALL_INTERRUPT_PRIORITY << portPRIORITY_SHIFT))
     {
         /* Interrupts were already masked. */
         ulReturn = pdTRUE;
@@ -638,7 +637,7 @@ uint32_t ulPortSetInterruptMask( void )
     else
     {
         ulReturn = pdFALSE;
-        setPriorityMask((uint32_t) (configMAX_API_CALL_INTERRUPT_PRIORITY << portPRIORITY_SHIFT));
+        R_GIC_SetPriorityMask((uint32_t) (configMAX_API_CALL_INTERRUPT_PRIORITY << portPRIORITY_SHIFT));
         __asm volatile ("dsb		\n"
                         "isb		\n"::: "memory");
     }
@@ -668,7 +667,7 @@ void vPortValidateInterruptPriority (void)
      *
      * FreeRTOS maintains separate thread and ISR API functions to ensure
      * interrupt entry is as fast and simple as possible. */
-    configASSERT(getRunningPriority() >= (uint32_t) (configMAX_API_CALL_INTERRUPT_PRIORITY << portPRIORITY_SHIFT));
+    configASSERT(R_GIC_GetRunningPriority() >= (uint32_t) (configMAX_API_CALL_INTERRUPT_PRIORITY << portPRIORITY_SHIFT));
 
     /* Priority grouping:  The interrupt controller (GIC) allows the bits
      * that define each interrupt's priority to be split between bits that
@@ -680,7 +679,7 @@ void vPortValidateInterruptPriority (void)
      * The priority grouping is configured by the GIC's binary point register
      * (ICCBPR).  Writing 0 to ICCBPR will ensure it is set to its lowest
      * possible value (which may be above 0). */
-    configASSERT((getAliasedBinaryPoint() & portBINARY_POINT_BITS) <= portMAX_BINARY_POINT_VALUE);
+    configASSERT((R_GIC_GetAliasedBinaryPoint() & portBINARY_POINT_BITS) <= portMAX_BINARY_POINT_VALUE);
 }
 
 #endif                                 /* configASSERT_DEFINED */
