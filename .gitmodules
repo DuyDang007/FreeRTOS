@@ -1,7 +1,6 @@
 [submodule "FreeRTOS/Source"]
 	path = FreeRTOS/Source
-	url = https://rcar-env.dgn.renesas.com/gitlab/linuxbsp_yocto/freertos/FreeRTOS-Kernel.git
-	branch = freertos_kernel_V11.1.0_rcar_gen5
+	url = https://github.com/FreeRTOS/FreeRTOS-Kernel.git
 [submodule "FreeRTOS-Plus/Source/FreeRTOS-Plus-POSIX"]
 	path = FreeRTOS-Plus/Source/FreeRTOS-Plus-POSIX
-	url = https://rcar-env.dgn.renesas.com/gitlab/linuxbsp_yocto/freertos/Lab-Project-FreeRTOS-POSIX.git
+	url = https://github.com/FreeRTOS/Lab-Project-FreeRTOS-POSIX.git
