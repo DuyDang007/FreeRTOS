@@ -19,6 +19,7 @@
 
     "INC ": [
         "$(FREERTOS)/Source/include",
+        "$(FREERTOS)/Demo/R-Car_Gen5_CR52/include",
         "$(FREERTOS)/Source/portable/MSVC-MingW",
         "$(FREERTOS)/../FreeRTOS-Plus/Source/FreeRTOS-Plus-TCP/include",
         "$(FREERTOS)/../FreeRTOS-Plus/Source/FreeRTOS-Plus-TCP/portable/Compiler/MSVC",
@@ -32,7 +33,6 @@
 
     "CBMCFLAGS ": [
 	"--object-bits 7",
-	"--32",
 	"--bounds-check",
 	"--pointer-check"
     ],

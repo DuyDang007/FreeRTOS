@@ -1,0 +1,154 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: MIT
+ *
+ */
+ 
+#include <stdarg.h>
+#include <string.h>
+
+#include "FreeRTOS.h"
+#include "task.h"
+#include "stdio.h"
+
+#include "CMSIS_5/cmsis_rcar_gen5.h"
+#include "scif.h"
+#include "serial/r_serial.h"
+
+/* PFC (Pin Function Controller) */
+#define RCAR_PFC_GPSR1  0xC0800840u       /* R/W 32 GPIO/Peripheral_Function Select register PortGroup 1 */
+#define RCAR_PFC_GPSR1_SCIF_ENABLE  0x0001F000u  /* bit16:HRX0, bit15:HSCK0, bit14:HRTS0#, bit13:HCTS0#, bit12:HTX0 */
+#define RCAR_PFC_IP1SR1 0xC0800864u       /* R/W 32 Peripheral Function Select register 1 PortGroup 1 */
+#define RCAR_PFC_IP1SR1_SCIF_ENABLE  0x11110000u /* [31:16]: 0x1111 (select SCK0, RTS0#, CTS0#, TX0) */
+#define RCAR_PFC_IP1SR1_SCIF_CLEAR_MASK  0x0000FFFFu /* [31:16]:clear */
+#define RCAR_PFC_IP2SR1 0xC0800868u       /* R/W 32 Peripheral Function Select register 2 PortGroup 1 */
+#define RCAR_PFC_IP2SR1_SCIF_ENABLE  0x00000001u /* [3:0]: 0x1 (select RX0) */
+#define RCAR_PFC_IP2SR1_SCIF_CLEAR_MASK  0xFFFFFFF0u /* [3:0]: clear */
+#define RCAR_PFC_PMMR(addr)  ((addr) & 0xFFFFF800u) /* R/W 32 LSI Multiplexed Pin Setting Mask Register */
+
+static int portInitialized = 0;
+
+static void outbyte(char c);
+
+static void uart_rcar_pfc_init(void);
+
+void R_SERIAL_PortInit(e_serial_devices_t device)
+{
+	if (portInitialized)
+		return;
+
+	uart_rcar_pfc_init();
+	console_init(device);
+	portInitialized = 1;
+}
+
+void R_SERIAL_PutString(const unsigned char *buffer, unsigned short length)
+{
+	if (!portInitialized)
+		return;
+
+	/* Send each character in the string, one at a time. */
+	while (length--) {
+        if (*buffer == '\n')
+            console_putc('\r');
+        console_putc(*buffer);
+        buffer++;
+	}
+}
+
+int32_t R_SERIAL_GetChar(unsigned char *recv_char)
+{
+    if (recv_char != NULL) {
+        console_getc(recv_char);
+        return 0;
+    }
+	return -1;
+}
+
+int32_t R_SERIAL_PutChar(unsigned char send_char)
+{
+	console_putc(send_char);
+	return 0;
+}
+
+void R_SERIAL_Close(void)
+{
+	/* Not supported */
+	return;
+}
+
+/* Override std C lib output for printf, fprintf */
+int _write(int file, char *ptr, int len)
+{
+	int i;
+    (void) file;
+
+	for (i = 0; i < len; i++) {
+		outbyte(*ptr++);
+	}
+
+	return len;
+}
+
+int printf_raw(const char *format, ...)
+{
+	va_list args;
+	int ret;
+
+	va_start(args, format);
+	ret = vfprintf(stderr, format, args);
+	va_end(args);
+
+	return ret;
+}
+
+/* TO DO: Remove when done fix HSCIF issue. */
+int printf_delay(const char *format, ...)
+{
+    va_list args;
+    int ret;
+
+    va_start(args, format);
+    ret = vfprintf(stderr, format, args);
+    va_end(args);
+
+    vTaskDelay(1);
+
+    return ret;
+}
+
+static void outbyte(char c)
+{
+	if (!portInitialized)
+		R_SERIAL_PortInit(UART_ID);
+
+	/* Standard practice to convert \n to \r\n */
+	if (c == '\n')
+		console_putc('\r');
+
+	console_putc(c);
+}
+
+static void uart_rcar_pfc_init(void)
+{
+	uint32_t drv_data;
+
+	/* GPSR1:Set 0xf to [16:12] */
+	drv_data = sys_read32(RCAR_PFC_GPSR1);
+	drv_data = drv_data | RCAR_PFC_GPSR1_SCIF_ENABLE;
+	sys_write32(~drv_data, RCAR_PFC_PMMR(RCAR_PFC_GPSR1));
+	sys_write32(drv_data, RCAR_PFC_GPSR1);
+
+	/* IP1SR1:Set 0x1111 to [31:16] */
+	drv_data = sys_read32(RCAR_PFC_IP1SR1);
+	drv_data = (drv_data & RCAR_PFC_IP1SR1_SCIF_CLEAR_MASK) | RCAR_PFC_IP1SR1_SCIF_ENABLE;
+	sys_write32(~drv_data, RCAR_PFC_PMMR(RCAR_PFC_IP1SR1));
+	sys_write32(drv_data, RCAR_PFC_IP1SR1);
+
+	/* IP2SR1:Set 0x1 to [3:0] */
+	drv_data = sys_read32(RCAR_PFC_IP2SR1);
+	drv_data = (drv_data & RCAR_PFC_IP2SR1_SCIF_CLEAR_MASK) | RCAR_PFC_IP2SR1_SCIF_ENABLE;
+	sys_write32(~drv_data, RCAR_PFC_PMMR(RCAR_PFC_IP2SR1));
+	sys_write32(drv_data, RCAR_PFC_IP2SR1);
+}

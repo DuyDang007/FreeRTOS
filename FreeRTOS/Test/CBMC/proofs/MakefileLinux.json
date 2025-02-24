@@ -1,6 +1,6 @@
 {
     "GOTO_CC": [
-	"goto-cc"
+	"goto-cc --native-compiler arm-none-eabi-gcc"
     ],
     "COMPILE_LINK": [
 	"-o"

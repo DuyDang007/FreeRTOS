@@ -1,0 +1,142 @@
+/*
+ * Copyright (C) 2019-2020 Renesas Electronics Europe Ltd. All Rights Reserved.
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
+#include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+#include "cmsis_rcar_gen5.h"
+#include "mpu.h"
+#include "memory_map.h"
+
+extern const unsigned int __bss_start__;
+extern const unsigned int __bss_end__;
+extern const unsigned int _STACK_SIZE;
+
+extern uint32_t _RAM_START;
+extern uint32_t _RAM_SIZE;
+
+extern uint32_t _Reset;
+uint32_t resource_table;
+#if ETHER_ENABLE
+extern uint32_t eth_non_cache_start;
+#endif
+
+#if RAM_CONSOLE_ENABLE
+char ram_console[1024] = "";
+#endif
+
+extern int main(void);
+
+extern void __libc_init_array(void) ;
+
+static void Init_MPU(void)
+{
+    /* Disable MPU */
+    MPU_Disable();
+
+    MPU_Init();
+
+    MPU_SetRegion(REGION_SRAM_ATTR((uint32_t) &_RAM_START, (uint32_t) &_RAM_SIZE));
+    
+    for (int i = 0; i < sizeof(RCAR_MEMMORY_ARR)/sizeof(st_memory_region_t); i++) {
+       
+        uint8_t ret = 0;
+
+        switch (RCAR_MEMMORY_ARR[i].attr) {
+            case DEVICE_ATTR:
+                ret = MPU_SetRegion(REGION_DEVICE_ATTR(RCAR_MEMMORY_ARR[i].mem_addr.base_address, RCAR_MEMMORY_ARR[i].mem_addr.size));
+                break;
+
+            case RAM_ATTR:
+                ret = MPU_SetRegion(REGION_RAM_ATTR(RCAR_MEMMORY_ARR[i].mem_addr.base_address, RCAR_MEMMORY_ARR[i].mem_addr.size));
+                break;
+
+            case RAM_NOCACHE_ATTR:
+                ret = MPU_SetRegion(REGION_RAM_NOCACHE_ATTR(RCAR_MEMMORY_ARR[i].mem_addr.base_address, RCAR_MEMMORY_ARR[i].mem_addr.size));
+                break;
+
+            case RAM_TEXT_ATTR:
+                ret = MPU_SetRegion(REGION_RAM_TEXT_ATTR(RCAR_MEMMORY_ARR[i].mem_addr.base_address, RCAR_MEMMORY_ARR[i].mem_addr.size));
+                break;
+
+            case RAM_RO_ATTR:
+                ret = MPU_SetRegion(REGION_RAM_RO_ATTR(RCAR_MEMMORY_ARR[i].mem_addr.base_address, RCAR_MEMMORY_ARR[i].mem_addr.size));
+                break;
+
+            case SRAM_ATTR:
+                ret = MPU_SetRegion(REGION_SRAM_ATTR(RCAR_MEMMORY_ARR[i].mem_addr.base_address, RCAR_MEMMORY_ARR[i].mem_addr.size));
+                break;
+
+            case FLASH_ATTR:
+                ret = MPU_SetRegion(REGION_FLASH_ATTR(RCAR_MEMMORY_ARR[i].mem_addr.base_address, RCAR_MEMMORY_ARR[i].mem_addr.size));
+                break;
+
+            default:
+#if RAM_CONSOLE_ENABLE
+                snprintf(ram_console + strlen(ram_console), sizeof(ram_console) - strlen(ram_console), "Set MPU region index %d FAIL. Memory attribute isn't supported;", i + 1);
+#endif
+			    break;
+        }
+
+        if (ret) {
+#if RAM_CONSOLE_ENABLE
+            snprintf(ram_console + strlen(ram_console), sizeof(ram_console) - strlen(ram_console), "Set MPU region index %d FAIL. Exceeded number of MPU regions supported;", i + 1);
+#endif
+        } 
+    } 
+
+    /* Enable MPU */
+    MPU_Enable();
+}
+
+__STATIC_INLINE void bss_init(unsigned int* section_begin, unsigned int* section_end)
+{
+  // Iterate and clear word by word.
+  // It is assumed that the pointers are word aligned.
+  unsigned int *p = section_begin;
+  while (p < section_end)
+    *p++ = 0;
+}
+
+static void FPU_Enable(void)
+{
+#define BSP_CPCAR_CP_ENABLE             (0x00F00000)
+#define BSP_FPEXC_EN_ENABLE             (0x40000000)
+    uint32_t apacr;
+    uint32_t fpexc;
+
+    /* Enables cp10 and cp11 accessing */
+    apacr  = __get_CPACR();
+    apacr |= BSP_CPCAR_CP_ENABLE;
+    __set_CPACR(apacr);
+    __ISB();
+
+    /* Enables the FPU */
+    fpexc  = __get_FPEXC();
+    fpexc |= BSP_FPEXC_EN_ENABLE;
+    __set_FPEXC(fpexc);
+    __ISB();
+
+}
+
+void SystemInit(void)
+{
+#if (defined(__FPU_USED) && (__FPU_USED == 1U))
+    FPU_Enable();
+#endif
+    Init_MPU();
+    __libc_init_array();
+}
+
+void assert_func(const char *file, int line, const char *func)
+{
+    printf("ASSERT! File \"%s\", Line \"%d\", Function \"%s\" \n", file, line, func);
+    for (;;)
+    {
+        __BKPT(0);
+    }
+}
