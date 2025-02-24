@@ -8,6 +8,7 @@
 #ifndef __arm_generic_timer_h
 #define __arm_generic_timer_h
 
+#ifndef __ASSEMBLER__
 #include "cmsis_cp15.h"
 
 #define CNTFRQ_READ()         __get_CNTFRQ()
@@ -16,6 +17,9 @@
 #define CNTP_CTL_WRITE(v)     __set_CNTP_CTL(v)
 #define CNTP_CVAL_READ()      __get_CNTP_CVAL()
 #define CNTP_CVAL_WRITE(v)    __set_CNTP_CVAL(v)
-#define GENERIC_TIMER_CLK     25000000
+
+#endif // __ASSEMBLER__
+
+#define GENERIC_TIMER_CLK     25000000UL
 
 #endif // __arm_generic_timer_h

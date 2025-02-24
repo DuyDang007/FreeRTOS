@@ -36,7 +36,7 @@ typedef enum {
     REGION_21,
     REGION_22,
     REGION_23,
-} Region_num;
+} e_region_index_t;
 
 /* Global MAIR configurations */
 #define MPU_MAIR_INDEX_DEVICE			0U
@@ -162,15 +162,31 @@ void MPU_Disable(void);
  */
 void MPU_Init(void);
 
-/** \brief Configure the given MPU region. And Enable this region
- * \param rnr Region number to be configured [0 - 23].
- * \param region The structure containing the prbar and prlar register values ​​will be set.
+/** @brief Configure the given MPU region. And Enable this region
+ * 
+ * @param[in] rnr - Region index.
+ * @param[in] region_attr - The structure containing the prbar and prlar register values ​​will be set.
+ *
+ * @retval 0 if successful 
+ * @retval 1 if region is exists
+ * @retval 2 if region is out of max mpu region supported 
  */
-void MPU_SetRegion(Region_num rnr, ARM_MPU_Region_t region_attr);
+uint8_t MPU_SetRegion_ByIndex(e_region_index_t rnr, ARM_MPU_Region_t region_attr);
 
-/** \brief Clear and disable the given MPU region.
- * \param rnr Region number to be cleared.
+/** @brief Automatically select indexes to configure the given MPU region. And Enable this region
+ *
+ * @param[in] region_attr - The structure containing the prbar and prlar register values <200b><200b>will be set.
+ *
+ * @retval 0 if successful
+ * @retval other if set mpu region fail
  */
-void MPU_ClrRegion(Region_num rnr);
+uint8_t MPU_SetRegion(ARM_MPU_Region_t region_attr);
+
+/** @brief Clear and disable the given MPU region.
+ * @param[in] rnr - Region index to be cleared.
+ * @retval 0 if successful
+ * @retval other if clear mpu region fail
+ */
+uint8_t MPU_ClrRegion_ByIndex(e_region_index_t rnr);
 
 #endif /* __MPU_H__*/

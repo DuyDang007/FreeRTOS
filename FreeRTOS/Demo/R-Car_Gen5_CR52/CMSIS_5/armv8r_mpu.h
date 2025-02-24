@@ -323,7 +323,6 @@ static inline uint32_t ARM_MPU_Get_Number_Of_Regions(void) {
  * \param attr The attribute value to be set.
  */
 static inline void ARM_MPU_SetMAIR0Attr(uint8_t idx, uint8_t attr) {
-	idx = (idx < 0 || idx > 3) ? 0 : idx;
 	const uint8_t pos = ((idx % 4U) * 8U);
 	const uint32_t mask = 0xFFU << pos;
  
@@ -338,7 +337,6 @@ static inline void ARM_MPU_SetMAIR0Attr(uint8_t idx, uint8_t attr) {
  * \param attr The attribute value to be set.
  */
 static inline void ARM_MPU_SetMAIR1Attr(uint8_t idx, uint8_t attr) {
-	idx = (idx < 0 || idx > 3) ? 0 : idx;
 	const uint8_t pos = ((idx % 4U) * 8U);
 	const uint32_t mask = 0xFFU << pos;
  
@@ -349,11 +347,11 @@ static inline void ARM_MPU_SetMAIR1Attr(uint8_t idx, uint8_t attr) {
 }
 
 /** \brief Configure the given MPU region. And Enable this region
- * \param nr Region number to be configured [0 - 23].
+ * \param nr Region number to be configured [0 : (MAX_MPU_REGION_SUPPORTED - 1)].
  * \param region The structure containing the prbar and prlar register values ​​will be set.
  */
+#define MAX_MPU_REGION_SUPPORTED ARM_MPU_Get_Number_Of_Regions()
 static inline void ARM_MPU_SetRegion(uint8_t nr, ARM_MPU_Region_t region) {
-	nr = (nr < 0 || nr > 23) ? 0 : nr; 
 	uint32_t PRBAR_Value = region.prbar;
 	uint32_t PRLAR_Value = region.prlar;
 
@@ -371,7 +369,6 @@ static inline void ARM_MPU_SetRegion(uint8_t nr, ARM_MPU_Region_t region) {
  * \param nr Region number to be cleared.
  */
 static inline void ARM_MPU_ClrRegion(uint8_t nr) {
-    nr = (nr < 0 || nr > 23) ? 0 : nr; 
 	uint32_t PRBAR_Value = 0U;
 	uint32_t PRLAR_Value = 0U;
 

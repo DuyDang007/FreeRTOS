@@ -104,6 +104,7 @@ set(bsp_source
     ${BSP_DIR}/drivers/watchdog/r_wwdt.c
     ${BSP_DIR}/drivers/watchdog/r_wwdt_reg.c
     ${BSP_DIR}/common/ARM_CR52/port.c
+    ${BSP_DIR}/common/rcar_utils.c
     ${BSP_DIR}/drivers/ucie/ucie_controller.c
     ${BSP_DIR}/drivers/ucie/ucie_host.c
     ${BSP_DIR}/drivers/ucie/ucie_ep.c

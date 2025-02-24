@@ -16,6 +16,7 @@
 .global _reset
 .global software_init_hook	
 
+#include "drivers/timer/arm_generic_timer.h"
 .section .boot
 
 #define MODE_MASK	0x1F		/* Bit mask for mode bits in CPSR */
@@ -79,10 +80,15 @@ _reset:
 	/* Init HSCTLR see Armv8-R AArch32 architecture profile */
 	ldr r0, =(HSCTLR_RES1 | SCTLR_I_BIT | SCTLR_C_BIT)
 	mcr p15, 4, r0, c1, c0, 0
-	
+
+    /* Configure Arm Genereric Timer frequency */
+    ldr r0, =GENERIC_TIMER_CLK
+    mcr p15, 0, r0, c14, c0, 0
+
 	/* Init HACTLR: Enable EL1 access to all IMP DEF registers */
 	ldr r0, =HACTLR_INIT
 	mcr p15, 4, r0, c1, c0, 1
+
 
 	mrs	r0, cpsr		/* Original PSR value */
 	bic	r0 ,r0, #MODE_MASK	/* Clear the mode bits */

@@ -10,27 +10,7 @@
 #include <stdio.h>
 #include "cmsis_rcar_gen5.h"
 #include "mpu.h"
-
-#define SYSTEM_CLOCK_COUNTER_DEFAULT 25000000
-
-// Define all peripheral address regions
-#define PERIPHERAL_START_0          0x18800000
-#define PERIPHERAL_SIZE_0           0x00080000  // to 0x1888_0000
-
-#define PERIPHERAL_START_1          0x188C0000
-#define PERIPHERAL_SIZE_1           0x07740000  // to 0x2000_0000
-
-#define CA_CMA_ADDRESS              0x50000000
-#define CA_CMA_SIZE                 0x0FF00000  // to 0x5FF0_0000
-
-#define OSAL_MEMORY_ADDRESS         0x60000000
-#define OSAL_MEMORY_SIZE            0x20000000  // to 0x8000_0000
-
-#define SHARED_DRAM_ADDRESS         0x80000000
-#define SHARED_DRAM_SIZE            0x20000000  // to 0xA000_0000
-
-#define PERIPHERAL_START_2          0xC0000000
-#define PERIPHERAL_SIZE_2           0x40000000  // to 0x1_0000_0000
+#include "memory_map.h"
 
 extern const unsigned int __bss_start__;
 extern const unsigned int __bss_end__;
@@ -45,6 +25,10 @@ uint32_t resource_table;
 extern uint32_t eth_non_cache_start;
 #endif
 
+#if RAM_CONSOLE_ENABLE
+char ram_console[1024] = "";
+#endif
+
 extern int main(void);
 
 extern void __libc_init_array(void) ;
@@ -56,13 +40,54 @@ static void Init_MPU(void)
 
     MPU_Init();
 
-    MPU_SetRegion(REGION_0, REGION_SRAM_ATTR((uint32_t) &_RAM_START, (uint32_t) &_RAM_SIZE));
-    MPU_SetRegion(REGION_1, REGION_DEVICE_ATTR((uint32_t) CA_CMA_ADDRESS, (uint32_t) CA_CMA_SIZE));
-    MPU_SetRegion(REGION_2, REGION_DEVICE_ATTR((uint32_t) OSAL_MEMORY_ADDRESS, (uint32_t) OSAL_MEMORY_SIZE));
-    MPU_SetRegion(REGION_3, REGION_DEVICE_ATTR((uint32_t) SHARED_DRAM_ADDRESS, (uint32_t) SHARED_DRAM_SIZE));
-    MPU_SetRegion(REGION_4, REGION_DEVICE_ATTR((uint32_t) PERIPHERAL_START_0, (uint32_t) PERIPHERAL_SIZE_0));
-    MPU_SetRegion(REGION_5, REGION_DEVICE_ATTR((uint32_t) PERIPHERAL_START_1, (uint32_t) PERIPHERAL_SIZE_1));
-    MPU_SetRegion(REGION_6, REGION_DEVICE_ATTR((uint32_t) PERIPHERAL_START_2, (uint32_t) PERIPHERAL_SIZE_2));
+    MPU_SetRegion(REGION_SRAM_ATTR((uint32_t) &_RAM_START, (uint32_t) &_RAM_SIZE));
+    
+    for (int i = 0; i < sizeof(RCAR_MEMMORY_ARR)/sizeof(st_memory_region_t); i++) {
+       
+        uint8_t ret = 0;
+
+        switch (RCAR_MEMMORY_ARR[i].attr) {
+            case DEVICE_ATTR:
+                ret = MPU_SetRegion(REGION_DEVICE_ATTR(RCAR_MEMMORY_ARR[i].mem_addr.base_address, RCAR_MEMMORY_ARR[i].mem_addr.size));
+                break;
+
+            case RAM_ATTR:
+                ret = MPU_SetRegion(REGION_RAM_ATTR(RCAR_MEMMORY_ARR[i].mem_addr.base_address, RCAR_MEMMORY_ARR[i].mem_addr.size));
+                break;
+
+            case RAM_NOCACHE_ATTR:
+                ret = MPU_SetRegion(REGION_RAM_NOCACHE_ATTR(RCAR_MEMMORY_ARR[i].mem_addr.base_address, RCAR_MEMMORY_ARR[i].mem_addr.size));
+                break;
+
+            case RAM_TEXT_ATTR:
+                ret = MPU_SetRegion(REGION_RAM_TEXT_ATTR(RCAR_MEMMORY_ARR[i].mem_addr.base_address, RCAR_MEMMORY_ARR[i].mem_addr.size));
+                break;
+
+            case RAM_RO_ATTR:
+                ret = MPU_SetRegion(REGION_RAM_RO_ATTR(RCAR_MEMMORY_ARR[i].mem_addr.base_address, RCAR_MEMMORY_ARR[i].mem_addr.size));
+                break;
+
+            case SRAM_ATTR:
+                ret = MPU_SetRegion(REGION_SRAM_ATTR(RCAR_MEMMORY_ARR[i].mem_addr.base_address, RCAR_MEMMORY_ARR[i].mem_addr.size));
+                break;
+
+            case FLASH_ATTR:
+                ret = MPU_SetRegion(REGION_FLASH_ATTR(RCAR_MEMMORY_ARR[i].mem_addr.base_address, RCAR_MEMMORY_ARR[i].mem_addr.size));
+                break;
+
+            default:
+#if RAM_CONSOLE_ENABLE
+                snprintf(ram_console + strlen(ram_console), sizeof(ram_console) - strlen(ram_console), "Set MPU region index %d FAIL. Memory attribute isn't supported;", i + 1);
+#endif
+			    break;
+        }
+
+        if (ret) {
+#if RAM_CONSOLE_ENABLE
+            snprintf(ram_console + strlen(ram_console), sizeof(ram_console) - strlen(ram_console), "Set MPU region index %d FAIL. Exceeded number of MPU regions supported;", i + 1);
+#endif
+        } 
+    } 
 
     /* Enable MPU */
     MPU_Enable();
@@ -77,7 +102,7 @@ __STATIC_INLINE void bss_init(unsigned int* section_begin, unsigned int* section
     *p++ = 0;
 }
 
-static void FPU_Enable()
+static void FPU_Enable(void)
 {
 #define BSP_CPCAR_CP_ENABLE             (0x00F00000)
 #define BSP_FPEXC_EN_ENABLE             (0x40000000)
@@ -98,61 +123,12 @@ static void FPU_Enable()
 
 }
 
-static void system_counter_init(uint32_t clock_rate) {
-#if 0 // Fix me later
-    __set_CNTFRQ(clock_rate);
-#endif
-}
-
 void SystemInit(void)
 {
-//    uint32_t tmp;
-//
-//    tmp = __get_SCTLR();
-//    tmp &= ~SCTLR_M_Msk;            /* Disable MPU (M bit) */
-//    tmp &= ~SCTLR_C_Msk;            /* Disable data cache (C bit) */
-//    tmp &= ~SCTLR_Z_Msk;            /* Disable branch prediction (Z bit) */
-//    tmp &= ~SCTLR_I_Msk;            /* Disable instruction cache (I bit) */
-//    __DSB();
-//    __set_SCTLR(tmp);
-//    __ISB();
-//
-//    /* Enable Floating point hardware */
 #if (defined(__FPU_USED) && (__FPU_USED == 1U))
     FPU_Enable();
 #endif
-    // Init system counter.
-    system_counter_init(SYSTEM_CLOCK_COUNTER_DEFAULT);
-//
-//    /*
-//     * Do not use global variables because this function is called before
-//     * reaching pre-main. RW section may be overwritten afterwards.
-//     */
-//
-//    /* Invalidate instruction cache and flush branch target cache */
-//    __set_ICIALLU(0);
-//    __DSB();
-//    __ISB();
-//
-//    L1C_InvalidateDCacheAll();
-//
-//    /*
-//     * R-Car specific
-//     * Set the address of the vector table using RBAR. Note that although
-//     * we can change the address of the vector table using RBAR, as far as
-//     * the MPU is concerned, the vector table is still at address 0x0.
-//     */
-//#define CR7BAR    0xE6160070U
-//    writel((uint32_t)&_Reset, CR7BAR);
-//    __ISB();
-//    /* Enable BAREN */
-//    writel((uint32_t)&_Reset | BIT(4), CR7BAR);
-//
     Init_MPU();
-//
-//    L1C_EnableCaches();
-//    L1C_EnableBTAC();
-//    bss_init((void *)&__bss_start__, (void *)&__bss_end__);
     __libc_init_array();
 }
 

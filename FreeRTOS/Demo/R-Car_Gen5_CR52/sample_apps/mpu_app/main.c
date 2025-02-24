@@ -32,6 +32,8 @@
 
 #include "interrupts.h"
 #include "stdio.h"
+#include "rcar_utils.h"
+
 #define main_MPU_TASK_PRIORITY      ( tskIDLE_PRIORITY + 1 )
 extern uint32_t _RAM_START;
 #define REGION_SRAM           ((uint32_t)&_RAM_START + 0x0001000)
@@ -83,10 +85,23 @@ static void prvTestMPURegions( void *pvParameters )
     volatile uint32_t *sram_ptr = (uint32_t *)REGION_SRAM;
     volatile uint32_t *ro_ptr = (uint32_t *)REGION_RO;
     volatile uint32_t *dev_ptr = (uint32_t *)REGION_DEVICE;
-    
-    
+
+    printf("----- Test OSAL MPU api\n");
+    vTaskDelay(100);
+    printf("TC1: Total OSAL region: %d\n", R_UTILS_GetTotalRegionOfMemory(OSAL));
+
+    vTaskDelay(100);
+    st_memory_t region = R_UTILS_GetMemoryRegionInfo(OSAL, 0);
+    printf("TC2: TEST OSAL MPU api get OSAL region base address and size\n");
+    vTaskDelay(100);
+    printf("Case osal idx 0. Base address: 0x%x, Size: 0x%x\n", region.base_address, region.size);
+    vTaskDelay(100);
+    region = R_UTILS_GetMemoryRegionInfo(OSAL, 1);
+    printf("Case osal idx 1, out of range so expect base: 0, size: 0. Base address: 0x%x, Size: 0x%x\n", region.base_address, region.size);
+    vTaskDelay(100);
+
     /* Test Region SRAM (Read/Write)*/ 
-    printf("Testing Region SRAM ...\n");
+    printf("TC3: Testing Region SRAM ...\n");
     vTaskDelay(100);
     *sram_ptr = 0xAAAAAAAA;
     printf("Writing to region SRAM ...\n");
@@ -95,7 +110,7 @@ static void prvTestMPURegions( void *pvParameters )
     vTaskDelay(100);
 
     /* Test Region DEVICE (Read/Write)*/
-    printf("Testing Region DEVICE ...\n");
+    printf("TC4: Testing Region DEVICE ...\n");
     vTaskDelay(100);
     *dev_ptr = 0xBBBBBBBB;
     printf("Writing to region DEVICE ...\n");
