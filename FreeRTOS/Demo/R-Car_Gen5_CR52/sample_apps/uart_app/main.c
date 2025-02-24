@@ -34,6 +34,7 @@
 #include "scif.h"
 #include "interrupts.h"
 #include "stdio.h"
+#include "serial/r_serial.h"
 #define main_LOG_TASK_PRIORITY        ( tskIDLE_PRIORITY + 1 )
 
 /*-----------------------------------------------------------*/
@@ -50,21 +51,63 @@ static void UARTInterruptHandler(void *data);
 SemaphoreHandle_t xSemaphore = NULL;
 unsigned char p_char;
 /*-----------------------------------------------------------*/
+uint32_t getIrqID(uint8_t uart_id)
+{
+    uint32_t irqID;
+    switch(uart_id) {
+        case 0:
+            irqID = SCIF0_INT_ID;
+            break;
+        case 1:
+            irqID = SCIF1_INT_ID;
+            break;
+        case 3:
+            irqID = SCIF3_INT_ID;
+            break;
+        case 4:
+            irqID = SCIF4_INT_ID;
+            break;
+        case 5:
+            irqID = HSCIF0_INT_ID;
+            break;
+        case 6:
+            irqID = HSCIF1_INT_ID;
+            break;
+        case 7:
+            irqID = HSCIF2_INT_ID;
+            break;
+        case 8:
+            irqID = HSCIF3_INT_ID;
+            break;
+        default:
+            return 0;
+    }
+
+    return irqID;
+}
 
 int main( void )
 {
+    uint32_t irqID;
+
     /* Configure the hardware ready to run the demo. */
     prvSetupHardware();
-    
-    /* Set Handler for Irq */
-    Irq_SetupEntry(HSCIF_INT_ID, UARTInterruptHandler, NULL);
-    
-    /* Set priority for Irq */
-    Irq_SetPriority(HSCIF_INT_ID, IPRIORITY(2));
 
-    /* Enable Irq */
-    Irq_Enable(HSCIF_INT_ID);
+    irqID = getIrqID(UART_ID);
 
+    if (irqID == 0) {
+        printf("Not support UART_ID = %d\n", UART_ID);
+    } else {
+        /* Set Handler for Irq */
+        Irq_SetupEntry(irqID, UARTInterruptHandler, NULL);
+
+        /* Set priority for Irq */
+        Irq_SetPriority(irqID, IPRIORITY(2));
+
+        /* Enable Irq */
+        Irq_Enable(irqID);
+    }
+ 
     xSemaphore = xSemaphoreCreateBinary();
 
     if (xSemaphore == NULL) {
@@ -93,6 +136,8 @@ static void prvSetupHardware( void )
 	started. */
 	portDISABLE_INTERRUPTS();
 
+    R_SERIAL_PortInit(UART_ID);
+
 	Irq_Setup();
 }
 
@@ -101,10 +146,11 @@ static void prvLogTask( void *pvParameters )
 
     /* Remove compiler warning about unused parameter. */
     ( void ) pvParameters;
+    unsigned char buffer[24] = "prvLogTask ...\n";
 
     for( ;; )
     {
-        printf("prvLogTask ...\n");
+        R_SERIAL_PutString(buffer, sizeof(buffer));
         vTaskDelay(3000);
     }
 }
@@ -115,7 +161,7 @@ void UARTInterruptHandler(void *data) {
     (void)data;
 
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-    console_getc(&p_char);
+    R_SERIAL_GetChar(&p_char);
     xSemaphoreGiveFromISR(xSemaphore, &xHigherPriorityTaskWoken);
     portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }

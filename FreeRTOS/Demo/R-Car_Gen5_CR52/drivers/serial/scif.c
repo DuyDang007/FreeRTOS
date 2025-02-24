@@ -8,20 +8,7 @@
 #include "scif.h"
 #include "CMSIS_5/cmsis_rcar_gen5.h"
 
-
-#if SCIF==1
-#define SCIF0_BASE 0xc0700000
-#define SCIF1_BASE 0xc0704000
-#define SCIF3_BASE 0xc0708000
-#define SCIF4_BASE 0xc070C000
-#else // HSCIF
-#define SCIF0_BASE 0xc0710000
-#define SCIF1_BASE 0xc0714000
-#define SCIF3_BASE 0xc0718000
-#define SCIF4_BASE 0xc071C000
-#endif
-static uint32_t scif_base = SCIF0_BASE;
-
+static uint32_t scif_base;
 
 /* Registers */
 #define SCSMR           0x00    /* Serial Mode Register */
@@ -119,22 +106,15 @@ static void uart_rcar_set_baudrate(uint32_t baud_rate)
 	uart_rcar_write_8(SCBRR, reg_val);
 }
 
-#if 1 // Interrupt
-
-static int uart_rcar_irq_is_enabled(/*const struct device *dev,*/
-				     uint32_t irq)
+static int uart_rcar_irq_is_enabled(uint32_t irq)
 {
 	return !!(uart_rcar_read_16(SCSCR) & irq);
 }
 
-static int uart_rcar_fifo_fill(/*const struct device *dev,*/
-			       const uint8_t *tx_data,
-			       int len)
+static int uart_rcar_fifo_fill(const uint8_t *tx_data, int len)
 {
-//	struct uart_rcar_data *data = dev->data;
 	int num_tx = 0;
 	uint16_t reg_val;
-//	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
 	while (((len - num_tx) > 0) &&
 	       (uart_rcar_read_16(SCFSR) & SCFSR_TDFE)) {
@@ -148,18 +128,14 @@ static int uart_rcar_fifo_fill(/*const struct device *dev,*/
 		num_tx++;
 	}
 
-//	k_spin_unlock(&data->lock, key);
-
 	return num_tx;
 }
 
-static int uart_rcar_fifo_read(/*const struct device *dev,*/ uint8_t *rx_data,
+static int uart_rcar_fifo_read( uint8_t *rx_data,
 			       const int size)
 {
-//	struct uart_rcar_data *data = dev->data;
 	int num_rx = 0;
 	uint16_t reg_val;
-//	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
 	while (((size - num_rx) > 0) &&
 	       (uart_rcar_read_16(SCFSR) & SCFSR_RDF)) {
@@ -172,166 +148,104 @@ static int uart_rcar_fifo_read(/*const struct device *dev,*/ uint8_t *rx_data,
 
 	}
 
-//	k_spin_unlock(&data->lock, key);
-
 	return num_rx;
 }
 
-static void uart_rcar_irq_tx_enable(/*const struct device *dev*/)
+static void uart_rcar_irq_tx_enable(void)
 {
-//	struct uart_rcar_data *data = dev->data;
-
 	uint16_t reg_val;
-//	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
 	reg_val = uart_rcar_read_16(SCSCR);
 	reg_val |= (SCSCR_TIE);
 	uart_rcar_write_16(SCSCR, reg_val);
-
-//	k_spin_unlock(&data->lock, key);
 }
 
-static void uart_rcar_irq_tx_disable(/*const struct device *dev*/)
+static void uart_rcar_irq_tx_disable(void)
 {
-//	struct uart_rcar_data *data = dev->data;
-
 	uint16_t reg_val;
-//	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
 	reg_val = uart_rcar_read_16(SCSCR);
 	reg_val &= ~(SCSCR_TIE);
 	uart_rcar_write_16(SCSCR, reg_val);
-
-//	k_spin_unlock(&data->lock, key);
 }
 
-static int uart_rcar_irq_tx_ready(/*const struct device *dev*/)
+static int uart_rcar_irq_tx_ready(void)
 {
 	return !!(uart_rcar_read_16(SCFSR) & SCFSR_TDFE);
 }
 
-static void uart_rcar_irq_rx_enable(/*const struct device *dev*/)
+static void uart_rcar_irq_rx_enable(void)
 {
-//	struct uart_rcar_data *data = dev->data;
-
 	uint16_t reg_val;
-//	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
 	reg_val = uart_rcar_read_16(SCSCR);
 	reg_val |= (SCSCR_RIE);
 	uart_rcar_write_16(SCSCR, reg_val);
-
-//	k_spin_unlock(&data->lock, key);
 }
 
-static void uart_rcar_irq_rx_disable(/*const struct device *dev*/)
+static void uart_rcar_irq_rx_disable(void)
 {
-//	struct uart_rcar_data *data = dev->data;
-
 	uint16_t reg_val;
-//	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
 	reg_val = uart_rcar_read_16(SCSCR);
 	reg_val &= ~(SCSCR_RIE);
 	uart_rcar_write_16(SCSCR, reg_val);
-
-//	k_spin_unlock(&data->lock, key);
 }
 
-static int uart_rcar_irq_rx_ready(/*const struct device *dev*/)
+static int uart_rcar_irq_rx_ready(void)
 {
 	return !!(uart_rcar_read_16(SCFSR) & SCFSR_RDF);
 }
 
-static void uart_rcar_irq_err_enable(/*const struct device *dev*/)
+static void uart_rcar_irq_err_enable(void)
 {
-//	struct uart_rcar_data *data = dev->data;
-
 	uint16_t reg_val;
-//	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
 	reg_val = uart_rcar_read_16(SCSCR);
 	reg_val |= (SCSCR_REIE);
 	uart_rcar_write_16(SCSCR, reg_val);
-
-//	k_spin_unlock(&data->lock, key);
 }
 
-static void uart_rcar_irq_err_disable(/*const struct device *dev*/)
+static void uart_rcar_irq_err_disable(void)
 {
-//	struct uart_rcar_data *data = dev->data;
 
 	uint16_t reg_val;
-//	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
 	reg_val = uart_rcar_read_16(SCSCR);
 	reg_val &= ~(SCSCR_REIE);
 	uart_rcar_write_16(SCSCR, reg_val);
-
-//	k_spin_unlock(&data->lock, key);
 }
 
-static int uart_rcar_irq_is_pending(/*const struct device *dev*/)
+static int uart_rcar_irq_is_pending(void)
 {
 	return (uart_rcar_irq_rx_ready() && uart_rcar_irq_is_enabled(SCSCR_RIE)) ||
 	       (uart_rcar_irq_tx_ready() && uart_rcar_irq_is_enabled(SCSCR_TIE));
 }
 
-static int uart_rcar_irq_update()
+static int uart_rcar_irq_update(void)
 {
 	return 1;
 }
 
-static void uart_rcar_irq_callback_set(/*const struct device *dev,*/
-				       uart_irq_callback_user_data_t cb,
-				       void *cb_data)
-{
-	// Todo: Removed it. Only set Handler with ID for interrupt.
-//	struct uart_rcar_data *data = dev->data;
-
-//	data->callback = cb;
-//	data->cb_data = cb_data;
-}
-
-/**
- * @brief Interrupt service routine.
- *
- * This simply calls the callback function, if one exists.
- *
- * @param arg Argument to ISR.
- */
-void uart_rcar_isr()
-{
-	//Todo: Call cb function here.
-//	struct uart_rcar_data *data = dev->data;
-
-//	if (data->callback) {
-//		data->callback(dev, data->cb_data);
-//	}
-}
-#endif
-
-
 uint32_t console_init(uint32_t port) {
-
+    const uint32_t serial_channels_arr[] = {
+        0xc0700000, // SCIF0
+        0xc0704000, // SCIF1
+        0x0,        // Unsupported
+        0xc0708000, // SCIF3
+        0xc070C000, // SCIF4
+        0xc0710000, // HSCIF0
+        0xc0714000, // HSCIF1
+        0xc0718000, // HSCIF2
+        0xc071C000  // HSCIF3
+    };
 	uint16_t reg_val;
 
-	switch (port) {
-		case 0:
-			scif_base = SCIF0_BASE;
-			break;
-		case 1:
-			scif_base = SCIF1_BASE;
-			break;
-		case 3:
-			scif_base = SCIF3_BASE;
-			break;
-		case 4:
-			scif_base = SCIF4_BASE;
-			break;
-		default:
-			return 0;
-	}
+    scif_base = serial_channels_arr[port];
+    if (scif_base == (uint32_t)0)
+    {
+        return 0;
+    }
 
 	/* Disable Transmit and Receive */
 	reg_val = uart_rcar_read_16(SCSCR);

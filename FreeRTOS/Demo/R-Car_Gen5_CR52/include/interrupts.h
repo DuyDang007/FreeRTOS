@@ -36,7 +36,18 @@
 /**
  * @brief HSCIF Interrupt number
  */
-#define HSCIF_INT_ID	623
+#define SCIF0_INT_ID    619
+#define SCIF1_INT_ID    620
+#define SCIF3_INT_ID    621
+#define SCIF4_INT_ID    622
+#define HSCIF0_INT_ID   623
+#define HSCIF1_INT_ID   624
+#define HSCIF2_INT_ID   625
+#define HSCIF3_INT_ID   626
+
+/**
+ * @brief SCP2CR
+ */
 #define SCP2CR_INT_BASE_ID 214
 
 /**

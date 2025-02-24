@@ -12,10 +12,9 @@
 #include "task.h"
 #include "stdio.h"
 
-#include "../Common/include/serial.h"
 #include "CMSIS_5/cmsis_rcar_gen5.h"
 #include "scif.h"
-
+#include "serial/r_serial.h"
 
 /* PFC (Pin Function Controller) */
 #define RCAR_PFC_GPSR1  0xC0800840u       /* R/W 32 GPIO/Peripheral_Function Select register PortGroup 1 */
@@ -28,98 +27,62 @@
 #define RCAR_PFC_IP2SR1_SCIF_CLEAR_MASK  0xFFFFFFF0u /* [3:0]: clear */
 #define RCAR_PFC_PMMR(addr)  ((addr) & 0xFFFFF800u) /* R/W 32 LSI Multiplexed Pin Setting Mask Register */
 
-static void uart_rcar_pfc_init(void)
+static int portInitialized = 0;
+
+static void outbyte(char c);
+
+static void uart_rcar_pfc_init(void);
+
+void R_SERIAL_PortInit(e_serial_devices_t device)
 {
-	uint32_t drv_data;
-
-	/* GPSR1:Set 0xf to [16:12] */
-	drv_data = sys_read32(RCAR_PFC_GPSR1);
-	drv_data = drv_data | RCAR_PFC_GPSR1_SCIF_ENABLE;
-	sys_write32(~drv_data, RCAR_PFC_PMMR(RCAR_PFC_GPSR1));
-	sys_write32(drv_data, RCAR_PFC_GPSR1);
-
-	/* IP1SR1:Set 0x1111 to [31:16] */
-	drv_data = sys_read32(RCAR_PFC_IP1SR1);
-	drv_data = (drv_data & RCAR_PFC_IP1SR1_SCIF_CLEAR_MASK) | RCAR_PFC_IP1SR1_SCIF_ENABLE;
-	sys_write32(~drv_data, RCAR_PFC_PMMR(RCAR_PFC_IP1SR1));
-	sys_write32(drv_data, RCAR_PFC_IP1SR1);
-
-	/* IP2SR1:Set 0x1 to [3:0] */
-	drv_data = sys_read32(RCAR_PFC_IP2SR1);
-	drv_data = (drv_data & RCAR_PFC_IP2SR1_SCIF_CLEAR_MASK) | RCAR_PFC_IP2SR1_SCIF_ENABLE;
-	sys_write32(~drv_data, RCAR_PFC_PMMR(RCAR_PFC_IP2SR1));
-	sys_write32(drv_data, RCAR_PFC_IP2SR1);
-}
-
-
-static int xSerialPortInitialized;
-
-xComPortHandle xSerialPortInitMinimal(unsigned long ulWantedBaud, unsigned portBASE_TYPE uxQueueLength)
-{
-	(void) ulWantedBaud;
-	(void) uxQueueLength;
-
-	if (xSerialPortInitialized)
-		return (xComPortHandle) 0;
+	if (portInitialized)
+		return;
 
 	uart_rcar_pfc_init();
-	console_init(0);
-	xSerialPortInitialized = 1;
-
-	return (xComPortHandle) 0;
+	console_init(device);
+	portInitialized = 1;
 }
 
-void vSerialPutString(xComPortHandle pxPort, const signed char *pcString, unsigned short usStringLength)
+void R_SERIAL_PutString(const unsigned char *buffer, unsigned short length)
 {
-	(void) usStringLength;
-
-	if (!xSerialPortInitialized)
+	if (!portInitialized)
 		return;
 
 	/* Send each character in the string, one at a time. */
-	while (*pcString) {
-		xSerialPutChar(pxPort, *pcString, portMAX_DELAY);
-		pcString++;
+	while (length--) {
+        if (*buffer == '\n')
+            console_putc('\r');
+        console_putc(*buffer);
+        buffer++;
 	}
 }
 
-signed portBASE_TYPE xSerialGetChar(xComPortHandle pxPort, signed char *pcRxedChar, TickType_t xBlockTime)
+int32_t R_SERIAL_GetChar(unsigned char *recv_char)
+{
+    if (recv_char != NULL) {
+        console_getc(recv_char);
+        return 0;
+    }
+	return -1;
+}
+
+int32_t R_SERIAL_PutChar(unsigned char send_char)
+{
+	console_putc(send_char);
+	return 0;
+}
+
+void R_SERIAL_Close(void)
 {
 	/* Not supported */
-	return pdFALSE;
-}
-
-signed portBASE_TYPE xSerialPutChar(xComPortHandle pxPort, signed char cOutChar, TickType_t xBlockTime)
-{
-	(void) pxPort;
-	(void) xBlockTime;
-
-	console_putc(cOutChar);
-	return pdTRUE;
-}
-
-void vSerialClose(xComPortHandle xPort)
-{
-	/* Not supported */
-	(void) xPort;
-}
-
-void outbyte(char c)
-{
-	if (!xSerialPortInitialized)
-		xSerialPortInitMinimal(UART_BAUDRATE, 200);
-
-	/* Standard practice to convert \n to \r\n */
-	if (c == '\n')
-		console_putc('\r');
-
-	console_putc(c);
+	return;
 }
 
 /* Override std C lib output for printf, fprintf */
 int _write(int file, char *ptr, int len)
 {
 	int i;
+    (void) file;
 
 	for (i = 0; i < len; i++) {
 		outbyte(*ptr++);
@@ -153,4 +116,39 @@ int printf_delay(const char *format, ...)
     vTaskDelay(1);
 
     return ret;
+}
+
+static void outbyte(char c)
+{
+	if (!portInitialized)
+		R_SERIAL_PortInit(UART_ID);
+
+	/* Standard practice to convert \n to \r\n */
+	if (c == '\n')
+		console_putc('\r');
+
+	console_putc(c);
+}
+
+static void uart_rcar_pfc_init(void)
+{
+	uint32_t drv_data;
+
+	/* GPSR1:Set 0xf to [16:12] */
+	drv_data = sys_read32(RCAR_PFC_GPSR1);
+	drv_data = drv_data | RCAR_PFC_GPSR1_SCIF_ENABLE;
+	sys_write32(~drv_data, RCAR_PFC_PMMR(RCAR_PFC_GPSR1));
+	sys_write32(drv_data, RCAR_PFC_GPSR1);
+
+	/* IP1SR1:Set 0x1111 to [31:16] */
+	drv_data = sys_read32(RCAR_PFC_IP1SR1);
+	drv_data = (drv_data & RCAR_PFC_IP1SR1_SCIF_CLEAR_MASK) | RCAR_PFC_IP1SR1_SCIF_ENABLE;
+	sys_write32(~drv_data, RCAR_PFC_PMMR(RCAR_PFC_IP1SR1));
+	sys_write32(drv_data, RCAR_PFC_IP1SR1);
+
+	/* IP2SR1:Set 0x1 to [3:0] */
+	drv_data = sys_read32(RCAR_PFC_IP2SR1);
+	drv_data = (drv_data & RCAR_PFC_IP2SR1_SCIF_CLEAR_MASK) | RCAR_PFC_IP2SR1_SCIF_ENABLE;
+	sys_write32(~drv_data, RCAR_PFC_PMMR(RCAR_PFC_IP2SR1));
+	sys_write32(drv_data, RCAR_PFC_IP2SR1);
 }
