@@ -251,4 +251,8 @@ int R_PCIE_EP_TransferDataDMA(struct st_pcie_ep *ep, uint64_t pcie_addr,
 
 /** @} */ // end of PCIE_EP_Module
 
+/**
+* @brief Performing PCIe Inbound ATU
+*/
+void R_PCIE_EP_Inbound_ATU(uint16_t channel);
 #endif

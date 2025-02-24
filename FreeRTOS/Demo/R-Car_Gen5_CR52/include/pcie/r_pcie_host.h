@@ -330,6 +330,10 @@ bool R_PCIE_RegionGetAllocateBase(struct st_pcie_host *host, pcie_bdf_t bdf, boo
  */
 bool R_PCIE_RegionTranslate(struct st_pcie_host *host, pcie_bdf_t bdf, bool mem, bool mem64, size_t bar_size, uint32_t *bar_addr);
 
+/**
+* @brief Performing PCIe Outbound ATU
+*/
+void R_PCIE_Host_Outbound_ATU(uint16_t channel);
 /*---------------------------------------- Configuration bits -----------------------------------------*/
 
 /*
@@ -339,6 +343,7 @@ bool R_PCIE_RegionTranslate(struct st_pcie_host *host, pcie_bdf_t bdf, bool mem,
 /**
  * @brief define
  */
+
 #define PCIE_CONF_CAPPTR    13U    /* capabilities pointer */
 
 /**

@@ -32,15 +32,14 @@
 
 #include "interrupts.h"
 #include "stdio.h"
+#include <stdlib.h>
 #include "pcie/r_pcie_ctrl.h"
 #include "pcie/r_pcie_host.h"
 #include "pcie/r_pcie_ep.h"
 
-#define printf_delay(fmt, ...)      \
-	vTaskDelay(1);		    \
-printf(fmt, ##__VA_ARGS__);         \
-
 #define main_CXL_TASK_PRIORITY        ( tskIDLE_PRIORITY + 1 )
+
+extern int printf_delay(const char *format, ...);
 
 /*-----------------------------------------------------------*/
 
@@ -82,13 +81,47 @@ static void prvSetupHardware( void )
 static void prvCXLTask( void *pvParameters )
 {
 
+    uint8_t ret;
+    struct st_pcie_ep ep;
+    struct st_pcie_host host;
+    uintptr_t *dma_local_addr;
+    enum pcie_ob_mem_type ob_mem_type = PCIE_OB_ANYMEM;
+    uint32_t UCIE_D2D_CH0_LOWER = 0x00000000;
+    uint64_t UCIE_D2D_CH0_UPPER = 0x00000200;
+    uint32_t SIZE_IN_BYTE = 1024;
+    uint32_t EP_CH = 1;
+    uint32_t HOST_CH = 0;
+
     /* Remove compiler warning about unused parameter. */
     ( void ) pvParameters;
 
+    printf_delay("****** TEST: UCIe/CXL driver ******\n");
+
+    printf_delay("Initialize for UCIe EP channel 1\n");
+    R_PCIE_EP_Init(&ep, EP_CH);
+    printf_delay("Initialize for UCIe RC channel 0\n");
+    R_PCIE_InitHost(&host, HOST_CH);
+    printf_delay("Inbound ATU Setting\n");
+    R_PCIE_EP_Inbound_ATU(EP_CH);
+    printf_delay("Outbound ATU Setting\n");
+    R_PCIE_Host_Outbound_ATU(HOST_CH);
+
+    dma_local_addr = malloc(SIZE_IN_BYTE);
+    if (!dma_local_addr)
+        printf_delay("\n UCIe/CXL DMA alloc fail\n");
+
+    printf_delay("\n Performing DMA Read\n");
+    R_PCIE_EP_TransferDataDMA(&ep, (UCIE_D2D_CH0_UPPER << 32) | UCIE_D2D_CH0_LOWER,
+					dma_local_addr, SIZE_IN_BYTE, ob_mem_type,
+					HOST_TO_DEVICE);
+    printf_delay("\n Performing DMA Write\n");
+    R_PCIE_EP_TransferDataDMA(&ep, (UCIE_D2D_CH0_UPPER << 32) | UCIE_D2D_CH0_LOWER,
+                                        dma_local_addr, SIZE_IN_BYTE, ob_mem_type,
+                                        DEVICE_TO_HOST);
+
+    vTaskDelay(1000);
     for( ;; )
     {
-        printf_delay("prvCXLTask ...\n");
-        vTaskDelay(3000);
     }
 }
 
