@@ -23,21 +23,20 @@ message(STATUS ${KERNEL_DIR})
 message(STATUS ${LOGGING_DIR})
 
 ### Check the argumment
-set(BOARD x5h_vdk CACHE STRING "Select board")
-
-set(CORE_NUM 0 CACHE STRING "Select core number")
-
-execute_process(
-    COMMAND mkdir -p ${CMAKE_BINARY_DIR}/common/linker
-    COMMAND bash ${LINKER_DIR}/generate_ldscript.sh ${CORE_NUM} ${LINKER_DIR}/lscript_common.ld.in ${CMAKE_BINARY_DIR}/common/linker/lscript_common.ld
-    WORKING_DIRECTORY ${BSP_DIR}
-)
-
+set(BOARD "x5h_vdk")
+set(ALLOWED_RAM_REGION "1;2;3")
+if(NOT DEFINED RAM_REGION)
+    set(RAM_REGION 1)
+endif()
+set(LDFILE ${BSP_DIR}/common/linker/lscript_sram.ld)
 if(BOARD STREQUAL "x5h_vdk")
-    message(STATUS "Building for ${BOARD} board")
-    set(LDFILE ${BSP_DIR}/common/linker/lscript_vram.ld)
-else()
-    message(FATAL_ERROR "Not supported ${BOARD} board yet")
+    list(FIND ALLOWED_RAM_REGION "${RAM_REGION}" INDEX)
+    if(INDEX GREATER -1)
+        message(STATUS "RAM REGION ${RAM_REGION} is using now.")
+        set(LDFILE ${BSP_DIR}/common/linker/lscript_vram${RAM_REGION}.ld)
+    else()
+        message(FATAL_ERROR "Insert RAM REGION ${RAM_REGION} is not allowed.")
+    endif()
 endif()
 
 ### Global compile definitions
@@ -57,7 +56,7 @@ add_compile_options(
 
 add_link_options(
     -lnosys --specs=nosys.specs
-    -L${BSP_DIR}/common/linker/ -L${CMAKE_BINARY_DIR}/common/linker/ -T ${LDFILE} -Wl,--no-warn-rwx-segments
+    -L${BSP_DIR}/common/linker/ -T ${LDFILE} -Wl,--no-warn-rwx-segments
 )
 
 #######################################################################################
@@ -227,11 +226,6 @@ install(
 # Linker scripts
 install(
     DIRECTORY ${BSP_DIR}/common/linker
-    DESTINATION .
-    FILES_MATCHING PATTERN "*.ld.in" PATTERN "*.ld" PATTERN "*.sh"
-)
-install(
-    DIRECTORY ${CMAKE_BINARY_DIR}/common/linker
     DESTINATION .
     FILES_MATCHING PATTERN "*.ld"
 )
