@@ -71,6 +71,20 @@
 #define INTID_GPIO_NO_EXIST    0x0
 
 /**
+ * @brief Interrupt IDs of I2C driver
+ */
+#define INTID_I2C_IF0		0x0392
+#define INTID_I2C_IF1		0x025D
+#define INTID_I2C_IF2		0x025E
+#define INTID_I2C_IF3		0x025F
+#define INTID_I2C_IF4		0x0260
+#define INTID_I2C_IF5		0x0261
+#define INTID_I2C_IF6		0x0262
+#define INTID_I2C_IF7		0x0263
+#define INTID_I2C_IF8		0x0264
+#define INTID_NO_EXIST		0x0
+
+/**
  * @brief Interrupt IDs of SYS-DMAC group 1
  */
 #define INTID_SYSDMA1_CH0                0x013A

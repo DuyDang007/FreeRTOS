@@ -43,6 +43,7 @@ static void prvSetupHardware( void );
 
 static void prvI2CTask( void *pvParameters );
 
+static void i2cUserCallback(void *data);
 /*-----------------------------------------------------------*/
 
 int main( void )
@@ -77,8 +78,8 @@ static void prvI2CTask( void *pvParameters )
 	/* Remove compiler warning about unused parameter. */
 	( void ) pvParameters;
 
-	uint8_t send_data[] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07};
-	uint8_t result[10];
+	uint8_t send_data[] = { 0x1, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07};
+	uint8_t result[24];
 	/* Remove compiler warning about unused parameter. */
 	( void ) pvParameters;
 
@@ -86,22 +87,28 @@ static void prvI2CTask( void *pvParameters )
 	i2c_instance_ctrl_t g_i2c_device_ctrl_1;
 	i2c_master_cfg_t        g_i2c_device_cfg_1 =
 	{
-	    .channel       = 0,
+	    .channel       = 1,
 	    .rate          = I2C_MASTER_RATE_FAST,
 	    .slave         = 0x6d,
 	    .addr_mode     = I2C_MASTER_ADDR_MODE_7BIT,
-	    .p_callback    = NULL,     // Callback
+	    .dma_single    = false,
 	    .p_context     = &g_i2c_device_ctrl_1,
 	};
 	    printf_delay("PROGRAM START\r\n");
 	    R_I2C_Open(&g_i2c_device_ctrl_1, &g_i2c_device_cfg_1);
 
+	    R_I2C_CallbackSet(&g_i2c_device_ctrl_1, (void *)i2cUserCallback, &g_i2c_device_ctrl_1, NULL);
+
 	    printf_delay("WRITE DATA \r\n");
 	    R_I2C_Write(&g_i2c_device_ctrl_1, send_data, sizeof(send_data), 0);
 	    printf_delay("WRITE DONE\r\n");
 
-	    R_I2C_Read(&g_i2c_device_ctrl_1, (uint8_t *)&result, 1, 0);
-	    printf_delay("READ DATA: 0x%x\r\n", result[0]);
+	    R_I2C_Read(&g_i2c_device_ctrl_1, (uint8_t *)&result, sizeof(result), 0);
+	    printf_delay("READ DATA: ");
+	    for (uint8_t i = 0; i < sizeof(result); i++)
+	        printf_delay("0x%x\t", result[i]);
+	    printf_delay("\r\n");
+
 	    R_I2C_Close(&g_i2c_device_ctrl_1);
 	    printf_delay("PROGRAM END\r\n");
 
@@ -112,7 +119,10 @@ static void prvI2CTask( void *pvParameters )
 }
 
 /*-----------------------------------------------------------*/
-
+void i2cUserCallback(void *data) {
+	i2c_instance_ctrl_t * p_instance_ctrl = (i2c_instance_ctrl_t *) data;
+	/* Todo: */
+}
 int printf_raw(const char *format, ...);
 
 void vMainAssertCalled( const char *pcFileName, uint32_t ulLineNumber )

@@ -13,6 +13,8 @@ extern "C" {
 #endif
 
 #include <stdint.h>
+#include <stdbool.h>
+#include "interrupts.h"
 
 /**
  * \defgroup  I2CMaingroup   I2C related drivers
@@ -54,7 +56,7 @@ typedef enum {
  *
  */
 uint32_t RCar_I2C_Write(r_i2c_Unit_t Unit, uint32_t SlaveAddr, const uint8_t *Bytes,
-                     uint32_t NumBytes);
+                     uint32_t NumBytes, bool dma_single);
 
 /**
  * Read a number of bytes from an address of the given I2C channel
@@ -68,7 +70,7 @@ uint32_t RCar_I2C_Write(r_i2c_Unit_t Unit, uint32_t SlaveAddr, const uint8_t *By
  *
  */
 uint32_t RCar_I2C_Read(r_i2c_Unit_t Unit, uint32_t SlaveAddr, uint8_t *Bytes,
-                    uint32_t NumBytes);
+                    uint32_t NumBytes, bool dma_single);
 
 /**
  * Configure the slave map in read mode and read the number of bytes required
@@ -84,7 +86,9 @@ uint32_t RCar_I2C_Read(r_i2c_Unit_t Unit, uint32_t SlaveAddr, uint8_t *Bytes,
 uint32_t R_I2C_ReadRegMap(r_i2c_Unit_t Unit, uint32_t SlaveAddr, uint32_t SlaveReg,
                           uint8_t *Bytes, uint32_t NumBytes);
 
-void RCar_I2C_Init(r_i2c_Unit_t Unit);
+void RCar_I2C_Init(r_i2c_Unit_t Unit, uint32_t I2C_ClockRate);
+int R_I2C_SetInterruptCallback(r_i2c_Unit_t Unit, IrqHandlerFn handler, void *ctx);
+int R_I2C_Irq_handler(r_i2c_Unit_t Unit);
 /** @} */ /* end of group I2Cgroup */
 
 #ifdef __cplusplus

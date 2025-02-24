@@ -91,6 +91,8 @@ typedef struct st_i2c_master_cfg
     uint32_t               txi_irq;                           ///< Transmit IRQ number.
     uint32_t               tei_irq;                           ///< Transmit end IRQ number.
     uint32_t               eri_irq;                           ///< Error IRQ number.
+    bool 		   dma_single;			      ///< DMA single mode
+    bool 		   dma_cont;			      ///< DMA continuous mode.
 
     /* Transfer API support */
     //transfer_instance_t const * p_transfer_tx;                ///< Transfer instance for I2C transmit. Set to NULL if unused.
@@ -116,6 +118,7 @@ typedef void i2c_master_ctrl_t;
 typedef struct st_i2c_instance_ctrl
 {
     i2c_master_cfg_t const  * p_cfg;    ///< Pointer to the configuration structure.
+    i2c_master_rate_t      rate;	//Device's maximum clock rate from enum i2c_rate_t
     uint32_t                slave;      ///< The address of the slave device.
     i2c_master_addr_mode_t  addr_mode;  ///< Indicates how slave fields should be interpreted.
     uint32_t                open;       ///< Flag to determine if the device is open.
@@ -141,6 +144,8 @@ typedef struct st_i2c_instance_ctrl
     volatile bool restart;              ///< Holds whether or not the restart should be issued when done.
     volatile bool err;                  ///< Tracks whether or not an error occurred during processing.
     volatile bool restarted;            ///< Tracks whether or not a restart was issued during the previous transfer.
+    volatile bool dma_single;		///< Use DMA single mode to transfer data.
+    volatile bool dma_cont;		///< Use DNA continuous mode to transfer data.
     volatile bool do_dummy_read;        ///< Tracks whether a dummy read is issued on the first RX.
     volatile bool activation_on_rxi;    ///< Tracks whether the transfer is activated on RXI interrupt.
     volatile bool activation_on_txi;    ///< Tracks whether the transfer is activated on TXI interrupt.
