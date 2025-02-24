@@ -7,18 +7,18 @@
  */
 
 #include <string.h>
-#include "protocol.h"
-#include "util.h"
-#include "scmi/r_scmi_protocol_power.h"
+#include "scmi/inc/protocol.h"
+#include "scmi/inc/util.h"
+#include "scmi/inc/power.h"
 
-DT_SCMI_PROTOCOL_DEFINE_NODEV(SCMI_PROTOCOL_POWER_DOMAIN, NULL);
+SCMI_PROTOCOL_DEFINE_NODEV(SCMI_PROTOCOL_POWER_DOMAIN, NULL);
 
 struct scmi_power_state_get_reply {
 	int32_t status;
 	uint32_t power_state;
 };
 
-int R_SCMI_PowerVersionGet(uint32_t *version)
+int scmi_power_version_get(uint32_t *version)
 {
 	struct scmi_protocol *proto = &SCMI_PROTOCOL_NAME(SCMI_PROTOCOL_POWER_DOMAIN);
 	struct scmi_msg_resp_version reply_buffer;
@@ -57,7 +57,7 @@ int R_SCMI_PowerVersionGet(uint32_t *version)
 	return 0;
 }
 
-int R_SCMI_PowerStateGet(struct scmi_power_state_config *cfg)
+int scmi_power_state_get(struct scmi_power_state_config *cfg)
 {
 	struct scmi_protocol *proto = &SCMI_PROTOCOL_NAME(SCMI_PROTOCOL_POWER_DOMAIN);
 	struct scmi_power_state_get_reply reply_buffer;
@@ -96,7 +96,7 @@ int R_SCMI_PowerStateGet(struct scmi_power_state_config *cfg)
 	return 0;
 }
 
-int R_SCMI_PowerStateSet(struct scmi_power_state_config *cfg)
+int scmi_power_state_set(struct scmi_power_state_config *cfg)
 {
 	struct scmi_protocol *proto = &SCMI_PROTOCOL_NAME(SCMI_PROTOCOL_POWER_DOMAIN);
 	struct scmi_message msg, reply;
@@ -109,11 +109,6 @@ int R_SCMI_PowerStateSet(struct scmi_power_state_config *cfg)
 
 	if (proto->id != SCMI_PROTOCOL_POWER_DOMAIN) {
 		return -EINVAL;
-	}
-
-	/* Currently ASYNC flag is not supported. */
-	if (cfg->flags & SCMI_POWER_STATE_SET_FLAGS_ASYNC) {
-		return -ENOTSUP;
 	}
 
 	msg.hdr = SCMI_MESSAGE_HDR_MAKE(SCMI_POWER_DOMAIN_MSG_POWER_STATE_SET, SCMI_COMMAND,
@@ -136,3 +131,4 @@ int R_SCMI_PowerStateSet(struct scmi_power_state_config *cfg)
 
 	return 0;
 }
+

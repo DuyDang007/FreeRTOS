@@ -23,8 +23,6 @@ struct scmi_mbox_channel {
 	const struct scmi_dev *shmem;
 	/* TX dbell */
 	struct mbox_spec tx;
-	/* TX reply dbell */
-	struct mbox_spec tx_reply;
 };
 
 int scmi_mbox_init(struct scmi_dev *transport);

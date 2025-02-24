@@ -5,8 +5,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "rcar_scmi_common.h"
-#include "mbox.h"
+#include "cmsis_rcar_gen5.h"
+#include "interrupts.h"
+#include "scmi/inc/rcar_scmi_common.h"
+#include "scmi/inc/mbox.h"
 
 #define MAILBOX_MAX_CHANNELS 4
 #define MAILBOX_MBOX_SIZE    3
@@ -34,37 +36,55 @@
 #define MFIS_SCP_REG_MFISRSIICR(base, m) \
     (*(volatile uint32_t *)(size_t)(base + (0x1000U * (m)) + 0x00U + 0x20000U))
 
-struct scmi_dev mfis_dev;
+#define CURRENT_CORE_MPIDR		(__get_MPIDR() & 0xF)
+#define CURRENT_CLUSTER_MPIDR	((__get_MPIDR() & 0xF0) >> 8)
+/* Realtime Core[m](m=0-11) for CR52 Agent */
+#define CURRENT_CORE_IDX \
+   (CURRENT_CLUSTER_MPIDR == 0 ? \
+		CURRENT_CORE_MPIDR : \
+		CURRENT_CORE_MPIDR + 4 * CURRENT_CLUSTER_MPIDR)
+
+static struct scmi_dev mfis_dev;
 
 struct mfis_mailbox_data {
 	mbox_callback_t cb[MAILBOX_MAX_CHANNELS];
 	void *user_data[MAILBOX_MAX_CHANNELS];
 	bool channel_enable[MAILBOX_MAX_CHANNELS];
-	uint32_t received_data;
+	//uint32_t received_data;
 };
 
 struct mfis_mailbox_config {
 	uintptr_t base;
 };
 
-static void mfis_mailbox_isr(const struct scmi_dev *dev)
+static void mfis_mailbox_isr(Context_t *context)
 {
+	struct scmi_dev *dev = (struct scmi_dev *)context->ctx;
 	struct mfis_mailbox_data *data = dev->data;
 	const struct mfis_mailbox_config *cfg = dev->config;
-	uint32_t mfis_rtcore_num = X5H_MFIS_SCP_IRQ_RTCORE_CR52;
+	uint32_t mfis_rtcore_num = CURRENT_CORE_IDX;
 	uint32_t mfis_irq = X5H_MFIS_SCP_IRQ_REG_SOURCE(0U) |
 						X5H_MFIS_SCP_IRQ_REG_INT(0U);
 
 	MFIS_SCP_REG_MFISRSIICR(cfg->base, mfis_rtcore_num) = 
 									mfis_irq & X5H_MFIS_SCP_IRQ_REG_MASK;
 
+	for (int i = 0; i < MAILBOX_MAX_CHANNELS; ++i) {
+		/* Continue to next channel if channel is not enabled */
+		if (!data->channel_enable) {
+			continue;
+		}
+
+		if (data->cb[i] && data->user_data[i])
+			data->cb[i](NULL, 0, data->user_data[i], NULL);
+	}
 }
 
 static int mfis_mailbox_send(const struct scmi_dev *dev, uint32_t channel,
 							const struct mbox_msg *msg)
 {
 	const struct mfis_mailbox_config *cfg = dev->config;
-	uint32_t mfis_rtcore_num  = X5H_MFIS_SCP_IRQ_RTCORE_CR52;
+	uint32_t mfis_rtcore_num = CURRENT_CORE_IDX;
 	uint32_t mfis_msg = 0U;
 	uint32_t mfis_irq = X5H_MFIS_SCP_IRQ_REG_SOURCE(0U) |
 						X5H_MFIS_SCP_IRQ_REG_INT(1U);
@@ -141,12 +161,24 @@ static const struct mfis_mailbox_config config = {
 
 static struct mfis_mailbox_data data;
 
+Context_t mfis_mailbox_cxt = {
+	.ctx = (void *)&mfis_dev,
+};
+
 int mfis_mailbox_init(struct mbox_spec *spec)
 {
 	struct scmi_dev *dev = &mfis_dev;
+	int irq_id = CURRENT_CORE_IDX + SCP2CR_INT_BASE_ID;
 
 	if (!spec)
 		return -EINVAL;
+
+	/* Set Handler for Irq */
+	Irq_SetupEntry(irq_id, (IrqHandlerFn)mfis_mailbox_isr, &mfis_mailbox_cxt);
+	/* Set priority for Irq */
+	Irq_SetPriority(irq_id, IPRIORITY(1));
+	/* Enable Irq */
+	Irq_Enable(irq_id);
 
 	dev->api = (void*) &mfis_mailbox_driver_api;
 	dev->config = (void*) &config;
@@ -155,10 +187,5 @@ int mfis_mailbox_init(struct mbox_spec *spec)
 	spec->dev = dev;
 
 	return 0;
-}
-
-void R_SCMI_IsrHandler(void)
-{
-	mfis_mailbox_isr(&mfis_dev);
 }
 

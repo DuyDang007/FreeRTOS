@@ -109,6 +109,7 @@ set(bsp_source
     ${BSP_DIR}/drivers/ucie/ucie_ep.c
     ${BSP_DIR}/drivers/iommu/virtio_mmu.c
     ${SCMI_SRC_LIST}
+	${BSP_DIR}/drivers/state-manager/state_manager.c
 )
 
 set(posix_source
@@ -152,8 +153,8 @@ target_include_directories(freertos_bsp
         $<BUILD_INTERFACE:${BSP_DIR}/drivers/dmac>
 	$<BUILD_INTERFACE:${BSP_DIR}/drivers/watchdog>
         $<BUILD_INTERFACE:${BSP_DIR}/drivers/ucie>
-        $<BUILD_INTERFACE:${BSP_DIR}/drivers/iommu>
-        $<BUILD_INTERFACE:${BSP_DIR}/drivers/firmware/scmi/inc>
+	$<BUILD_INTERFACE:${BSP_DIR}/drivers/iommu>
+        $<BUILD_INTERFACE:${BSP_DIR}/drivers/firmware>
         # POSIX
         $<BUILD_INTERFACE:${BSP_DIR}/common/POSIX_portable>
         $<BUILD_INTERFACE:${POSIX_DIR}/include>
@@ -252,7 +253,7 @@ add_subdirectory(sample_apps/swdt_app)
 add_subdirectory(sample_apps/wwdt_app)
 add_subdirectory(sample_apps/cxl_app)
 add_subdirectory(sample_apps/viommufe_app)
-add_subdirectory(sample_apps/scmi_app)
+add_subdirectory(sample_apps/power-management_app)
 if(ENABLE_OPENAMP)
     add_subdirectory(sample_apps/rpmsg_sample)
 endif()

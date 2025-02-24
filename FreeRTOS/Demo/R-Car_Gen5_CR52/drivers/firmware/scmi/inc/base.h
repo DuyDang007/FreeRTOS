@@ -6,10 +6,11 @@
  */
 
 /*
- * Base protocol describes the properties of the implementation and provides generic error management. 
+ * Base protocol describes the properties of the implementation
+ * and provides generic error management.
  */
-#ifndef __R_SCMI_PROTOCOL_BASE_H_
-#define __R_SCMI_PROTOCOL_BASE_H_
+#ifndef _SCMI_PROTOCOL_BASE_H_
+#define _SCMI_PROTOCOL_BASE_H_
 
 /**
  * @defgroup SCMI_Protocol_Base_Module SCMI Protocol Base Module
@@ -27,7 +28,7 @@
  *
  * @return 0 if all went fine, else return appropriate error. 
  */
-int R_SCMI_BaseVersionGet(uint32_t *version);
+int scmi_base_version_get(uint32_t *version);
 
 /**
  * @brief This function return the attributes of the base protocol
@@ -37,7 +38,7 @@ int R_SCMI_BaseVersionGet(uint32_t *version);
  *
  * @return 0 if all went fine, else return appropriate error. 
  */
-int R_SCMI_BaseAttributesGet(uint8_t *num_protocols, uint8_t *num_agents);
+int scmi_base_attributes_get(uint8_t *num_protocols, uint8_t *num_agents);
 
 /**
  * @brief This function provides the Vendor identifier in an ASCII string
@@ -48,7 +49,7 @@ int R_SCMI_BaseAttributesGet(uint8_t *num_protocols, uint8_t *num_agents);
  *
  * @return 0 if all went fine, else return appropriate error. 
  */
-int R_SCMI_BaseVendorIdGet(bool sub_vendor, char *vendor_id);
+int scmi_base_vendorid_get(bool sub_vendor, char *vendor_id);
 
 /**
  * @brief This function provides a vendor-specific 32-bit implementation version.
@@ -57,7 +58,7 @@ int R_SCMI_BaseVendorIdGet(bool sub_vendor, char *vendor_id);
  *
  * @return 0 if all went fine, else return appropriate error. 
  */
-int R_SCMI_BaseImplementationVersionGet(uint32_t *impl_version);
+int scmi_base_implementation_version_get(uint32_t *impl_version);
 
 /**
  * @brief This function allow agent to discover which protocol is allowed to access.
@@ -69,7 +70,7 @@ int R_SCMI_BaseImplementationVersionGet(uint32_t *impl_version);
  *
  * @return 0 if all went fine, else return appropriate error. 
  */
-int R_SCMI_BaseDiscoverListProtocols(uint32_t *num_protocols,
+int scmi_base_discover_list_protocols(uint32_t *num_protocols,
                                       uint8_t *protocols);
 
 /**
@@ -83,9 +84,10 @@ int R_SCMI_BaseDiscoverListProtocols(uint32_t *num_protocols,
  *
  * @return 0 if all went fine, else return appropriate error. 
  */
-int R_SCMI_BaseDiscoverAgentGet(uint32_t request_agent_id,
+int scmi_base_discover_agent_get(uint32_t request_agent_id,
 								 uint32_t *agent_id, uint8_t *name);
 
 /** @} */ // end of group SCMI_PROTOCOL_BASE_API
 
-#endif // __R_SCMI_PROTOCOL_BASE_H_
+#endif // _SCMI_PROTOCOL_BASE_H_
+

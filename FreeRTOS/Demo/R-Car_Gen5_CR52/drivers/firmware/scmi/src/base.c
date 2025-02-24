@@ -9,11 +9,11 @@
  */
 
 #include <string.h>
-#include "protocol.h"
-#include "util.h"
-#include "scmi/r_scmi_protocol_base.h"
+#include "scmi/inc/protocol.h"
+#include "scmi/inc/util.h"
+#include "scmi/inc/base.h"
 
-DT_SCMI_PROTOCOL_DEFINE_NODEV(SCMI_PROTOCOL_BASE, NULL);
+SCMI_PROTOCOL_DEFINE_NODEV(SCMI_PROTOCOL_BASE, NULL);
 
 #define BASE_ATTRIBUTES_NUM_AGENT(x)    (uint32_t)(((x) >> 8) & 0xFF)
 #define BASE_ATTRIBUTES_NUM_PROTOCOL(x) (uint32_t)(((x) >> 0) & 0xFF)
@@ -57,7 +57,7 @@ struct scmi_msg_resp_base_discover_agent {
 	uint8_t     name[SCMI_SHORT_NAME_MAX_SIZE];
 };
 
-int R_SCMI_BaseVersionGet(uint32_t *version)
+int scmi_base_version_get(uint32_t *version)
 {
 	struct scmi_protocol *proto = &SCMI_PROTOCOL_NAME(SCMI_PROTOCOL_BASE);
 	struct scmi_msg_resp_version reply_buffer;
@@ -105,7 +105,7 @@ int R_SCMI_BaseVersionGet(uint32_t *version)
  *
  * Return: 0 on success, else appropriate SCMI error.
  */
-int R_SCMI_BaseAttributesGet(uint8_t *num_protocols, uint8_t *num_agents)
+int scmi_base_attributes_get(uint8_t *num_protocols, uint8_t *num_agents)
 {
 	struct scmi_protocol *proto = &SCMI_PROTOCOL_NAME(SCMI_PROTOCOL_BASE);
 	struct scmi_msg_resp_base_attributes reply_buffer;
@@ -145,7 +145,7 @@ int R_SCMI_BaseAttributesGet(uint8_t *num_protocols, uint8_t *num_agents)
 	return 0;
 }
 
-int R_SCMI_BaseVendorIdGet(bool sub_vendor, char *vendor_id)
+int scmi_base_vendorid_get(bool sub_vendor, char *vendor_id)
 {
 	struct scmi_protocol *proto = &SCMI_PROTOCOL_NAME(SCMI_PROTOCOL_BASE);
 	struct scmi_msg_resp_discover_vendor reply_buffer;
@@ -184,7 +184,7 @@ int R_SCMI_BaseVendorIdGet(bool sub_vendor, char *vendor_id)
 	return 0;
 }
 
-int R_SCMI_BaseImplementationVersionGet(uint32_t *impl_version)
+int scmi_base_implementation_version_get(uint32_t *impl_version)
 {
 	struct scmi_protocol *proto = &SCMI_PROTOCOL_NAME(SCMI_PROTOCOL_BASE);
 	struct scmi_msg_resp_base_discover_impl_version reply_buffer;
@@ -223,7 +223,7 @@ int R_SCMI_BaseImplementationVersionGet(uint32_t *impl_version)
 	return 0;
 }
 
-int R_SCMI_BaseDiscoverListProtocols(uint32_t *num_protocols,
+int scmi_base_discover_list_protocols(uint32_t *num_protocols,
                                       uint8_t *protocols)
 {
 	struct scmi_protocol *proto = &SCMI_PROTOCOL_NAME(SCMI_PROTOCOL_BASE);
@@ -265,7 +265,7 @@ int R_SCMI_BaseDiscoverListProtocols(uint32_t *num_protocols,
 	return 0;
 }
 
-int R_SCMI_BaseDiscoverAgentGet(uint32_t request_agent_id,
+int scmi_base_discover_agent_get(uint32_t request_agent_id,
 								 uint32_t *agent_id, uint8_t *name)
 {
 	struct scmi_protocol *proto = &SCMI_PROTOCOL_NAME(SCMI_PROTOCOL_BASE);

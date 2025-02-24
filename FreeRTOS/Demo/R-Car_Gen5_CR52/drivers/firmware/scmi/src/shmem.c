@@ -7,11 +7,11 @@
  */
 
 #include <string.h>
-#include "protocol.h"
-#include "shmem.h"
-#include "util.h"
-#include "common.h"
-#include "rcar_scmi_common.h"
+#include "scmi/inc/protocol.h"
+#include "scmi/inc/shmem.h"
+#include "scmi/inc/util.h"
+#include "scmi/inc/common.h"
+#include "scmi/inc/rcar_scmi_common.h"
 
 struct scmi_shmem_config {
 	uintptr_t phys_addr;
@@ -19,7 +19,7 @@ struct scmi_shmem_config {
 };
 
 struct scmi_shmem_data {
-	uintptr_t regmap;
+	uintptr_t regmap[MAX_SHMEM_REGION];
 };
 
 struct scmi_shmem_layout {
@@ -31,20 +31,26 @@ struct scmi_shmem_layout {
 	volatile uint32_t msg_hdr;
 };
 
-int scmi_shmem_get_channel_status(const struct scmi_dev *dev, uint32_t *status)
+int scmi_shmem_get_channel_status(const struct scmi_dev *dev, uint32_t *status,
+								  bool is_notification)
 {
 	struct scmi_shmem_data *data;
 	struct scmi_shmem_layout *layout;
 
 	data = dev->data;
-	layout = (struct scmi_shmem_layout *)data->regmap;
+	if (is_notification) {
+		layout = (struct scmi_shmem_layout *)data->regmap[1];
+	} else {
+		layout = (struct scmi_shmem_layout *)data->regmap[0];
+	}
 
 	*status = layout->chan_status;
 
 	return 0;
 }
 
-static void scmi_shmem_memcpy(uintptr_t dst, const uintptr_t src, uint32_t bytes)
+static void scmi_shmem_memcpy(uintptr_t dst, const uintptr_t src,
+							  uint32_t bytes)
 {
 	int i;
 
@@ -53,15 +59,24 @@ static void scmi_shmem_memcpy(uintptr_t dst, const uintptr_t src, uint32_t bytes
 	}
 }
 
-int scmi_shmem_read_message(const struct scmi_dev *shmem, struct scmi_message *msg)
+int scmi_shmem_read_message(const struct scmi_dev *shmem,
+							struct scmi_message *msg,
+							bool is_notification)
 {
 	struct scmi_shmem_layout *layout;
 	struct scmi_shmem_data *data;
 	const struct scmi_shmem_config *cfg;
+	uintptr_t regmap;
 
 	data = shmem->data;
-	cfg = shmem->config;
-	layout = (struct scmi_shmem_layout *)data->regmap;
+	if (is_notification) {
+		regmap = data->regmap[1];
+		cfg = (struct scmi_shmem_config *)shmem->config + 1;
+	} else {
+		regmap = data->regmap[0];
+		cfg = (struct scmi_shmem_config *)shmem->config;
+	}
+	layout = (struct scmi_shmem_layout *)regmap;
 
 	/* some sanity checks first */
 	if (!msg) {
@@ -94,21 +109,30 @@ int scmi_shmem_read_message(const struct scmi_dev *shmem, struct scmi_message *m
 
 	if (msg->content) {
 		scmi_shmem_memcpy(POINTER_TO_UINT(msg->content),
-				  data->regmap + sizeof(*layout), msg->len);
+				  regmap + sizeof(*layout), msg->len);
 	}
 
 	return 0;
 }
 
-int scmi_shmem_write_message(const struct scmi_dev *shmem, struct scmi_message *msg)
+int scmi_shmem_write_message(const struct scmi_dev *shmem,
+							 struct scmi_message *msg,
+							 bool is_notification)
 {
 	struct scmi_shmem_layout *layout;
 	struct scmi_shmem_data *data;
 	const struct scmi_shmem_config *cfg;
+	uintptr_t regmap;
 
 	data = shmem->data;
-	cfg = shmem->config;
-	layout = (struct scmi_shmem_layout *)data->regmap;
+	if (is_notification) {
+		regmap = data->regmap[1];
+		cfg = (struct scmi_shmem_config *)shmem->config + 1;
+	} else {
+		regmap = data->regmap[0];
+		cfg = (struct scmi_shmem_config *)shmem->config;
+	}
+	layout = (struct scmi_shmem_layout *)regmap;
 
 	/* some sanity checks first */
 	if (!msg) {
@@ -131,7 +155,7 @@ int scmi_shmem_write_message(const struct scmi_dev *shmem, struct scmi_message *
 	layout->msg_hdr = msg->hdr;
 
 	if (msg->content) {
-		scmi_shmem_memcpy(data->regmap + sizeof(*layout),
+		scmi_shmem_memcpy(regmap + sizeof(*layout),
 				  POINTER_TO_UINT(msg->content), msg->len);
 	}
 
@@ -141,49 +165,109 @@ int scmi_shmem_write_message(const struct scmi_dev *shmem, struct scmi_message *
 	return 0;
 }
 
-uint32_t scmi_shmem_channel_status(const struct scmi_dev *shmem)
+uint32_t scmi_shmem_channel_status(const struct scmi_dev *shmem,
+								   bool is_notification)
 {
 	struct scmi_shmem_layout *layout;
 	struct scmi_shmem_data *data;
 
 	data = shmem->data;
-	layout = (struct scmi_shmem_layout *)data->regmap;
+	if (is_notification) {
+		layout = (struct scmi_shmem_layout *)data->regmap[1];
+	} else {
+		layout = (struct scmi_shmem_layout *)data->regmap[0];
+	}
 
 	return layout->chan_status;
 }
 
-void scmi_shmem_update_flags(const struct scmi_dev *shmem, uint32_t mask, uint32_t val)
+int scmi_shmem_channel_free_set(const struct scmi_dev *shmem,
+								   bool is_notification)
 {
 	struct scmi_shmem_layout *layout;
 	struct scmi_shmem_data *data;
 
 	data = shmem->data;
-	layout = (struct scmi_shmem_layout *)data->regmap;
+	if (is_notification) {
+		layout = (struct scmi_shmem_layout *)data->regmap[1];
+	} else {
+		layout = (struct scmi_shmem_layout *)data->regmap[0];
+	}
+
+	if ((layout->chan_status & SCMI_SHMEM_CHAN_STATUS_FREE_BIT) != 0)
+		return SCMI_GENERIC_ERROR;
+
+	layout->chan_status |= SCMI_SHMEM_CHAN_STATUS_FREE_BIT;
+	return 0;
+}
+
+void scmi_shmem_update_flags(const struct scmi_dev *shmem, uint32_t mask,
+							 uint32_t val, bool is_notification)
+{
+	struct scmi_shmem_layout *layout;
+	struct scmi_shmem_data *data;
+
+	data = shmem->data;
+	if (is_notification) {
+		layout = (struct scmi_shmem_layout *)data->regmap[1];
+	} else {
+		layout = (struct scmi_shmem_layout *)data->regmap[0];
+	}
 
 	layout->chan_flags = (layout->chan_flags & ~mask) | (val & mask);
 }
 
-const struct scmi_shmem_config config = {
-	.phys_addr = X5H_SCMI_SHMEM_PLATFORM_CR52,
-	.size = X5H_SCMI_SHMEM_SIZE - sizeof(struct scmi_shmem_layout),
+const struct scmi_shmem_config configs_main[MAX_SHMEM_REGION] = {
+	{
+		.phys_addr = X5H_SCMI_SHMEM_PLATFORM_MAIN,
+		.size = X5H_SCMI_SHMEM_SIZE - sizeof(struct scmi_shmem_layout),
+	},
+	{
+		.phys_addr = X5H_SCMI_SHMEM_AGENT_MAIN,
+		.size = X5H_SCMI_SHMEM_SIZE - sizeof(struct scmi_shmem_layout),
+	},
+};
+
+const struct scmi_shmem_config configs_2nd[MAX_SHMEM_REGION] = {
+	{
+		.phys_addr = X5H_SCMI_SHMEM_PLATFORM_2ND,
+		.size = X5H_SCMI_SHMEM_SIZE - sizeof(struct scmi_shmem_layout),
+	},
+	{
+		.phys_addr = X5H_SCMI_SHMEM_AGENT_2ND,
+		.size = X5H_SCMI_SHMEM_SIZE - sizeof(struct scmi_shmem_layout),
+	},
 };
 
 struct scmi_shmem_data data;
 
 int scmi_shmem_init(struct scmi_dev *dev)
 {
+	uint8_t cpuid = __get_MPIDR() & 0xFF;
+
 	if (!dev)
 		return -EINVAL;
 
-	dev->config = &config;
+	for (int i = 0; i < MAX_SHMEM_REGION; ++i)
+		if ((configs_main[i].size < sizeof(struct scmi_shmem_layout)) ||
+			(configs_2nd[i].size < sizeof(struct scmi_shmem_layout)))
+			return -EINVAL;
+
 	dev->data = &data;
 
-	if (config.size < sizeof(struct scmi_shmem_layout)) {
+	/* No MMU -> map 1:1 */
+	if (0 == cpuid) {
+		dev->config = &configs_main;
+		data.regmap[0] = configs_main[0].phys_addr;
+		data.regmap[1] = configs_main[1].phys_addr;
+	} else if (1 == cpuid) {
+		dev->config = &configs_2nd;
+		data.regmap[0] = configs_2nd[0].phys_addr;
+		data.regmap[1] = configs_2nd[1].phys_addr;
+	} else {
+		SCMI_LOG_ERR("Invalid CPU ID (%d)", cpuid);
 		return -EINVAL;
 	}
-
-	/* No MMU -> map 1:1 */
-	data.regmap = config.phys_addr;
 
 	return 0;
 }

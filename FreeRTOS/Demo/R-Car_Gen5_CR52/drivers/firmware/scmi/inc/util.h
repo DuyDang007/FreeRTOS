@@ -19,7 +19,6 @@
 
 #include <stdint.h>
 
-//struct scmi_channel;
 struct scmi_protocol;
 
 /** @brief Cast @p x, a pointer, to an unsigned integer. */
@@ -58,8 +57,8 @@ struct scmi_protocol;
  * @idx channel index. Should be 0 for TX channels and 1 for
  * RX channels
  */
-#define DT_SCMI_TRANSPORT_PROTO_HAS_CHAN(node_id, idx)\
-	DT_PROP_HAS_IDX(node_id, shmem, idx)
+#define SCMI_TRANSPORT_PROTO_HAS_CHAN(node_id, idx)\
+	PROP_HAS_IDX(node_id, shmem, idx)
 
 #define SCMI_TRANSPORT_CHAN_NAME(proto, idx) CONCAT4(scmi_channel_, proto, _, idx)
 
@@ -74,7 +73,7 @@ struct scmi_protocol;
  *
  * @param node_id protocol node identifier
  */
-#define DT_SCMI_TRANSPORT_TX_CHAN_DECLARE()				\
+#define SCMI_TRANSPORT_TX_CHAN_DECLARE()				\
 		    extern struct scmi_channel					\
 		     SCMI_TRANSPORT_CHAN_NAME(SCMI_PROTOCOL_BASE, 0);		\
 
@@ -84,25 +83,14 @@ struct scmi_protocol;
  * Given a node_id for a protocol, this macro declares the
  * SCMI TX and RX channels statically bound to said protocol via
  * the "extern" qualifier. Since RX channels are currently not
- * supported, this is equivalent to DT_SCMI_TRANSPORT_TX_CHAN_DECLARE().
+ * supported, this is equivalent to SCMI_TRANSPORT_TX_CHAN_DECLARE().
  * Despite this, users should opt for this macro instead of the TX-specific
  * one.
  *
  * @param node_id protocol node identifier
  */
-#define DT_SCMI_TRANSPORT_CHANNELS_DECLARE()				\
-	DT_SCMI_TRANSPORT_TX_CHAN_DECLARE()				\
-
-/**
- * @brief Declare SCMI TX/RX channels using node instance number
- *
- * Same as DT_SCMI_TRANSPORT_CHANNELS_DECLARE() but uses the
- * protocol's node instance number and the DT_DRV_COMPAT macro.
- *
- * @param protocol node instance number
- */
-#define DT_INST_SCMI_TRANSPORT_CHANNELS_DECLARE(inst)				\
-	DT_SCMI_TRANSPORT_CHANNELS_DECLARE(DT_INST(inst, DT_DRV_COMPAT))
+#define SCMI_TRANSPORT_CHANNELS_DECLARE()				\
+	SCMI_TRANSPORT_TX_CHAN_DECLARE()				\
 
 /**
  * @brief Get a reference to a protocol's SCMI TX channel
@@ -116,7 +104,7 @@ struct scmi_protocol;
  * @return reference to the struct scmi_channel of the TX channel
  * bound to the protocol identifier by node_id
  */
-#define DT_SCMI_TRANSPORT_TX_CHAN() \
+#define SCMI_TRANSPORT_TX_CHAN() \
 		    &SCMI_TRANSPORT_CHAN_NAME(SCMI_PROTOCOL_BASE, 0)
 
 /**
@@ -146,19 +134,19 @@ extern struct scmi_dev transport_dev;
  * placed in a linker section called scmi_protocol. Each protocol
  * driver is required to use this macro for "registration". Using
  * this macro directly is higly discouraged and users should opt
- * for macros such as DT_SCMI_PROTOCOL_DEFINE_NODEV() or
- * DT_SCMI_PROTOCOL_DEFINE(), which also takes care of the static
+ * for macros such as SCMI_PROTOCOL_DEFINE_NODEV() or
+ * SCMI_PROTOCOL_DEFINE(), which also takes care of the static
  * channel declaration (if applicable).
  *
  * @param node_id protocol node identifier
  * @param proto protocol ID in decimal format
  * @param pdata protocol private data
  */
-#define DT_SCMI_PROTOCOL_DATA_DEFINE(proto, pdata)			\
+#define SCMI_PROTOCOL_DATA_DEFINE(proto, pdata)			\
 	STRUCT_SECTION(scmi_protocol, SCMI_PROTOCOL_NAME(proto)) = \
 	{									\
 		.id = proto,							\
-		.tx = DT_SCMI_TRANSPORT_TX_CHAN(),			\
+		.tx = SCMI_TRANSPORT_TX_CHAN(),			\
 		.data = pdata,							\
 		.transport = TRANSPORT_GET() \
 	}
@@ -166,7 +154,7 @@ extern struct scmi_dev transport_dev;
 /**
  * @brief Define an SCMI protocol with no device
  *
- * Variant of DT_SCMI_PROTOCOL_DEFINE(), but no `struct device` is
+ * Variant of SCMI_PROTOCOL_DEFINE(), but no `struct device` is
  * created and no initialization function is called during system
  * initialization. This is useful for protocols that are not really
  * part of a subsystem with an API (e.g: pinctrl).
@@ -174,8 +162,9 @@ extern struct scmi_dev transport_dev;
  * @param node_id protocol node identifier
  * @param data protocol private data
  */
-#define DT_SCMI_PROTOCOL_DEFINE_NODEV(proto, data)	\
-	DT_SCMI_TRANSPORT_CHANNELS_DECLARE()			\
-	DT_SCMI_PROTOCOL_DATA_DEFINE(proto, data)
+#define SCMI_PROTOCOL_DEFINE_NODEV(proto, data)	\
+	SCMI_TRANSPORT_CHANNELS_DECLARE()			\
+	SCMI_PROTOCOL_DATA_DEFINE(proto, data)
 
 #endif /* _SCMI_UTIL_H_ */
+

@@ -60,6 +60,24 @@
 	 SCMI_FIELD_MAKE(proto, GENMASK(7, 0), 10) |	\
 	 SCMI_FIELD_MAKE(token, GENMASK(9, 0), 18))
 
+/**
+ * @brief Parse fields from an SCMI message
+ *
+ */
+#define SCMI_FIELD_PARSE(hdr, mask, shift) \
+	(((uint32_t)(hdr) >> (shift)) & mask)
+#define SCMI_MESSAGE_ID_PARSE(hdr) \
+	SCMI_FIELD_PARSE(hdr, GENMASK(7, 0), 0)
+
+#define SCMI_MESSAGE_TYPE_PARSE(hdr) \
+	SCMI_FIELD_PARSE(hdr, GENMASK(1, 0), 8)
+
+#define SCMI_MESSAGE_PROTO_PARSE(hdr) \
+	SCMI_FIELD_PARSE(hdr, GENMASK(7, 0), 10)
+
+#define SCMI_MESSAGE_TOKEN_PARSE(hdr) \
+	SCMI_FIELD_PARSE(hdr, GENMASK(9, 0), 18)
+
 struct scmi_channel;
 
 /**
@@ -110,6 +128,9 @@ enum scmi_status_code {
 #define SCMI_PROTOCOL_VOLTAGE_DOMAIN 23
 #define SCMI_PROTOCOL_PCAP_MONITOR 24
 #define SCMI_PROTOCOL_PINCTRL 25
+
+#define MAX_SCMI_PROTOCOLS \
+	(SCMI_PROTOCOL_PINCTRL - SCMI_PROTOCOL_BASE)
 
 /**
  * @struct scmi_protocol

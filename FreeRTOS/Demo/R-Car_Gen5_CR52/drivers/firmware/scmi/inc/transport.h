@@ -58,6 +58,8 @@ struct scmi_channel {
 	scmi_channel_cb cb;
 	/** is the channel ready to be used by a protocol? */
 	bool ready;
+	/** is this transfer the command (0) or notification (1) type? */
+	bool is_notification;
 };
 
 struct scmi_transport_api {
@@ -72,6 +74,8 @@ struct scmi_transport_api {
 			    struct scmi_channel *chan,
 			    struct scmi_message *msg);
 	bool (*channel_is_free)(const struct scmi_dev *transport,
+				struct scmi_channel *chan);
+	int (*channel_free_set)(const struct scmi_dev *transport,
 				struct scmi_channel *chan);
 	struct scmi_channel *(*request_channel)(const struct scmi_dev *transport,
 						uint32_t proto, bool tx);
@@ -249,6 +253,30 @@ static inline bool scmi_transport_channel_is_free(const struct scmi_dev *transpo
 	}
 
 	return api->channel_is_free(transport, chan);
+}
+
+/**
+ * @brief Set an SCMI channel free (only notification)
+ *
+ * @param transport pointer to the scmi_dev structure for
+ * the transport layer
+ * @param chan pointer to SCMI channel the query is to be
+ * performed on
+ *
+ * @retval 0 if successful
+ * @retval negative errno code if failure
+ */
+static inline int scmi_transport_channel_free_set(const struct scmi_dev *transport,
+						  struct scmi_channel *chan)
+{
+	const struct scmi_transport_api *api =
+		(const struct scmi_transport_api *)transport->api;
+
+	if (!api || !api->channel_free_set) {
+		return -ENOSYS;
+	}
+
+	return api->channel_free_set(transport, chan);
 }
 
 #endif /* _SCMI_TRANSPORT_H_ */

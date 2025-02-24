@@ -8,14 +8,23 @@
 #ifndef __RCAR_SCMI_COMMON_H_
 #define __RCAR_SCMI_COMMON_H_
 
+//#define S2R_DRAFT_FLOW
+
+#define SCMI_AGENT_ID_CA		10
+#define SCMI_AGENT_ID_FRTOS_1ST	2
+#define SCMI_AGENT_ID_FRTOS_2ND 3
+#define SCMI_AGENT_ID_AUTOSAR	4
+
 /* Describe R-Car X5H Specific transport using shared memory
  * and MFIS Mailbox 
  */
-
+#define MAX_SHMEM_REGION			   2
 /* Shared memory address */
 #define X5H_SCMI_SHMEM_BASE_ADDR       (0xC1000000U)
-#define X5H_SCMI_SHMEM_PLATFORM_CR52   (X5H_SCMI_SHMEM_BASE_ADDR + (0x60200U))
-#define X5H_SCMI_SHMEM_AGENT_CR52      (X5H_SCMI_SHMEM_BASE_ADDR + (0x60500U))
+#define X5H_SCMI_SHMEM_PLATFORM_MAIN   (X5H_SCMI_SHMEM_BASE_ADDR + (0x60200U))
+#define X5H_SCMI_SHMEM_AGENT_MAIN      (X5H_SCMI_SHMEM_BASE_ADDR + (0x60300U))
+#define X5H_SCMI_SHMEM_PLATFORM_2ND    (X5H_SCMI_SHMEM_BASE_ADDR + (0x60400U))
+#define X5H_SCMI_SHMEM_AGENT_2ND       (X5H_SCMI_SHMEM_BASE_ADDR + (0x60500U))
 
 /* Shared memory size */
 #define X5H_SCMI_SHMEM_SIZE         (256U)
@@ -37,9 +46,6 @@
 
 /* MFIS IRQ register internal interrupt request bit (0bit used) */
 #define X5H_MFIS_SCP_IRQ_REG_INT(n)         (0x00000001U & (n))
-
-/* Realtime Core[m](m=0-11) for CR52 Agent */
-#define X5H_MFIS_SCP_IRQ_RTCORE_CR52        (0U)
 
 /* MFIS IRQ register mask bits (31-16bit unused) */
 #define X5H_MFIS_SCP_IRQ_REG_MASK           (0x0000FFFFU)

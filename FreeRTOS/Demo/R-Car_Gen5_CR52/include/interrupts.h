@@ -37,7 +37,7 @@
  * @brief HSCIF Interrupt number
  */
 #define HSCIF_INT_ID	623
-#define SCP2CR00_INT_ID 214 
+#define SCP2CR_INT_BASE_ID 214
 
 /**
  * @brief Reserved priority bit

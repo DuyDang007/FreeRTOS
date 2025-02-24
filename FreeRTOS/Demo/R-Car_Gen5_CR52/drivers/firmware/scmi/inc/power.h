@@ -6,8 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _R_SCMI_PROTOCOL_POWER_H_
-#define _R_SCMI_PROTOCOL_POWER_H_
+#ifndef _SCMI_PROTOCOL_POWER_H_
+#define _SCMI_PROTOCOL_POWER_H_
 
 /**
  * @defgroup SCMI_Protocol_Power_Module SCMI Protocol Power Module
@@ -23,9 +23,22 @@
  */
 #define BIT(nr)                   (1UL << (nr))
 /**
+ * @brief Power State Set Flag Mask.
+ */
+#define SCMI_POWER_STATE_SET_FLAG_MASK  (uint32_t)(1UL)
+/**
  * @brief SCMI power state set flags async.
  */
 #define SCMI_POWER_STATE_SET_FLAGS_ASYNC BIT(0)
+
+/**
+ * @brief Power domain on state.
+ */
+#define SCMI_POWER_STATE_ON  (0x00000000U)
+/**
+ * @brief Power domain off state.
+ */
+#define SCMI_POWER_STATE_OFF (0x40000000U)
 
 /**
  * @brief Describes the parameters for the POWER_STATE_SET command
@@ -60,7 +73,7 @@ enum scmi_power_domain_message {
  * @retval 0 if successful
  * @retval negative errno if failure
  */
-int R_SCMI_PowerVersionGet(uint32_t *version);
+int scmi_power_version_get(uint32_t *version);
 
 /**
  * @brief Send the POWER_STATE_SET command and get its reply
@@ -71,7 +84,7 @@ int R_SCMI_PowerVersionGet(uint32_t *version);
  * @retval 0 if successful
  * @retval negative errno if failure
  */
-int R_SCMI_PowerStateSet(struct scmi_power_state_config *cfg);
+int scmi_power_state_set(struct scmi_power_state_config *cfg);
 
 /**
  * @brief Query the power domain state
@@ -82,8 +95,9 @@ int R_SCMI_PowerStateSet(struct scmi_power_state_config *cfg);
  * @retval 0 if successful
  * @retval negative errno if failure
  */
-int R_SCMI_PowerStateGet(struct scmi_power_state_config *cfg);
+int scmi_power_state_get(struct scmi_power_state_config *cfg);
 
 /** @} */ // end of SCMI_Protocol_Power_Module
 
-#endif /* _R_SCMI_PROTOCOL_POWER_H_ */
+#endif /* _SCMI_PROTOCOL_POWER_H_ */
+
