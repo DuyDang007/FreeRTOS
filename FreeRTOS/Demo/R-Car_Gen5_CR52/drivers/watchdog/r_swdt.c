@@ -1,0 +1,120 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: MIT
+ *
+ */
+
+#include "FreeRTOS.h"
+#include "task.h"
+#include <stdio.h>
+#include "watchdog/r_swdt_api.h"
+
+#define SWDT_BASE	0x1C050000
+#define SWTCNT		0x0
+
+#define SWTCSRA		0x04
+#define SWTCSRA_WOVF	(1 << 4)
+#define SWTCSRA_WRFLG	(1 << 5)
+#define SWTCSRA_TME	(1 << 7)
+
+#define SWTCSRB		0x08
+#define OSCCLK		100000000 //HWUM is:131570
+
+#define RST_DM0_BASE	0xC6560000
+#define RST_WDTRSTCR	0x0420
+#define SWDT_RSTMSK	(1 << 1)
+#define RST_RESFC	0x0460
+#define RST_SRES1FC5	(1 << 25)
+
+#define DIV_ROUND_UP(a, b) (((a) + (b) - 1) / (b))
+#define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
+#define MUL_BY_CLKS_PER_SEC(cks, d) \
+			DIV_ROUND_UP((d) * OSCCLK, clk_divs[(cks)])
+
+static const unsigned int clk_divs[] = { 1, 4, 16, 32, 64, 128, 1024, 4096 };
+
+#define printf_delay(fmt, ...)      \
+	vTaskDelay(1);             \
+printf(fmt, ##__VA_ARGS__);         \
+
+uint8_t R_SWDT_Init(uint8_t timeout_sec);
+uint8_t R_SWDT_Ping(uint8_t timeout_new_sec);
+uint32_t R_SWDT_Start();
+uint32_t R_SWDT_Stop();
+
+static uint8_t cks;
+static void r_swdt_write(uintptr_t Addr, uint32_t val)
+{
+	*((volatile uint32_t *)Addr) = val;
+
+	return;
+}
+
+static uint32_t r_swdt_read(uintptr_t Addr)
+{
+
+    return (Addr == 0x1C050000) ?  *((volatile uint16_t *)Addr) : *((volatile uint8_t *)Addr);
+}
+
+static uint32_t r_rst_read(uintptr_t Addr)
+{
+	return *((volatile uint32_t *)Addr);
+}
+
+static void r_swdt_wait_cycles(uint8_t cycles) {
+	uint8_t delay;
+	delay = DIV_ROUND_UP(cycles * 10000000, OSCCLK);
+
+	vTaskDelay(delay);
+}
+
+uint8_t R_SWDT_Init(uint8_t timeout_sec) {
+	uint16_t clks_per_sec;
+	/* for SWDT */
+	r_swdt_write(SWDT_BASE + SWTCSRA, (0xA5A5A5 << 8) | (r_swdt_read(SWDT_BASE + SWTCSRA) & ~SWTCSRA_TME));
+	r_swdt_wait_cycles(2);
+	r_swdt_write(SWDT_BASE + SWTCNT, 0x5A5A0000); //reset counter
+	r_swdt_write(SWDT_BASE + SWTCSRA, (0xA5A5A5 << 8) | (r_swdt_read(SWDT_BASE + SWTCSRA) & ~SWTCSRA_WOVF));
+	r_swdt_write(SWDT_BASE + SWTCSRB, (0xA5A5A5 << 8) | 0);
+
+	for (uint8_t i = ARRAY_SIZE(clk_divs) - 1; i >= 0; i--) {
+		clks_per_sec = OSCCLK / clk_divs[i];
+			if (clks_per_sec && clks_per_sec < 65536) {
+				cks = i;
+			break;
+		}
+	}
+	/* for RST_CTRL */
+	r_swdt_write(RST_DM0_BASE + RST_RESFC, r_rst_read(RST_DM0_BASE + RST_RESFC) & ~RST_SRES1FC5);
+
+	/* Wait WRFLG becomes 0 */
+	while (r_swdt_read(SWDT_BASE + SWTCSRA) & SWTCSRA_WRFLG);
+
+	/* Enable Generating internal reset when SWDT overflow */
+	r_swdt_write(RST_DM0_BASE + RST_WDTRSTCR, r_rst_read(RST_DM0_BASE + RST_WDTRSTCR) & ~SWDT_RSTMSK);
+	r_swdt_write(SWDT_BASE + SWTCNT, (0x5A5A << 16) | (65536 - MUL_BY_CLKS_PER_SEC(cks, timeout_sec)));
+
+	return 0;
+}
+
+uint8_t R_SWDT_Ping(uint8_t timeout_sec)
+{
+	r_swdt_write(SWDT_BASE + SWTCNT, (0x5A5A << 16) | (65536 - MUL_BY_CLKS_PER_SEC(cks, timeout_sec)));
+
+	return 0;
+}
+
+uint32_t R_SWDT_Start() {
+	vTaskDelay(30);
+	r_swdt_write(SWDT_BASE + SWTCSRA, (0xA5A5A5 << 8) | (r_swdt_read(SWDT_BASE + SWTCSRA) | SWTCSRA_TME));
+
+	return 0;
+}
+
+uint32_t R_SWDT_Stop() {
+	r_swdt_wait_cycles(3);
+	r_swdt_write(SWDT_BASE + SWTCSRA, 0);
+
+	return 0;
+}
