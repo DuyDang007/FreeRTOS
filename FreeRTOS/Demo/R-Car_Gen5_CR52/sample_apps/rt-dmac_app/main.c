@@ -30,12 +30,15 @@
 /* Scheduler include files. */
 #include "FreeRTOS.h"
 #include "task.h"
+#include "rt_dmac/rdmac_common.h"
+#include "rt_dmac/rdmac_ctrl.h"
 
 #include "interrupts.h"
 #include "stdio.h"
-#include "virtio_mmu.h"
+#include "stdbool.h"
+#define main_RDMAC_TASK_PRIORITY        ( tskIDLE_PRIORITY + 1 )
 
-#define main_VIOMMUFE_TASK_PRIORITY        ( tskIDLE_PRIORITY + 1 )
+extern int printf_delay(const char *format, ...);
 
 /*-----------------------------------------------------------*/
 
@@ -44,7 +47,7 @@
  */
 static void prvSetupHardware( void );
 
-static void prvVIOMMUFETask( void *pvParameters );
+static void prvRDMACTask( void *pvParameters );
 
 /*-----------------------------------------------------------*/
 
@@ -52,8 +55,9 @@ int main( void )
 {
 	/* Configure the hardware ready to run the demo. */
 	prvSetupHardware();
- 
-    xTaskCreate( prvVIOMMUFETask, "VIRTIO_MMU_FE", configMINIMAL_STACK_SIZE, NULL, main_VIOMMUFE_TASK_PRIORITY, NULL );
+    
+    
+    xTaskCreate( prvRDMACTask, "RTDMACTask", configMINIMAL_STACK_SIZE, NULL, main_RDMAC_TASK_PRIORITY, NULL );
     /* Start the tasks and timer running. */
     vTaskStartScheduler();
     for( ;; )
@@ -74,22 +78,45 @@ static void prvSetupHardware( void )
 	Irq_Setup();
 }
 
-static void prvVIOMMUFETask( void *pvParameters )
+static void prvRDMACTask( void *pvParameters )
 {
+    	/* Remove compiler warning about unused parameter. */
+    	( void ) pvParameters;
 
-    /* Remove compiler warning about unused parameter. */
-    ( void ) pvParameters;
+        rDmacCfg_t cfg;
+        rDmacDescCfg_t descCfg;
 
-    device_t dev;
+        /* Device Driver Part */
+        R_RTDMAC_RcarDmacCtrlInit(RT_DMAC2, DRV_RTDMAC_PRIO_FIX);
 
-    R_IOMMU_AttachDev(SMMU_DSP, dev);
-    R_IOMMU_DetachDev(SMMU_DSP, dev);
+        //Fill in the configuration details
+        cfg.mSrcAddr = 0x189E7000;
+        cfg.mDestAddr = 0x189E7100;
 
-    for( ;; )
-    {
-        printf("prv_VIOMMUFE_Task ...\n");
-        vTaskDelay(3000);
-    }
+	*(volatile uint32_t*)cfg.mSrcAddr = 0x123;
+	printf_delay("Value at SrcAddr: 0x%x \n",*(volatile uint32_t*)cfg.mSrcAddr);
+        cfg.mTransferCount = 1;
+        cfg.mDMAMode = DRV_DMAC_DMA_NO_DESCRIPTOR; // Assuming DRV_DMAC_DMA_NO_DESCRIPTOR is defined
+        cfg.mSrcAddrMode = DRV_RTDMAC_ADDR_FIXED; // Assuming ADDR_MODE_FIXED is defined
+        cfg.mDestAddrMode = DRV_RTDMAC_ADDR_FIXED; // Assuming ADDR_MODE_FIXED is defined
+        cfg.mTransferUnit = DRV_RTDMAC_TRANS_UNIT_4BYTE; // Assuming DRV_RTDMAC_TRANS_UNIT_4BYTE is defined
+        cfg.mResource = DRV_RTDMAC_MEMORY; // Assuming DRV_RTDMAC_MEMORY is defined
+        cfg.mLowSpeed = DRV_RTDMAC_SPEED_NORMAL; // Assuming DRV_RTDMAC_SPEED_NORMAL is defined
+        cfg.mPrioLevel = 0;
+
+        int dmaStatus =R_RTDMAC_RcarDmacExec(RT_DMAC2, RT_DMAC_CH2, &cfg, &descCfg);
+
+	// Check DMA execution status
+	if (dmaStatus != 0)
+		printf_delay("DMA execution failed with status: %d\n", dmaStatus);
+
+	// Verify destination data
+	uint32_t destData = *(volatile uint32_t*)cfg.mDestAddr;
+	printf_delay("Value at DestAddr after DMA: 0x%x \n", destData);
+
+    	for( ;; )
+    	{
+    	}
 }
 
 /*-----------------------------------------------------------*/
@@ -108,4 +135,3 @@ void vDeleteCallingTask( void )
 {
      vTaskDelete( NULL );
 }
-
