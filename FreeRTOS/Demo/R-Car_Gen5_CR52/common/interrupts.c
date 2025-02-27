@@ -40,6 +40,8 @@ static IvtEntry HandlerTable[MAX_IRQ_NUMBER];
 #define MASK_UCIE_ERROR(x)      (0x18A00000U + 0x9778U + ((x) * 0x4U))
 #define STAT_VIN(x)             (0x18A00000U + 0x854CU + ((x) * 0x4U))
 #define MASK_VIN(x)             (0x18A00000U + 0x954CU + ((x) * 0x4U))
+#define STAT_UMF(x)             (0x18A00000U + 0x874CU + ((x) * 0x4U))
+#define MASK_UMF(x)             (0x18A00000U + 0x974CU + ((x) * 0x4U))
 
 typedef struct
 {
@@ -129,10 +131,15 @@ static const irq_table r8a78000_irq_table[] = {
         { 0x17D, 0xFF, STAT_VIN(10), MASK_VIN(10) },
         { 0x17E, 0xFF, STAT_VIN(11), MASK_VIN(11) },
 
-        {0x1FC, 0x1F, STAT_UCIE(0), MASK_UCIE(0) },
-        {0x1FD, 0x1F, STAT_UCIE(1), MASK_UCIE(1) },
-        {0x1FE, 0x1FF, STAT_UCIE_ERROR(0), MASK_UCIE_ERROR(0) },
-        {0x1FF, 0x1FF, STAT_UCIE_ERROR(1), MASK_UCIE_ERROR(1) },
+        { 0x1FC, 0x1F, STAT_UCIE(0), MASK_UCIE(0) },
+        { 0x1FD, 0x1F, STAT_UCIE(1), MASK_UCIE(1) },
+        { 0x1FE, 0x1FF, STAT_UCIE_ERROR(0), MASK_UCIE_ERROR(0) },
+        { 0x1FF, 0x1FF, STAT_UCIE_ERROR(1), MASK_UCIE_ERROR(1) },
+
+        { 0x1F3, 0x3, STAT_UMF(0), MASK_UMF(0) },
+        { 0x1F4, 0x3, STAT_UMF(1), MASK_UMF(1) },
+        { 0x1F5, 0x3, STAT_UMF(2), MASK_UMF(2) },
+        { 0x1F6, 0x3, STAT_UMF(3), MASK_UMF(3) },
 };
 
 /**
