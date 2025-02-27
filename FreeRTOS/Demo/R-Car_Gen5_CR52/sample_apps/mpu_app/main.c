@@ -36,9 +36,9 @@
 
 #define main_MPU_TASK_PRIORITY      ( tskIDLE_PRIORITY + 1 )
 extern uint32_t _RAM_START;
-#define REGION_SRAM           ((uint32_t)&_RAM_START + 0x0001000)
-#define REGION_RO             0x50000000
-#define REGION_DEVICE         0xD0000000
+#define REGION_SRAM           ((uint32_t)&_RAM_START + 0x2BF000)
+//#define REGION_RO             0x50000000
+#define REGION_DEVICE         0xc11d0000
 /*-----------------------------------------------------------*/
 
 /*
@@ -83,7 +83,7 @@ static void prvTestMPURegions( void *pvParameters )
     ( void ) pvParameters;
 
     volatile uint32_t *sram_ptr = (uint32_t *)REGION_SRAM;
-    volatile uint32_t *ro_ptr = (uint32_t *)REGION_RO;
+    //volatile uint32_t *ro_ptr = (uint32_t *)REGION_RO;
     volatile uint32_t *dev_ptr = (uint32_t *)REGION_DEVICE;
 
     printf("----- Test OSAL MPU api\n");
@@ -119,15 +119,15 @@ static void prvTestMPURegions( void *pvParameters )
     vTaskDelay(100);
 
     /* Test Region RO (Read-Only) */ 
-    printf("Testing Region Read-Only ...\n");
+    /*printf("Testing Region Read-Only ...\n");
     vTaskDelay(100);
     uint32_t ro_value = *ro_ptr;
     printf("Read Value = 0x%X\n\n", ro_value);
-    vTaskDelay(100);
+    vTaskDelay(100);*/
 
     /* Attempt to Write to Region RO */
-    printf("Attempting to write to Region RO...\n");
-    *ro_ptr = 0xCCCCCCCC;
+    /*printf("Attempting to write to Region RO...\n");
+    *ro_ptr = 0xCCCCCCCC;*/
 
     vTaskDelete(NULL);
  

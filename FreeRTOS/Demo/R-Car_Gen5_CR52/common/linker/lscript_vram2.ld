@@ -3,16 +3,13 @@ SEARCH_DIR(.)
 INCLUDE lscript_common.ld
 
 /* These values may need changing depending on your app */
-_STACK_SIZE       = 0x480000;   /* 4.5MB */
 _IRQ_STACK_SIZE   = 0x57800;    /* 350 KB */
 _FIQ_STACK_SIZE   = 0x1B000;    /* 100 KB */
 _SVC_STACK_SIZE   = 0x1B000;    /* 100 KB */
 _ABORT_STACK_SIZE = 0x1B000;    /* 100 KB */
-_UNDEF_STACK_SIZE = 0x16800;    /* 90 KB */
-_HEAP_SIZE        = 0x480000;   /* 4.5MB */
+_UNDEF_STACK_SIZE = 0x1B000;    /* 100 KB */
+_HEAP_SIZE        = 0x500000;   /* 5MB */
 /* Heap uses HeapBase global var, see configTOTAL_HEAP_SIZE */
-
-/* Note: See RCAR_VIDEO_BUFFER_START for additional memory used */
 
 /* Address of RAM */
 _RAM_START = ORIGIN(vram2_base_addr);
@@ -225,11 +222,6 @@ SECTIONS
 
 .stack (NOLOAD) : {
    . = ALIGN(16);
-   _stack_end = .;
-   . += _STACK_SIZE;
-   _stack = .;
-   __stack = _stack;
-   . = ALIGN(16);
    _irq_stack_end = .;
    . += _IRQ_STACK_SIZE;
    __irq_stack = .;
@@ -245,10 +237,17 @@ SECTIONS
    . += _FIQ_STACK_SIZE;
    . = ALIGN(16);
    __fiq_stack = .;
+   . = ALIGN(16);
    _undef_stack_end = .;
    . += _UNDEF_STACK_SIZE;
    . = ALIGN(16);
    __undef_stack = .;
+   _os_stack_end = .;
+   remain_mem = _RAM_SIZE - _os_stack_end;
+   . += _RAM_SIZE - remain_mem;
+   . += ALIGN(16);
+   _stack = .;
+   __stack = _stack;
 } > vram2_base_addr
 
 #if defined(ENABLE_OPENAMP_)
