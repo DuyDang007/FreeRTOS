@@ -1,15 +1,10 @@
 #include "gic.h"
-//#include "cmsis_gcc.h"
 #include "cmsis_rcar_gen5.h"
-
-#define GICV3_ROUTE_AFF3_SHIFT           (8)
-
 
 GICD_Type*       gic_dist;
 GICR_Type*      gic_rdist;
 
-static uint32_t gic_addr_valid = 0;
-static uint32_t gic_max_rd = 0;
+static uint8_t gic_max_rd = 4;
 
 void R_GIC_SetICC_SRE(unsigned int value)
 {
@@ -448,11 +443,8 @@ void R_GIC_SetAddr(void* dist, void* rdist) {
 
     gic_dist = (GICD_Type *)dist;
     gic_rdist = (GICR_Type *)rdist;
-    gic_addr_valid = 1;
 
-    // Now find the maximum RD ID that I can use
-    // This is used for range checking in later functions
-    while((gic_rdist[index].lpis.GICR_TYPER[0] & (1<<4)) == 0) // Keep incrementing until GICR_TYPER.Last reports no more RDs in block
+    while((gic_rdist[index].target_ctrl.GICR_TYPER[0] & (1<<4)) == 0)
     {
       index++;
     }
@@ -465,17 +457,12 @@ void R_GIC_SetAddr(void* dist, void* rdist) {
 uint32_t R_GIC_Enable(void) {
     uint32_t result = 1;  // Success indicator
 
-    // Check that GIC pointers are valid
     if (gic_dist == NULL)
         return 1;
 
-    // First set the ARE bits
-    gic_dist->GICD_CTLR = (1 << 5) | (1 << 4);
+    gic_dist->GICD_CTLR = 0x13; // Enable group 0, group 1 and affinity.
 
-    // The split here is because the register layout is different once ARE==1
-
-    // Now set the rest of the options
-    gic_dist->GICD_CTLR = 7 | (1 << 5) | (1 << 4);
+    while ((gic_dist->GICD_CTLR & 0x80000000) != 0x0); // Wait for RWP clear.
 
     return result;
 }
@@ -486,386 +473,147 @@ uint32_t R_GIC_Enable(void) {
 uint32_t R_GIC_GetRedistID(uint32_t affinity) {
     uint32_t index = 0;
 
-    // Check that GIC pointers are valid
-    if (gic_addr_valid==0)
+    if (gic_rdist == 0)
       return 0xFFFFFFFF;
 
     do
     {
-      if (gic_rdist[index].lpis.GICR_TYPER[1] == affinity)
+      if (gic_rdist[index].target_ctrl.GICR_TYPER[1] == affinity)
          return index;
 
       index++;
     }
     while(index <= gic_max_rd);
 
-    return 0xFFFFFFFF; // return -1 to signal not RD found
+    return 0xFFFFFFFF;
 }
 
 uint32_t R_GIC_WakeUpRedist(uint32_t rd) {
-    uint32_t tmp;
+    if (gic_rdist == 0)
+        return 1;
 
-    // Check that GIC pointers are valid
-    if (gic_addr_valid==0)
-      return 1;
+    gic_rdist[rd].target_ctrl.GICR_WAKER &= 0xFFFFFFFD;
 
-    // Tell the Redistributor to wake-up by clearing ProcessorSleep bit
-    tmp = gic_rdist[rd].lpis.GICR_WAKER;
-    tmp = tmp & ~0x2;
-    gic_rdist[rd].lpis.GICR_WAKER = tmp;
-
-    // Poll ChildrenAsleep bit until Redistributor wakes
-    do
-    {
-      tmp = gic_rdist[rd].lpis.GICR_WAKER;
+    while ((gic_rdist[rd].target_ctrl.GICR_WAKER&0x4) == 0x4) {
     }
-    while((tmp & 0x4) != 0);
 
     return 0;
-
 }
 
 uint32_t R_GIC_EnableInt(uint32_t ID, uint32_t rd) {
-    (void)ID; (void)rd;
     uint32_t result = 1;
-    uint32_t bank, max_ppi, max_spi;
-    uint8_t* config;
 
-    #ifdef DEBUG
-    printf("enableInt:: Enabling INTID %d on RD%d\n", ID, rd);
-    #endif
-
-    // Check that GIC pointers are valid
-   if (gic_addr_valid==0)
-   {
-     #ifdef DEBUG
-     printf("enableInt:: ERROR - GIC pointers not intialized\n");
-     #endif
-     return 1;
-   }
-
-    if (ID < 31)
-    {
-      // Check rd in range
-      if (rd > gic_max_rd)
-      {
-         #ifdef DEBUG
-         printf("enableInt:: ERROR - Invalid RD index.\n");
-         #endif
-         return 1;
-      }
-
-       // SGI or PPI
-       ID   = ID & 0x1f;    // ... and which bit within the register
-       ID   = 1 << ID;      // Move a '1' into the correct bit position
-
-       gic_rdist[rd].sgis.GICR_ISENABLER[0] = ID;
-    }
-    else if (ID < 1020)
-    {
-      // SPI
-      bank = ID/32;        // There are 32 IDs per register, need to work out which register to access
-      ID   = ID & 0x1f;    // ... and which bit within the register
-
-      ID   = 1 << ID;      // Move a '1' into the correct bit position
-
-      gic_dist->GICD_ISENABLER[bank] = ID;
-    }
-    else
-    {
-      #ifdef DEBUG
-      printf("enableInt:: ERROR - Invalid interrupt.\n");
-      #endif
+    if (gic_rdist==0) {
       return 1;
+    }
+
+    if (ID < 31) {
+       gic_rdist[rd].sgi_ppi.GICR_ISENABLER[0] = 1 << ID;
+    } else if (ID < 1020) {
+      GIC_EnableIRQ(gic_dist, ID);
     }
 
     return result;
 }
 
 uint32_t R_GIC_DisableInt(uint32_t ID, uint32_t rd) {
-    uint32_t bank, max_ppi, max_spi;
-    uint8_t* config;
-
-    #ifdef DEBUG
-    printf("disableInt:: Disabling INTID %d on RD%d\n", ID, rd);
-    #endif
-
-    // Check that GIC pointers are valid
-    if (gic_addr_valid==0)
-    {
-      #ifdef DEBUG
-      printf("disableInt:: ERROR - GIC pointers not intialized\n");
-      #endif
-      return 1;
-    }
-
     if (ID < 31)
     {
-      // Check rd in range
-      if (rd > gic_max_rd)
-         return 1;
-
-      // SGI or PPI
-      ID   = ID & 0x1f;    // ... and which bit within the register
-      ID   = 1 << ID;      // Move a '1' into the correct bit position
-
-      gic_rdist[rd].sgis.GICR_ICENABLER[0] = ID;
+      gic_rdist[rd].sgi_ppi.GICR_ICENABLER[0] = 1 << ID;
     }
     else if (ID < 1020)
     {
-      // SPI
-      bank = ID/32;        // There are 32 IDs per register, need to work out which register to access
-      ID   = ID & 0x1f;    // ... and which bit within the register
-
-      ID   = 1 << ID;      // Move a '1' into the correct bit position
-
-      gic_dist->GICD_ICENABLER[bank] = ID;
-    }
-    else
-    {
-      #ifdef DEBUG
-      printf("disableInt:: ERROR - Invalid interrupt.\n");
-      #endif
-      return 1;
+      GIC_DisableIRQ(gic_dist, ID);
     }
 
     return 0;
 }
 
 uint32_t R_GIC_SetIntPriority(uint32_t ID, uint32_t rd, uint8_t priority) {
-    uint8_t* config;
-    uint32_t max_ppi, max_spi;
 
-    #ifdef DEBUG
-    printf("setIntPriority:: Setting priority of INTID %d on RD%d to 0x%x\n", ID, rd, priority);
-    #endif
-
-    // Check that GIC pointers are valid
-    if (gic_addr_valid==0)
+    if (gic_rdist==0)
     {
-      #ifdef DEBUG
-      printf("setIntPriority:: ERROR - GIC pointers not intialized\n");
-      #endif
       return 1;
     }
 
     if (ID < 31)
     {
-      // Check rd in range
       if (rd > gic_max_rd)
          return 1;
 
-      // SGI or PPI
-      gic_rdist[rd].sgis.GICR_IPRIORITYR[ID] = priority;
+      gic_rdist[rd].sgi_ppi.GICR_IPRIORITYR[ID] = priority;
     }
     else if (ID < 1020)
     {
-      // SPI
       gic_dist->GICD_IPRIORITYR[ID] = priority;
-    }
-    else
-    {
-      #ifdef DEBUG
-      printf("setIntPriority:: ERROR - Invalid interrupt.\n");
-      #endif
-      return 1;
     }
 
     return 0;
 }
 
 uint32_t R_GIC_SetIntType(uint32_t ID, uint32_t rd, uint32_t type) {
-  uint8_t* config;
-  uint32_t bank, tmp, conf, max_spi;
-
-  #ifdef DEBUG
-  printf("setIntType:: Setting INTID %d on RD%d as type 0x%x\n", ID, rd, type);
-  #endif
-
-  // Check that GIC pointers are valid
-  if (gic_addr_valid==0)
-    return 1;
-
-  if (ID < 31)
-  {
-    // SGI or PPI
-    // Config of SGIs is fixed
-    // It is IMP DEF whether ICFG for PPIs is write-able, on Arm implementations it is fixed
-    return 1;
-  }
-  else if (ID < 1020)
-  {
-    // SPI
-    type = type & 0x3;            // Mask out unused bits
-
-    bank = ID/16;                 // There are 16 IDs per register, need to work out which register to access
-    ID   = ID & 0xF;              // ... and which field within the register
-    ID   = ID * 2;                // Convert from which field to a bit offset (2-bits per field)
-
-    conf = conf << ID;            // Move configuration value into correct bit position
-
-    tmp = gic_dist->GICD_ICFGR[bank];     // Read current value
-    tmp = tmp & ~(0x3 << ID);             // Clear the bits for the specified field
-    tmp = tmp | conf;                     // OR in new configuration
-    gic_dist->GICD_ICFGR[bank] = tmp;     // Write updated value back
-  }
-  else
-    return 1;
-
-  return 0;
-
-}
-
-uint32_t R_GIC_SetIntGroup(uint32_t ID, uint32_t rd, uint32_t security) {
-    uint8_t* config;
-    uint32_t bank, tmp, group, mod, max_ppi, max_spi;
-
-    #ifdef DEBUG
-    printf("setIntGroup:: Setting INTID %d on RD%d as groups 0x%x\n", ID, rd, security);
-    #endif
-
-    // Check that GIC pointers are valid
-    if (gic_addr_valid==0)
-      return 1;
+    if (gic_rdist==0)
+        return 1;
 
     if (ID < 31)
     {
-      // Check rd in range
-      if (rd > gic_max_rd)
-         return 1;
-
-      // SGI or PPI
-      ID   = ID & 0x1f;    // Find which bit within the register
-      ID   = 1 << ID;      // Move a '1' into the correct bit position
-
-      // Read current values
-      group = gic_rdist[rd].sgis.GICR_IGROUPR[0];
-      mod   = gic_rdist[rd].sgis.GICR_IGRPMODR[0];
-
-      // Update required bits
-      switch (security)
-      {
-        case GICV3_GROUP0:
-          group = (group & ~ID);
-          mod   = (mod   & ~ID);
-          break;
-
-        case GICV3_GROUP1_SECURE:
-          group = (group & ~ID);
-          mod   = (mod   | ID);
-          break;
-
-        case GICV3_GROUP1_NON_SECURE:
-          group = (group | ID);
-          mod   = (mod   & ~ID);
-          break;
-
-        default:
-          return 1;
-      }
-
-      // Write modified version back
-      gic_rdist[rd].sgis.GICR_IGROUPR[0] = group;
-      gic_rdist[rd].sgis.GICR_IGRPMODR[0] = mod;
+      return 1;
     }
     else if (ID < 1020)
     {
-      // SPI
-      bank = ID/32;        // There are 32 IDs per register, need to work out which register to access
-      ID   = ID & 0x1f;    // ... and which bit within the register
-
-      ID   = 1 << ID;      // Move a '1' into the correct bit position
-
-      group = gic_dist->GICD_IGROUPR[bank];
-      mod   = gic_dist->GICD_IGRPMODR[bank];
-
-      switch (security)
-      {
-        case GICV3_GROUP0:
-          group = (group & ~ID);
-          mod   = (mod   & ~ID);
-          break;
-
-        case GICV3_GROUP1_SECURE:
-          group = (group & ~ID);
-          mod   = (mod   | ID);
-          break;
-
-        case GICV3_GROUP1_NON_SECURE:
-          group = (group | ID);
-          mod   = (mod   & ~ID);
-          break;
-
-        default:
-          return 1;
-      }
-
-      gic_dist->GICD_IGROUPR[bank] = group;
-      gic_dist->GICD_IGRPMODR[bank] = mod;
+      GIC_SetConfiguration(gic_dist, ID, type);
     }
     else
       return 1;
+    
+    return 0;
+}
+
+uint32_t R_GIC_SetIntGroup(uint32_t ID, uint32_t rd, uint32_t security) {
+    // Just support group 1 non secure
+    if (gic_rdist==0)
+        return 1;
+
+    if (ID < 31)
+    {
+      gic_rdist[rd].sgi_ppi.GICR_IGROUPR[0] |= (1 << (ID%32));
+      gic_rdist[rd].sgi_ppi.GICR_IGRPMODR[0] &= (1 << (ID%32));
+    }
+    else if (ID < 1020)
+    {
+      gic_dist->GICD_IGROUPR[ID/32] |= (1 << (ID%32));
+      gic_dist->GICD_IGRPMODR[ID/2] &= (1 << (ID%32));
+    }
 
   return 0;
 }
 
 uint32_t R_GIC_SetIntRoute(uint32_t ID, uint32_t mode, uint32_t affinity) {
-  uint64_t tmp, max_spi;
+    if (gic_rdist==0)
+        return 0xFFFFFFFF;
 
-  #ifdef DEBUG
-  printf("setIntRoute:: Routing INTID %d to mode=0x%x and affinity=0x%08x\n", ID, mode, affinity);
-  #endif
-
-  // Check that GIC pointers are valid
-  if (gic_addr_valid==0)
-    return 0xFFFFFFFF;
-
-  // Check for SPI ranges
-  // Combine routing in
-  if ((ID > 31) && (ID < 1020)) {
-    tmp = (uint64_t)(affinity & 0x00FFFFFF) | (((uint64_t)affinity & 0xFF000000) << GICV3_ROUTE_AFF3_SHIFT) | ((uint64_t)mode);
-    gic_dist->GICD_IROUTER[ID] = tmp;
-  } 
-  else 
-  {
-      return 1;
-  }
+    if (ID >= 32)
+    {
+        uint64_t value  = (uint64_t)(affinity & 0x00FFFFFF) | (uint64_t) mode;
+        gic_dist->GICD_IROUTER[ID] = value;
+    }
 
   return 0;
 }
 
 uint32_t R_GIC_SetIntPending(uint32_t ID, uint32_t rd) {
-    uint8_t* config;
-    uint32_t bank, tmp, max_ppi, max_spi;
+    uint32_t bank;
 
-    #ifdef DEBUG
-    printf("setIntPending:: Setting INTID %d on RD%d as Pending\n", ID, rd);
-    #endif
-
-    // Check that GIC pointers are valid
-    if (gic_addr_valid==0)
+    if (gic_rdist==0)
       return 0xFFFFFFFF;
 
-    if (ID < 31)
-    {
-      // Check rd in range
-      if (rd > gic_max_rd)
-         return 1;
-
-      ID   = ID & 0x1f;    // Find which bit within the register
-      ID   = 1 << ID;      // Move a '1' into the correct bit position
-
-      gic_rdist[rd].sgis.GICR_ISPENDR[0] = ID;
+    if (ID < 31) {
+      gic_rdist[rd].sgi_ppi.GICR_ISPENDR[0] = 1 << (ID%32);
     }
     else if (ID < 1020)
     {
-      // SPI
-      bank = ID/32;        // There are 32 IDs per register, need to work out which register to access
-      ID   = ID & 0x1f;    // ... and which bit within the register
-
-      ID   = 1 << ID;      // Move a '1' into the correct bit position
-
-      gic_dist->GICD_ISPENDR[bank] = ID;
+      GIC_SetPendingIRQ(gic_dist, ID);
+      GIC_ClearPendingIRQ(gic_dist, ID);
     }
     else
       return 1;
@@ -875,43 +623,19 @@ uint32_t R_GIC_SetIntPending(uint32_t ID, uint32_t rd) {
 }
 
 uint32_t R_GIC_ClearIntPending(uint32_t ID, uint32_t rd) {
-    uint8_t* config;
-    uint32_t bank, tmp, max_ppi, max_spi;
-
-    #ifdef DEBUG
-    printf("clearIntPending:: Clearing pending state of INTID %d on RD%d\n", ID, rd);
-    #endif
-
-    // Check that GIC pointers are valid
-    if (gic_addr_valid==0)
+    if (gic_rdist==0)
       return 0xFFFFFFFF;
 
     if (ID < 31)
     {
-      // Check rd in range
-      if (rd > gic_max_rd)
-         return 1;
-
-      ID   = ID & 0x1f;    // Find which bit within the register
-      ID   = 1 << ID;      // Move a '1' into the correct bit position
-
-      gic_rdist[rd].sgis.GICR_ICPENDR[0] = ID;
-
+      gic_rdist[rd].sgi_ppi.GICR_ICPENDR[0] = 1 << (ID%32);
     }
     else if (ID < 1020)
     {
-      // SPI
-      bank = ID/32;        // There are 32 IDs per register, need to work out which register to access
-      ID   = ID & 0x1f;    // ... and which bit within the register
-
-      ID   = 1 << ID;      // Move a '1' into the correct bit position
-
-      gic_dist->GICD_ICPENDR[bank] = ID;
+      GIC_SetPendingIRQ(gic_dist, ID);
     }
     else
       return 1;
 
     return 0;
 }
-
-
