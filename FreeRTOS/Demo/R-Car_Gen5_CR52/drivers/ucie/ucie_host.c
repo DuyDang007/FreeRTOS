@@ -1,7 +1,7 @@
 /*
-* Copyright (c) 2025 Renesas Electronics Corporation and/or its affiliates
+* Copyright (c) 2025 Renesas Electronics Corporation
 *
-* SPDX-License-Identifier: BSD-3-Clause
+* SPDX-License-Identifier: MIT
 */
 
 #include "pcie/r_pcie_host.h"
