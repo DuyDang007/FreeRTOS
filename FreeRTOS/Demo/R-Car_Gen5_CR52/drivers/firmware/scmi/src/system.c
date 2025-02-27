@@ -1,11 +1,8 @@
 /*
  *
  * Copyright (c) 2025 Renesas Electronics Corporation
- * Copyright (C) 2020-2022 ARM Ltd.
  *
- * System Control and Management Interface (SCMI) System Power Protocol
- *
- * SPDX-License-Identifier: GPL-2.0
+ * SPDX-License-Identifier: MIT
  */
 
 #include "scmi/inc/protocol.h"
@@ -20,10 +17,10 @@
 
 SCMI_PROTOCOL_DEFINE_NODEV(SCMI_PROTOCOL_SYSTEM, NULL);
 
-enum scmi_system_protocol_cmd {
+enum scmi_system_prot_cmd {
     SYSTEM_POWER_STATE_SET = 0x3,
-    SYSTEM_POWER_STATE_GET = 0x4,
-    SYSTEM_POWER_STATE_NOTIFY = 0x5,
+    SYSTEM_POWER_STATE_GET,
+    SYSTEM_POWER_STATE_NOTIFY,
 };
 
 struct system_info {

@@ -3,6 +3,7 @@
  * Copyright (c) 2025 Renesas Electronics Corporation
  *
  * SPDX-License-Identifier: MIT
+ *
  */
 
 #ifndef _R_POWER_DOMAIN_ID_H_

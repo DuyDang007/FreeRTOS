@@ -1,11 +1,8 @@
 /*
  *
  * Copyright (c) 2025 Renesas Electronics Corporation
- * Copyright (C) 2018-2021 ARM Ltd.
  *
- * System Control and Management Interface (SCMI) Base Protocol
- *
- * SPDX-License-Identifier: GPL-2.0
+ * SPDX-License-Identifier: MIT
  */
 
 #include <string.h>
@@ -18,19 +15,19 @@ SCMI_PROTOCOL_DEFINE_NODEV(SCMI_PROTOCOL_BASE, NULL);
 #define BASE_ATTRIBUTES_NUM_AGENT(x)    (uint32_t)(((x) >> 8) & 0xFF)
 #define BASE_ATTRIBUTES_NUM_PROTOCOL(x) (uint32_t)(((x) >> 0) & 0xFF)
 
-enum scmi_base_protocol_cmd {
+enum scmi_base_prot_cmd {
     BASE_DISCOVER_VENDOR = 0x3,
-    BASE_DISCOVER_SUB_VENDOR = 0x4,
-    BASE_DISCOVER_IMPLEMENT_VERSION = 0x5,
-    BASE_DISCOVER_LIST_PROTOCOLS = 0x6,
-    BASE_DISCOVER_AGENT = 0x7,
-    BASE_NOTIFY_ERRORS = 0x8,
-    BASE_SET_DEVICE_PERMISSIONS = 0x9,
-    BASE_SET_PROTOCOL_PERMISSIONS = 0xa,
-    BASE_RESET_AGENT_CONFIGURATION = 0xb,
+    BASE_DISCOVER_SUB_VENDOR,
+    BASE_DISCOVER_IMPLEMENT_VERSION,
+    BASE_DISCOVER_LIST_PROTOCOLS,
+    BASE_DISCOVER_AGENT,
+    BASE_NOTIFY_ERRORS,
+    BASE_SET_DEVICE_PERMISSIONS,
+    BASE_SET_PROTOCOL_PERMISSIONS,
+    BASE_RESET_AGENT_CONFIGURATION,
 };
 
-struct scmi_msg_resp_base_attributes {
+struct scmi_msg_resp_attributes {
     int32_t  status;
     uint32_t attributes;
 };
@@ -108,7 +105,7 @@ int scmi_base_version_get(uint32_t *version)
 int scmi_base_attributes_get(uint8_t *num_protocols, uint8_t *num_agents)
 {
 	struct scmi_protocol *proto = &SCMI_PROTOCOL_NAME(SCMI_PROTOCOL_BASE);
-	struct scmi_msg_resp_base_attributes reply_buffer;
+	struct scmi_msg_resp_attributes reply_buffer;
 	struct scmi_message msg, reply;
 	int ret;
 

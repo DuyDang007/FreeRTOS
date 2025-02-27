@@ -1,8 +1,18 @@
 /*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/*
  *
  * Copyright (c) 2025 Renesas Electronics Corporation
  *
+ * This file is based on the
+ * https://github.com/zephyrproject-rtos/zephyr/blob/main/drivers/mbox/mbox_nxp_mailbox.c
+ *
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * Wrapper of Renesas Mailbox driver for Zephyr's MBOX model.
  */
 
 #include "cmsis_rcar_gen5.h"
