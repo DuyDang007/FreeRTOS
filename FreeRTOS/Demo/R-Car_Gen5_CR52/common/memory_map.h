@@ -27,22 +27,22 @@ typedef struct st_memory_region {
 #define PERIPHERAL_START_1          0x188C0000
 #define PERIPHERAL_SIZE_1           0x07740000  // to 0x2000_0000
 
-#define CA_CMA_ADDRESS              0x50000000
-#define CA_CMA_SIZE                 0x0FF00000  // to 0x5FF0_0000
+#define SHARED_DRAM_ADDRESS_1       0x40000000
+#define SHARED_DRAM_SIZE_1          0x20000000  // to 0x6000_0000
 
 #define OSAL_MEMORY_ADDRESS         0x60000000
 #define OSAL_MEMORY_SIZE            0x20000000  // to 0x8000_0000
 
-#define SHARED_DRAM_ADDRESS         0x80000000
-#define SHARED_DRAM_SIZE            0x20000000  // to 0xA000_0000
+#define SHARED_DRAM_ADDRESS_2       0x80000000
+#define SHARED_DRAM_SIZE_2          0x40000000  // to 0xC000_0000
 
 #define PERIPHERAL_START_2          0xC0000000
 #define PERIPHERAL_SIZE_2           0x40000000  // to 0x1_0000_0000
 
 static const st_memory_region_t RCAR_MEMMORY_ARR[] = {
-    {.type = CMA,           .mem_addr = {.base_address = (uint32_t) CA_CMA_ADDRESS,      .size = (uint32_t) CA_CMA_SIZE},         .attr = DEVICE_ATTR},
     {.type = OSAL,          .mem_addr = {.base_address = (uint32_t) OSAL_MEMORY_ADDRESS, .size = (uint32_t) OSAL_MEMORY_SIZE},    .attr = DEVICE_ATTR},
-    {.type = SHARE_MEM,     .mem_addr = {.base_address = (uint32_t) SHARED_DRAM_ADDRESS, .size = (uint32_t) SHARED_DRAM_SIZE},    .attr = DEVICE_ATTR},
+    {.type = SHARE_MEM,     .mem_addr = {.base_address = (uint32_t) SHARED_DRAM_ADDRESS_1, .size = (uint32_t) SHARED_DRAM_SIZE_1},    .attr = DEVICE_ATTR},
+    {.type = SHARE_MEM,     .mem_addr = {.base_address = (uint32_t) SHARED_DRAM_ADDRESS_2, .size = (uint32_t) SHARED_DRAM_SIZE_2},    .attr = DEVICE_ATTR},
     {.type = PERIPHERAL,    .mem_addr = {.base_address = (uint32_t) PERIPHERAL_START_0,  .size = (uint32_t) PERIPHERAL_SIZE_0},   .attr = DEVICE_ATTR},
     {.type = PERIPHERAL,    .mem_addr = {.base_address = (uint32_t) PERIPHERAL_START_1,  .size = (uint32_t) PERIPHERAL_SIZE_1},   .attr = DEVICE_ATTR},
     {.type = PERIPHERAL,    .mem_addr = {.base_address = (uint32_t) PERIPHERAL_START_2,  .size = (uint32_t) PERIPHERAL_SIZE_2},   .attr = DEVICE_ATTR}
