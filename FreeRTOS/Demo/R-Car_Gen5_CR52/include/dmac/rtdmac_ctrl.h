@@ -1,9 +1,9 @@
-/*************************************************************************************************************
-* rtdmac_ctrl_h
-* Copyright (c) 2025 Renesas Electronics Corporation
-* This software is released under the MIT License
-* http://opensource.org/licenses/mit-license.php
-*************************************************************************************************************/
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: MIT
+ *
+ */
 
 #ifndef _RDMAC_CTRL_H_
 #define _RDMAC_CTRL_H_

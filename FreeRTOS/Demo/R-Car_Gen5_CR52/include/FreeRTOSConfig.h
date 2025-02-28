@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: MIT
+ *
+ */
 #ifndef FREERTOSCONFIG_H_
 #define FREERTOSCONFIG_H_
 /*-----------------------------------------------------------
