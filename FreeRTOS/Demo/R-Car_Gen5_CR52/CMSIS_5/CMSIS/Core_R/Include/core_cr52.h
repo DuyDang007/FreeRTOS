@@ -755,8 +755,8 @@ typedef struct
         uint32_t RESERVED4[3];
   __IOM uint32_t GICD_CPENDSGIR[4];          /*!< Offset: 0x0F10 (R/W)  Interrupt SGI Clear Pending Registers*/
   __IOM uint32_t GICD_SPENDSGIR[4];          /*!< Offset: 0x0F20 (R/W)  Interrupt SGI Set Pending Registers*/
-        uint32_t RESERVED5[5236];
-  __IOM uint64_t GICD_IROUTER[960U];         /*!< Offset: 0x6100 (R/ )  Interrupt Routing Registers 32 - 991 */
+        uint32_t RESERVED5[5172];
+  __IOM uint64_t GICD_IROUTER[960U];         /*!< Offset: 0x6000 (R/ )  Interrupt Routing Registers 32 - 991 */
         uint32_t RESERVED6[2035U];           /* Reserved space from 0x7EFC to 0xFFCF */
   __IM  uint32_t GICD_PIDR[8U];              /*!< Offset: 0xFFD0 (R/ )  Identification Registers 4 - 7, Offset: 0xFFE0 (R/ )  Identification Registers 0 - 3 */
   __IM  uint32_t GICD_CIDR[4U];              /*!< Offset: 0xFFF0 (R/ )  Identification Registers 0 - 3 */
