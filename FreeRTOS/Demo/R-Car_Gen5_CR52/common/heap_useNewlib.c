@@ -57,7 +57,12 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Modified by Renesas:
+ /*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
+ * Modified by Renesas:
  *  - Allow older verison of NEWLIB.
  *  - HEAP_SIZE replaced with _HEAP_SIZE.
  *  - __HeapBase replaced with HeapBase.
