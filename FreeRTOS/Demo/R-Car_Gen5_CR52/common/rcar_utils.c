@@ -1,3 +1,9 @@
+/*************************************************************************************************************
+* Copyright (c) 2025 Renesas Electronics Corporation
+*
+* SPDX-License-Identifier: MIT
+ *************************************************************************************************************/
+
 #include "memory_map.h"
 #include "cmsis_rcar_gen5.h"
 #include "drivers/timer/arm_generic_timer.h"

@@ -1,9 +1,8 @@
 /*************************************************************************************************************
-* sysdmac_ctrl_h
 * Copyright (c) 2025 Renesas Electronics Corporation
-* This software is released under the MIT License
-* http://opensource.org/licenses/mit-license.php
-*************************************************************************************************************/
+*
+* SPDX-License-Identifier: MIT
+ *************************************************************************************************************/
 
 #ifndef _SYSDMAC_CTRL_H_
 #define _SYSDMAC_CTRL_H_

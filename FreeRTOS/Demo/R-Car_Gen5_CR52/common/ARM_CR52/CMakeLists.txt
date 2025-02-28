@@ -1,3 +1,9 @@
+#*************************************************************************************************************
+# Copyright (c) 2025 Renesas Electronics Corporation
+#
+# SPDX-License-Identifier: MIT
+# *************************************************************************************************************/
+
 add_library(freertos_kernel_port OBJECT)
 target_sources(freertos_kernel_port
   PRIVATE
