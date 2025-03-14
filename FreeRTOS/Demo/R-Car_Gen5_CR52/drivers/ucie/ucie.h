@@ -17,6 +17,51 @@
 #define UCIE_D2D_CH1_LOWER		(0x00000000U)
 #define UCIE_D2D_CH1_UPPER		(0x00000240U)
 
+#define UCIE_BAR0_BASE_ADDR		(0x20010000000U)
+#define UCIE_BAR0_SIZE			0x20000
+
+#define UCIE_ADDR_SPACE			(0x24000000000ULL)
+
+#define COMMAND_READ			0x8
+#define COMMAND_WRITE			0x10
+
+#define STATUS_READ_SUCCESS		0x1
+#define STATUS_READ_FAIL		0x2
+#define STATUS_WRITE_SUCCESS		0x4
+#define STATUS_WRITE_FAIL		0x8
+#define STATUS_IRQ_RAISED		0x40
+
+#define UCIE_HEADER_TYPE		0x0e
+#define UCIE_HEADER_TYPE_MASK		0x7F
+#define UCIE_HEADER_TYPE_NORMAL		0
+
+#define UCIE_MISC_CONTROL_1_OFF		0x8BC
+#define UCIE_DBI_RO_WR_EN		0x1
+#define UCIE_VENDOR_ID			0x00
+#define UCIE_DEVICE_ID			0x02
+#define UCIE_INTERRUPT_LINE		0x3c
+#define UCIE_PRIMARY_BUS		0x18
+#define UCIE_COMMAND			0x04
+#define UCIE_COMMAND_IO			0x1
+#define UCIE_COMMAND_MEMORY		0x2
+#define UCIE_COMMAND_MASTER		0x4
+#define UCIE_COMMAND_SERR		0x100
+#define UCIE_CLASS_DEVICE		0x0a
+#define UCIE_CLASS_BRIDGE_PCI		0x0604
+#define UCIE_BASE_BAR0			0x10
+#define UCIE_DBI2_BASE_BAR0		0x100010
+#define UCIE_EXT_REBAR			0x610
+#define UCIE_REBAR_CAP			4
+
+#define UCIE_PORT_LINK_CONTROL		0x710
+#define PORT_LINK_FAST_LINK_MODE	0x80
+#define PORT_LINK_DLL_LINK_EN		0x20
+#define PORT_LINK_MODE_MASK		0x3F0000
+#define PORT_LINK_MODE_2_LANES		0x30000
+#define UCIE_LINK_WIDTH_SPEED_CONTROL	0x80C
+#define PORT_LOGIC_LINK_WIDTH_MASK	0x1F00
+#define PORT_LOGIC_LINK_WIDTH_2_LANES	0x200
+
 #define OPCODE				0x1F
 #define OPCODE_MEM_READ32		0
 #define OPCODE_MEM_WRITE32		0x1
@@ -70,6 +115,8 @@
 #define UCIE_PCICONF11			0x0002C
 #define UCIE_PCICONF12			0x00030
 
+#define UCIE_MSI_CAP			0x52
+
 /* ATU registers */
 #define UCIE_IB_ATU_LOWER_BASE		0x300108
 #define UCIE_IB_ATU_UPPER_BASE		0x30010c
@@ -115,7 +162,11 @@
 #define UCIE_DMA_RD_INT_STT		0x380484
 #define UCIE_DMA_RD_INT_CLR             0x38048c
 
+#define MAX_TRANSFER_SIZE		0x100000 // 1MB
 #define SIZE_IN_BYTE			1024 //1KB
+#define EIO				5 // IO error
+#define ENOMEM				12 // Out of memory
+#define EINVAL				22 //Invalid argument
 
 extern int printf_delay(const char *format, ...);
 
@@ -123,13 +174,27 @@ void writel(const uint32_t Value, const uintptr_t Address);
 
 uint32_t readl(const uintptr_t Address);
 
+void R_UCIE_RegWrite8(uint16_t channel, uint32_t Offset, uint8_t Value);
+
+uint8_t R_UCIE_RegRead8(uint16_t channel, uint32_t Offset);
+
+void R_UCIE_RegWrite16(uint16_t channel, uint32_t Offset, uint16_t Value);
+
+uint16_t R_UCIE_RegRead16(uint16_t channel, uint32_t Offset);
+
 void R_UCIE_RegWrite32(uint16_t channel, uint32_t Offset, uint32_t Value);
 
 uint32_t R_UCIE_RegRead32(uint16_t channel, uint32_t Offset);
+
+void R_PCIE_Outbound_ATU(uint16_t channel, uint64_t base_addr, uint64_t target_addr);
 
 bool rcar_ucie_calc_even_parity(uint64_t data);
 
 void rcar_ucie_reg_write32(uint32_t channel, bool phy, bool mem, uint32_t reg, uint32_t data);
 
 void rcar_ucie_controller_enable(uint32_t channel);
+
+void rcar_ucie_dbi_ro_wr_en(uint16_t channel, bool enable);
+
+void rcar_ucie_setup(uint16_t channel);
 /* .... */

@@ -15,6 +15,46 @@
 #include "interrupts.h"
 /* Implement functions for Host */
 
+void rcar_ucie_setup_rc(uint16_t channel)
+{
+    uint32_t val;
+
+    rcar_ucie_dbi_ro_wr_en(channel, true);
+
+    rcar_ucie_setup(channel);
+
+    /* Setup interrupt pins */
+    val = R_UCIE_RegRead32(channel, UCIE_INTERRUPT_LINE);
+    val &= 0xffff00ff;
+    val |= 0x00000100;
+    R_UCIE_RegWrite32(channel, UCIE_INTERRUPT_LINE, val);
+
+    /* Setup bus numbers */
+    val = R_UCIE_RegRead32(channel, UCIE_PRIMARY_BUS);
+    val &= 0xff000000;
+    val |= 0x00ff0100;
+    R_UCIE_RegWrite32(channel, UCIE_PRIMARY_BUS, val);
+
+    /* Setup command register */
+    val = R_UCIE_RegRead32(channel, UCIE_COMMAND);
+    val &= 0xffff0000;
+    val |= UCIE_COMMAND_IO | UCIE_COMMAND_MEMORY |
+	   UCIE_COMMAND_MASTER | UCIE_COMMAND_SERR;
+    R_UCIE_RegWrite32(channel, UCIE_COMMAND, val);
+
+    /* Program correct class for RC */
+    R_UCIE_RegWrite16(channel, UCIE_CLASS_DEVICE, UCIE_CLASS_BRIDGE_PCI);
+
+    rcar_ucie_dbi_ro_wr_en(channel, false);
+}
+
+void rcar_ucie_hw_enable(uint16_t channel)
+{
+    /* Configure as Root Port */
+    rcar_ucie_reg_write32(channel, false, true, IMP_CORECONFIG_CONFIG0, UCIECTL_DEF_RP_EN);
+    rcar_ucie_controller_enable(channel);
+}
+
 int ucie_link_up(uint16_t channel)
 {
     uint32_t val;
@@ -46,13 +86,7 @@ void R_PCIE_Host_Outbound_ATU(uint16_t channel)
     R_UCIE_RegWrite32(channel, UCIE_PCICONF11, 0x612d3f0f);
 
     /* Outbound ATU configuration */
-    R_UCIE_RegWrite32(channel, UCIE_OB_ATU_LOWER_BASE, 0x62040000);
-    R_UCIE_RegWrite32(channel, UCIE_OB_ATU_UPPER_BASE, 0);
-    R_UCIE_RegWrite32(channel, UCIE_OB_ATU_LIMIT_BASE, 0x62040000 + 0xffff);
-    R_UCIE_RegWrite32(channel, UCIE_OB_ATU_LOWER_TARGET, UCIE_D2D_CH0_LOWER);
-    R_UCIE_RegWrite32(channel, UCIE_OB_ATU_UPPER_TARGET, UCIE_D2D_CH0_UPPER);
-    R_UCIE_RegWrite32(channel, UCIE_OB_REGION_CTL1, 0x00000000);
-    R_UCIE_RegWrite32(channel, UCIE_OB_REGION_CTL1, 0x80000000);
+    R_PCIE_Outbound_ATU(channel, 0x62040000, (((uint64_t)UCIE_D2D_CH0_UPPER << 32) | UCIE_D2D_CH0_LOWER));
 
     /* bus master enable , memory space enable , IO space enable */
     R_UCIE_RegWrite32(channel, UCIE_PCICONF1, 0x100007);
@@ -83,6 +117,10 @@ void R_PCIE_InitHost(struct st_pcie_host *host, uint16_t channel)
     R_UCIE_RegWrite32(channel, 0x70, 0x8042B010);
     R_UCIE_RegWrite32(channel, 0x8BC, 0x040BFF48);
 */
+
+    rcar_ucie_hw_enable(channel);
+    rcar_ucie_setup_rc(channel);
+
     ret = ucie_link_up(channel);
     if (ret == 1)
         printf_delay("UCIe Link up\n");

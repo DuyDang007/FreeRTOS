@@ -34,11 +34,13 @@
 #include "interrupts.h"
 #include "stdio.h"
 #include <stdlib.h>
+#include <stdbool.h>
 #include "pcie/r_pcie_ctrl.h"
 #include "pcie/r_pcie_host.h"
 #include "pcie/r_pcie_ep.h"
 
-#define main_CXL_TASK_PRIORITY        ( tskIDLE_PRIORITY + 1 )
+#define main_CXL_TASK_PRIORITY        ( tskIDLE_PRIORITY + 2 )
+#define CXL_DataTrans_TASK_PRIORITY   ( tskIDLE_PRIORITY + 1 )
 
 extern int printf_delay(const char *format, ...);
 
@@ -51,6 +53,8 @@ static void prvSetupHardware( void );
 
 static void prvCXLTask( void *pvParameters );
 
+static void prvDataTransTask( void *pvParameters );
+
 /*-----------------------------------------------------------*/
 
 int main( void )
@@ -59,6 +63,7 @@ int main( void )
 	prvSetupHardware();
 
     xTaskCreate( prvCXLTask, "CXL task", configMINIMAL_STACK_SIZE, NULL, main_CXL_TASK_PRIORITY, NULL );
+    //xTaskCreate( prvDataTransTask, "CXL Data tranmission task", configMINIMAL_STACK_SIZE, NULL, CXL_DataTrans_TASK_PRIORITY, NULL );
     /* Start the tasks and timer running. */
     vTaskStartScheduler();
     for( ;; )
@@ -77,6 +82,22 @@ static void prvSetupHardware( void )
 	portDISABLE_INTERRUPTS();
 
 	Irq_Setup();
+}
+
+static void prvDataTransTask( void *pvParameters )
+{
+    enum pci_barno test_reg_bar = PCIE_BAR_0;
+
+    /* Remove compiler warning about unused parameter. */
+    ( void ) pvParameters;
+
+    printf_delay("****** Start Data Transmission ******\n");
+    //R_PCIE_EPF_Test_CmdHandler(test_reg_bar);
+
+    vTaskDelay(10);
+    for( ;; )
+    {
+    }
 }
 
 static void prvCXLTask( void *pvParameters )
@@ -99,12 +120,14 @@ static void prvCXLTask( void *pvParameters )
     printf_delay("****** TEST: UCIe/CXL driver ******\n");
 
     printf_delay("Initialize for UCIe EP channel 1\n");
+    ep.msi_cap = true;
     R_PCIE_EP_Init(&ep, EP_CH);
-    printf_delay("Initialize for UCIe RC channel 0\n");
-    R_PCIE_InitHost(&host, HOST_CH);
-    printf_delay("Inbound ATU Setting\n");
-    R_PCIE_EP_Inbound_ATU(EP_CH);
-    printf_delay("Outbound ATU Setting\n");
+
+    //printf_delay("Initialize for UCIe RC channel 0\n");
+    //R_PCIE_InitHost(&host, HOST_CH);
+    //printf_delay("Inbound ATU Setting\n");
+    //R_PCIE_EP_Inbound_ATU(EP_CH);
+/*  printf_delay("Outbound ATU Setting\n");
     R_PCIE_Host_Outbound_ATU(HOST_CH);
 
     dma_local_addr = malloc(SIZE_IN_BYTE);
@@ -119,8 +142,8 @@ static void prvCXLTask( void *pvParameters )
     R_PCIE_EP_TransferDataDMA(&ep, (UCIE_D2D_CH0_UPPER << 32) | UCIE_D2D_CH0_LOWER,
                                         dma_local_addr, SIZE_IN_BYTE, ob_mem_type,
                                         DEVICE_TO_HOST);
-
-    vTaskDelay(1000);
+*/
+    vTaskDelay(10);
     for( ;; )
     {
     }
