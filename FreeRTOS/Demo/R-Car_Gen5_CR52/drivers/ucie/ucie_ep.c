@@ -7,16 +7,218 @@
 #include "pcie/r_pcie_ep.h"
 #include "ucie.h"
 #include <string.h>
+#include <stdlib.h>
+#include "FreeRTOS.h"
+#include "task.h"
+
+#define MSI_LOCAL_ADDR   ((volatile uint32_t *)0x60000000)
+#define MSI_MSG_DATA     0x0000
 
 /* Implement functions for Endpoint */
 
+typedef struct ucie_epf_test_reg {
+    uint32_t	magic;
+    uint32_t	command;
+    uint32_t	status;
+    uint32_t	src_addr_lower;
+    uint32_t    src_addr_upper;
+    uint32_t	dst_addr_lower;
+    uint32_t    dst_addr_upper;
+    uint32_t	size;
+    uint32_t	checksum;
+    uint32_t	irq_type;
+    uint32_t	irq_number;
+    uint32_t	flags;
+} ucie_epf_test_reg_t ;
+
+int ucie_epf_test_read(struct st_pcie_ep *ep, ucie_epf_test_reg_t *bar0_reg)
+{
+    uint32_t ret;
+    void *buf;
+    void *src_addr = (void *)UCIE_ADDR_SPACE;
+    uint32_t size = bar0_reg->size;
+    uint32_t free_win = 2;
+    uint32_t index, bit_pos;
+    uint64_t remote_rc;
+    uint32_t channel = 1; //EP
+
+    if (size == 0 || size > MAX_TRANSFER_SIZE) {
+        printf_delay("Invalid transfer size: %d\n", size);
+        return -EINVAL;
+    }
+
+    buf = malloc(size);
+    if (!buf) {
+	printf_delay("Fail to allocate the buffer\n");
+	return -ENOMEM;
+    }
+
+    remote_rc = ((uint64_t)bar0_reg->src_addr_upper << 32) | bar0_reg->src_addr_lower;
+
+    /* Map the EP UCIe/CXL address with the remote RC physical address */
+    R_PCIE_Outbound_ATU(channel, (uint64_t)(uintptr_t)src_addr, remote_rc);
+
+    index = free_win / 32;
+    bit_pos = free_win % 32;
+    ep->ob_window_map[index] |= (1 << bit_pos);
+
+    printf_delay("[%s] Executing memcpy\n",__func__);
+    vTaskDelay(2);
+    memcpy(buf, (void *)src_addr, size);
+    printf_delay("[%s] Memcpy done to 0x%x, size %d\n",__func__, (unsigned long long)(uintptr_t)src_addr, size);
+
+    free(buf);
+
+    return ret;
+}
+
+int ucie_epf_test_write(struct st_pcie_ep *ep, ucie_epf_test_reg_t *bar0_reg)
+{
+    uint32_t ret, i;
+    void *dst_addr = (void *)UCIE_ADDR_SPACE;
+    void *buf;
+    uint32_t size = bar0_reg->size;
+    uint32_t free_win = 1;
+    uint32_t index, bit_pos;
+    uint64_t remote_rc;
+    uint32_t channel = 1; //EP
+
+    if (size == 0 || size > MAX_TRANSFER_SIZE) {
+        printf_delay("Invalid transfer size: %d\n", size);
+        return -EINVAL;
+    }
+
+    remote_rc = ((uint64_t)bar0_reg->dst_addr_upper << 32) | bar0_reg->dst_addr_lower;
+
+    /* Map the EP UCIe/CXL address with the remote RC physical address */
+    R_PCIE_Outbound_ATU(channel, (uint64_t)(uintptr_t)dst_addr, remote_rc);
+
+    index = free_win / 32;
+    bit_pos = free_win % 32;
+    ep->ob_window_map[index] |= (1 << bit_pos);
+
+    buf = malloc(size);
+    if (!buf) {
+	printf_delay("Failed to allocate buffer\n");
+	return -ENOMEM;
+    }
+
+    /* Create the test data */
+    for (i = 0; i < size; i++)
+        ((uint8_t *)buf)[i] = i & 0xFF;
+
+    printf_delay("[%s] Executing memcpy\n",__func__);
+    vTaskDelay(2);
+    memcpy((void *)dst_addr, buf, size);
+    printf_delay("[%s] Memcpy done to 0x%x, size %d\n",__func__, (unsigned long long)(uintptr_t)dst_addr, size);
+
+    free(buf);
+
+    return ret;
+}
+
+void ucie_epf_test_raise_irq(struct st_pcie_ep *ep, ucie_epf_test_reg_t *bar0_reg)
+{
+    uint32_t channel = 1;
+    bar0_reg->status |= STATUS_IRQ_RAISED;
+    void *msi_mem = (void *)0xa645000;
+
+    /* Raise MSI per the PCI Local Bus Specification Revision 3.0, 6.8.1. */
+    R_PCIE_Outbound_ATU(channel, 0x60000000, 0x437e8000);
+    *MSI_LOCAL_ADDR = MSI_MSG_DATA;
+}
+
+void R_PCIE_EPF_Test_CmdHandler(struct st_pcie_ep *ep)
+{
+    int ret;
+    uint32_t command;
+    ucie_epf_test_reg_t *bar0_reg = (ucie_epf_test_reg_t *)0x45142000;
+
+    while(1) {
+	command = bar0_reg->command;
+	if (command == 0)
+	    vTaskDelay(2);
+
+	bar0_reg->command = 0;
+	bar0_reg->status = 0;
+
+	vTaskDelay(10);
+	if (command & COMMAND_READ) {
+	    printf_delay("[%s]: Received Read Request\n",__func__);
+	    ret = ucie_epf_test_read(ep, bar0_reg);
+	    if (!ret)
+		bar0_reg->status |= STATUS_READ_SUCCESS;
+	    else
+		bar0_reg->status |= STATUS_READ_FAIL;
+	    ucie_epf_test_raise_irq(ep, bar0_reg);
+	    vTaskDelay(2);
+
+	} else if (command & COMMAND_WRITE) {
+	    printf_delay("[%s]: Received Write Request\n",__func__);
+	    ret = ucie_epf_test_write(ep, bar0_reg);
+	    if (!ret)
+		bar0_reg->status |= STATUS_WRITE_SUCCESS;
+	    else
+		bar0_reg->status |= STATUS_WRITE_FAIL;
+	    ucie_epf_test_raise_irq(ep, bar0_reg);
+	    vTaskDelay(2);
+	}
+    }
+}
+
 static void rcar_ucie_ep_hw_enable(uint16_t channel)
 {
+    /* Configure as Endpoint */
     rcar_ucie_reg_write32(channel, false, true, IMP_CORECONFIG_CONFIG0, UCIECTL_DEF_EP_EN);
-
     rcar_ucie_controller_enable(channel);
 
     //rcar_ucie_phy_enable(channel);
+}
+
+static void rcar_ucie_ep_header(uint16_t channel)
+{
+    R_UCIE_RegWrite16(channel, UCIE_VENDOR_ID, 0x16c3);
+    R_UCIE_RegWrite16(channel, UCIE_DEVICE_ID, 0xedda);
+    //R_UCIE_RegWrite16(channel, 0x3d, 0x1);
+}
+
+static int rcar_ucie_ep_init(struct st_pcie_ep *ep, uint16_t channel)
+{
+    uint8_t hdr_type;
+    uint32_t reg;
+    uint32_t flags = 0;
+
+    /* Allocate and initialize the ib/ob window map
+       assuming number of ib/out window = 32 */
+    ep->ib_window_map = pvPortMalloc(32 * sizeof(uint32_t));
+    if (ep->ib_window_map == NULL)
+	return -ENOMEM;
+    memset(ep->ib_window_map, 0, 32 * sizeof(uint32_t));
+
+    ep->ob_window_map = pvPortMalloc(32 * sizeof(uint32_t));
+    if (ep->ob_window_map == NULL)
+        return -ENOMEM;
+    memset(ep->ob_window_map, 0, 32 * sizeof(uint32_t));
+
+    R_UCIE_RegWrite16(channel, UCIE_COMMAND, 0);
+
+    /* Setting for BAR0 */
+    R_UCIE_RegWrite32(channel, UCIE_DBI2_BASE_BAR0, 0);
+    R_UCIE_RegWrite32(channel, UCIE_BASE_BAR0, 0x0);
+
+    R_UCIE_RegWrite32(channel, UCIE_DBI2_BASE_BAR0 + 4, 0);
+    R_UCIE_RegWrite32(channel, UCIE_BASE_BAR0 + 4, 0);
+
+    R_UCIE_RegWrite32(channel, UCIE_EXT_REBAR + UCIE_REBAR_CAP, 0x10);
+
+    hdr_type = R_UCIE_RegRead8(channel, UCIE_HEADER_TYPE) & UCIE_HEADER_TYPE_MASK;
+    if (hdr_type != UCIE_HEADER_TYPE_NORMAL) {
+	printf_delay("UCIe controller is not set to EP mode (hdr_type:0x%x)!\n", hdr_type);
+	return -EIO;
+    } else {
+	printf_delay("UCIe controller is set to EP mode\n");
+	return 0;
+    }
 }
 
 int R_PCIE_EP_TransferDataDMA(struct st_pcie_ep *ep, uint64_t pcie_addr,
@@ -126,25 +328,20 @@ int R_PCIE_EP_TransferDataDMA(struct st_pcie_ep *ep, uint64_t pcie_addr,
 	printf_delay("FAILED\n");
 }
 
-void R_PCIE_EP_Inbound_ATU(uint16_t channel)
+void R_PCIE_EP_Inbound_ATU(struct st_pcie_ep *ep, uint16_t channel)
 {
-    /* set max payload to 1024byte */
-    R_UCIE_RegWrite32(channel, UCIE_EXCAP2, 0x102970);
+    uint32_t free_win = 0;
+    uint32_t index, bit_pos;
 
-    /* PORT_LOGIC TRGT_MAP_CTRL_OFF */
-    R_UCIE_RegWrite32(channel, UCIE_PRTLGC24, 0x40);
-
-    /* Inbound ATU configuration */
-    R_UCIE_RegWrite32(channel, UCIE_IB_ATU_LOWER_BASE, UCIE_D2D_CH1_LOWER);
-    R_UCIE_RegWrite32(channel, UCIE_IB_ATU_UPPER_BASE, UCIE_D2D_CH1_UPPER);
-    R_UCIE_RegWrite32(channel, UCIE_IB_ATU_LIMIT_BASE, UCIE_D2D_CH1_LOWER + 0xffff);
-    R_UCIE_RegWrite32(channel, UCIE_IB_ATU_LOWER_TARGET, 0x64000000);
+    /* Inbound ATU BAR0 (BAR match mode) configuration */
+    R_UCIE_RegWrite32(channel, UCIE_IB_ATU_LOWER_TARGET, 0x45142000);
     R_UCIE_RegWrite32(channel, UCIE_IB_ATU_UPPER_TARGET, 0);
     R_UCIE_RegWrite32(channel, UCIE_IB_REGION_CTL1, 0);
-    R_UCIE_RegWrite32(channel, UCIE_IB_REGION_CTL2, 0x80000000);
+    R_UCIE_RegWrite32(channel, UCIE_IB_REGION_CTL2, 0xc0080000);
 
-    /* bus master enable , memory space enable , IO space enable */
-    R_UCIE_RegWrite32(channel, UCIE_PCICONF1, 0x100007);
+    index = free_win / 32;
+    bit_pos = free_win % 32;
+    ep->ib_window_map[index] |= (1 << bit_pos);
 }
 
 void R_PCIE_EP_Init(struct st_pcie_ep *ep, uint16_t channel)
@@ -169,5 +366,24 @@ void R_PCIE_EP_Init(struct st_pcie_ep *ep, uint16_t channel)
     R_UCIE_RegWrite32(channel, 0x70, 0x8002B010);
     R_UCIE_RegWrite32(channel, 0x8BC, 0x040BFF48);
 */
-    rcar_ucie_ep_hw_enable(channel);
+    rcar_ucie_dbi_ro_wr_en(channel, true);
+
+    //rcar_ucie_ep_hw_enable(channel);
+
+    if (rcar_ucie_ep_init(ep, channel))
+	printf_delay("Failed to initialize UCIe EP!\n");
+
+    rcar_ucie_setup(channel);
+
+    rcar_ucie_ep_header(channel);
+
+    if (ep->msi_cap)
+	R_UCIE_RegWrite16(channel, UCIE_MSI_CAP, 0x8a);
+
+    R_PCIE_EP_Inbound_ATU(ep, channel);
+
+    rcar_ucie_dbi_ro_wr_en(channel, false);
+
+    printf_delay("Wait for request from UCIe RC...\n");
+    R_PCIE_EPF_Test_CmdHandler(ep);
 }

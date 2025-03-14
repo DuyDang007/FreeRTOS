@@ -90,6 +90,10 @@ typedef void (*pcie_ep_reset_callback_t)(void *arg);
 struct st_pcie_ep
 {
     struct st_pcie_ctrl ctrl; ///< The controller that control this host.
+    enum pci_barno	test_reg_bar;
+    bool		msi_cap;
+    unsigned long	*ib_window_map;
+    unsigned long	*ob_window_map;
     pcie_irq_t irq[];         ///< List of interrupt source and its callback function.
 };
 
@@ -254,10 +258,9 @@ int R_PCIE_EP_TransferDataDMA(struct st_pcie_ep *ep, uint64_t pcie_addr,
 /**
 * @brief Performing PCIe Inbound ATU
 */
-void R_PCIE_EP_Inbound_ATU(uint16_t channel);
-
+void R_PCIE_EP_Inbound_ATU(struct st_pcie_ep *ep, uint16_t channel);
 /**
 * @brief Receiving test cmd from Host
 */
-void R_PCIE_EPF_Test_CmdHandler(enum pci_barno);
+void R_PCIE_EPF_Test_CmdHandler(struct st_pcie_ep *ep);
 #endif
