@@ -20,6 +20,13 @@
 
 #endif // __ASSEMBLER__
 
+#if (BOARD == x5h_vdk)
 #define GENERIC_TIMER_CLK     25000000UL
+#else
+/* The timer count up 16 counts with 66.667MHz clock.
+It means the counter operate at 1066.667MHz in equivalent */
+#define GENERIC_TIMER_CLK     1066666666    // Hz
+
+#endif
 
 #endif // __arm_generic_timer_h

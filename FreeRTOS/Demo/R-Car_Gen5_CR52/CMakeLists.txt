@@ -22,8 +22,10 @@ message(STATUS ${POSIX_DIR})
 message(STATUS ${KERNEL_DIR})
 message(STATUS ${LOGGING_DIR})
 
-### Check the argumment
-set(BOARD "x5h_vdk")
+if(NOT DEFINED BOARD)
+    set(BOARD "x5h_vdk")
+endif()
+
 set(ALLOWED_RAM_REGION "1;2;3")
 if(NOT DEFINED RAM_REGION)
     set(RAM_REGION 1)
@@ -37,6 +39,9 @@ if(BOARD STREQUAL "x5h_vdk")
     else()
         message(FATAL_ERROR "Insert RAM REGION ${RAM_REGION} is not allowed.")
     endif()
+else()
+    message(STATUS "DRAM REGION is using now.")
+    set(LDFILE ${BSP_DIR}/common/linker/lscript_dram.ld)
 endif()
 
 ### Global compile definitions

@@ -228,6 +228,7 @@ static int uart_rcar_irq_update(void)
 }
 
 uint32_t console_init(uint32_t port) {
+#if (BOARD == x5h_vdk)
     const uint32_t serial_channels_arr[] = {
         0xc0700000, // SCIF0
         0xc0704000, // SCIF1
@@ -239,6 +240,19 @@ uint32_t console_init(uint32_t port) {
         0xc0718000, // HSCIF2
         0xc071C000  // HSCIF3
     };
+#else
+    const uint32_t serial_channels_arr[] = {
+        0x0,
+        0x0,
+        0x0,
+        0x0,
+        0x0,
+        0x38010000, // HSCIF0
+        0x38014000, // HSCIF1
+        0x0,
+        0x0
+    };
+#endif
 	uint16_t reg_val;
 
     scif_base = serial_channels_arr[port];

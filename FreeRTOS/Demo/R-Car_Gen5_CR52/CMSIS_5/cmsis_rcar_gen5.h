@@ -39,8 +39,14 @@
 /* GIC */
 #define __GIC_PRESENT           1
 //#define GIC_DISTRIBUTOR_BASE	0xF0000000U
-#define CR52_GICD_ADDR          ((void *)0xF0000000U)
-#define CR52_GICR_ADDR          ((void *)0xF0100000U)
+#if (BOARD == x5h_vdk)
+    #define CR52_GICD_ADDR          ((void *)0xF0000000U)
+    #define CR52_GICR_ADDR          ((void *)0xF0100000U)
+#else
+    #define CR52_GICD_ADDR          ((void *)0xC0000000U)
+    #define CR52_GICR_ADDR          ((void *)0xC0100000U)
+#endif
+
 #define CR52_CPU_ID             0
 #define CR52_GIC_BASE_ADDR      (0xF0000000U)
 
