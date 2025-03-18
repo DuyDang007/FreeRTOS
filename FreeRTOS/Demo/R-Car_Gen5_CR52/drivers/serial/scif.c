@@ -23,6 +23,7 @@ static uint32_t scif_base;
 #define SCLSR           0x24    /* Line Status Register */
 #define DL              0x30    /* Frequency Division Register */
 #define CKS             0x34    /* Clock Select Register */
+#define HSSRR           0x40    /* Sampling rate Register */
 
 /* SCSMR (Serial Mode Register) */
 #define SCSMR_C_A       BIT(7)  /* Communication Mode */
@@ -32,6 +33,7 @@ static uint32_t scif_base;
 #define SCSMR_STOP      BIT(3)  /* Stop Bit Length */
 #define SCSMR_CKS1      BIT(1)  /* Clock Select 1 */
 #define SCSMR_CKS0      BIT(0)  /* Clock Select 0 */
+#define SCIF_SCSMR_INIT_DATA    ~((uint16_t)(SCSMR_CHR | SCSMR_PE | SCSMR_STOP | SCSMR_CKS1 | SCSMR_CKS0))
 
 /* SCSCR (Serial Control Register) */
 #define SCSCR_TEIE      BIT(11) /* Transmit End Interrupt Enable */
@@ -43,6 +45,7 @@ static uint32_t scif_base;
 #define SCSCR_TOIE      BIT(2)  /* Timeout Interrupt Enable */
 #define SCSCR_CKE1      BIT(1)  /* Clock Enable 1 */
 #define SCSCR_CKE0      BIT(0)  /* Clock Enable 0 */
+#define SCIF_SCSCR_INIT_DATA    (uint16_t)(SCSCR_TE | SCSCR_RE)
 
 /* SCFCR (FIFO Control Register) */
 #define SCFCR_RTRG1     BIT(7)  /* Receive FIFO Data Count Trigger 1 */
@@ -53,6 +56,7 @@ static uint32_t scif_base;
 #define SCFCR_TFRST     BIT(2)  /* Transmit FIFO Data Register Reset */
 #define SCFCR_RFRST     BIT(1)  /* Receive FIFO Data Register Reset */
 #define SCFCR_LOOP      BIT(0)  /* Loopback Test */
+#define SCIF_SCFCR_RESET_FIFO   (uint16_t)(SCFCR_TFRST | SCFCR_RFRST)
 
 /* SCFSR (Serial Status Register) */
 #define SCFSR_PER3      BIT(15) /* Parity Error Count 3 */
@@ -76,8 +80,25 @@ static uint32_t scif_base;
 #define SCLSR_TO        BIT(2)  /* Timeout */
 #define SCLSR_ORER      BIT(0)  /* Overrun Error */
 
-// CPG Registers
+#define HSCIF_DL_DIV1           (uint16_t)(1U << 0U)
+#define HSCIF_CKS_CKS           (uint16_t)(1U << 15U)
+#define HSCIF_CKS_XIN           (uint16_t)(1U << 14U)
+#define HSCIF_CKS_SC_CLK_EXT    ~((uint16_t)(HSCIF_CKS_CKS | HSCIF_CKS_XIN))
 
+#define HSCIF_HSSRR_SRE         (uint16_t)(1U << 15U)
+#define HSCIF_HSSRR_SRCYC       (uint16_t)(0x1FU << 0U)
+#define HSCIF_HSSRR_SRCYC8      (uint16_t)(7U << 0U)    /* Sampling rate 8-1 */
+#define HSCIF_HSSRR_VAL         (uint16_t)(HSCIF_HSSRR_SRE | HSCIF_HSSRR_SRCYC8)
+
+
+void wait(uint32_t count)
+{
+	volatile uint32_t cnt = count;
+	do
+	{
+		;    /* do nothing */
+	} while(cnt-- > 0);
+}
 
 typedef void (*uart_irq_callback_user_data_t)(void *user_data);
 
@@ -101,9 +122,23 @@ static void uart_rcar_set_baudrate(uint32_t baud_rate)
 {
 	uint8_t reg_val;
     const uint32_t clock_rate = 66660000u; // S0D12 Clock rate
-    
-	reg_val = ((clock_rate + 16 * baud_rate) / (32 * baud_rate) - 1);
-	uart_rcar_write_8(SCBRR, reg_val);
+
+    if (baud_rate >= 3000000) {
+        /* 24MHz / (3000000 * 8) = 1 */
+        uart_rcar_write_16(DL, HSCIF_DL_DIV1);
+        reg_val = uart_rcar_read_16(CKS);
+        reg_val &= HSCIF_CKS_SC_CLK_EXT;
+        uart_rcar_write_16(CKS, reg_val);
+        /* Sampling rate 8  */
+        reg_val = uart_rcar_read_16(HSSRR);
+        reg_val &= ~(HSCIF_HSSRR_SRE | HSCIF_HSSRR_SRCYC);
+        reg_val |= HSCIF_HSSRR_VAL;
+        uart_rcar_write_16(HSSRR, reg_val);
+        wait(0x2000U);
+    } else {
+	    reg_val = ((clock_rate + 16 * baud_rate) / (32 * baud_rate) - 1);
+	    uart_rcar_write_8(SCBRR, reg_val);
+    }
 }
 
 static int uart_rcar_irq_is_enabled(uint32_t irq)
@@ -280,31 +315,35 @@ uint32_t console_init(uint32_t port) {
 	reg_val &= ~(SCLSR_TO | SCLSR_ORER);
 	uart_rcar_write_16(SCLSR, reg_val);
 
-	/* Select internal clock */
-	reg_val = uart_rcar_read_16(SCSCR);
-	reg_val &= ~(SCSCR_CKE1 | SCSCR_CKE0);
-	uart_rcar_write_16(SCSCR, reg_val);
+    if (port <= 4) { // SCIF
+        /* Select internal clock */
+	    reg_val = uart_rcar_read_16(SCSCR);
+	    reg_val &= ~(SCSCR_CKE1 | SCSCR_CKE0);
+	    uart_rcar_write_16(SCSCR, reg_val);
+    }
+    else {
+        /* external clock, SC_CLK pin used for output pin */
+        uart_rcar_write_16(SCSCR, SCSCR_CKE1);
+    }
 
-	/* Serial Configuration (8N1) & Clock divider selection */
-	reg_val = uart_rcar_read_16( SCSMR);
-	reg_val &= ~(SCSMR_C_A | SCSMR_CHR | SCSMR_PE | SCSMR_O_E | SCSMR_STOP |
-		     SCSMR_CKS1 | SCSMR_CKS0);
-	uart_rcar_write_16(SCSMR, reg_val);
+    /* 8bit data, no-parity, 1 stop, Po/1 */
+	reg_val = uart_rcar_read_16(SCSMR);
+	reg_val &= SCIF_SCSMR_INIT_DATA;
+    uart_rcar_write_16(SCSMR, reg_val);
 
 	/* Set baudrate */
 	uart_rcar_set_baudrate(UART_BAUDRATE);
 
-	/* FIFOs data count trigger configuration */
+	/* reset-off tx-fifo, rx-fifo. */
 	reg_val = uart_rcar_read_16(SCFCR);
-	reg_val &= ~(SCFCR_RTRG1 | SCFCR_RTRG0 | SCFCR_TTRG1 | SCFCR_TTRG0 |
-		     SCFCR_MCE | SCFCR_TFRST | SCFCR_RFRST);
+    reg_val &= ~(SCIF_SCFCR_RESET_FIFO);
 	uart_rcar_write_16( SCFCR, reg_val);
 
-	/* Enable Transmit & Receive + disable Interrupts */
-	reg_val = uart_rcar_read_16(SCSCR);
-	reg_val |= (SCSCR_TE | SCSCR_RE);
-	reg_val &= ~(SCSCR_TIE | SCSCR_RIE | SCSCR_TEIE | SCSCR_REIE |
-		     SCSCR_TOIE);
+
+    /* 8bit data, no-parity, 1 stop, Po/1 */
+    reg_val = uart_rcar_read_16(SCSCR);
+	reg_val |= SCIF_SCSCR_INIT_DATA;
+
 	uart_rcar_write_16(SCSCR, reg_val);
 
 	uart_rcar_irq_rx_enable();
@@ -313,18 +352,24 @@ uint32_t console_init(uint32_t port) {
 }
 
 void console_putc(char c) {
-    uint16_t reg_val;
+    /* Check that transfer of SCIF0 is completed */
+    static uint8_t remain=0;
+    while (remain==0)
+    {
+        remain = 128-(uart_rcar_read_16(SCFDR)>>8) ;
+        if(remain<64)
+        {
+            remain=0;
+        }
+        else
+        {
+            remain-=64; 
+        }
+    }
 
-	/* Wait for empty space in transmit FIFO */
-	while (!(uart_rcar_read_16(SCFSR) & SCFSR_TDFE)) {
-	}
+    uart_rcar_write_8(SCFTDR, c);  /* Transfer one character */
+    remain--;
 
-	/* Send current byte */
-	uart_rcar_write_8(SCFTDR, c);
-
-	reg_val = uart_rcar_read_16(SCFSR);
-	reg_val &= ~(SCFSR_TDFE | SCFSR_TEND);
-	uart_rcar_write_16(SCFSR, reg_val);
 }
 
 int console_getc(unsigned char *p_char) {

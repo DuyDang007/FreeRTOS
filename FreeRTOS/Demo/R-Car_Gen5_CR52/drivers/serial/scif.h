@@ -15,7 +15,7 @@
 /// \return 1 on success, 0 on error.
 
 #ifndef UART_BAUDRATE
-#define UART_BAUDRATE 115200
+#define UART_BAUDRATE 3000000
 #endif
 
 uint32_t console_init(uint32_t port);
