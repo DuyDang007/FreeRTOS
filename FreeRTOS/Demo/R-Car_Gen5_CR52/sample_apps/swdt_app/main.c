@@ -80,18 +80,32 @@ static void prvSWDTTask( void *pvParameters )
 {
 	/* Remove compiler warning about unused parameter. */
 	( void ) pvParameters;
+	uint8_t i, timeout_sec;
 
 	/* Device driver part */
 	printf_delay("PROGRAM START\r\n");
-	R_SWDT_Init(60);
+	printf_delay("------Period count test-------\r\n");
+
+	timeout_sec = 10;
+	R_SWDT_Init(timeout_sec);
 	printf_delay("r_swdt_init: done\r\n");
+
 	R_SWDT_Start();
 	printf_delay("r_swdt_start: watchdog start ticking\r\n");
+
 	/* Application works here */
-	while(1) {
-		R_SWDT_Ping(50);
-		vTaskDelay(200);
+	for (i = 0; i < 5; i++){
+		R_SWDT_Ping(3);
+		printf(".");
 	}
+	printf_delay("\r\n");
+	printf_delay("Period count test: DONE\r\n");
+
+	/* Reset case starts here */
+	printf_delay("\r\n");
+	printf_delay("------Reset case test-------\r\n");
+	printf_delay("System will be reset in: %u\r\n", timeout_sec);
+
 	printf_delay("PROGRAM END\r\n");
 	for( ;; )
 	{
