@@ -46,14 +46,6 @@
 #define MFIS_SCP_REG_MFISRSIICR(base, m) \
     (*(volatile uint32_t *)(size_t)(base + (0x1000U * (m)) + 0x00U + 0x20000U))
 
-#define CURRENT_CORE_MPIDR		(__get_MPIDR() & 0xF)
-#define CURRENT_CLUSTER_MPIDR	((__get_MPIDR() & 0xF0) >> 8)
-/* Realtime Core[m](m=0-11) for CR52 Agent */
-#define CURRENT_CORE_IDX \
-   (CURRENT_CLUSTER_MPIDR == 0 ? \
-		CURRENT_CORE_MPIDR : \
-		CURRENT_CORE_MPIDR + 4 * CURRENT_CLUSTER_MPIDR)
-
 static struct scmi_dev mfis_dev;
 
 struct mfis_mailbox_data {

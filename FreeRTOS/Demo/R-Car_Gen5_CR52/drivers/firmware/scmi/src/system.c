@@ -41,7 +41,6 @@ struct system_power_state_get {
 struct system_power_state_set {
 	uint32_t flags;
     uint32_t state;
-    int32_t  status;
 };
 
 struct scmi_protocol *scmi_system_proto_get(void)

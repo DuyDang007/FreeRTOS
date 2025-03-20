@@ -19,7 +19,7 @@
 #define SCMI_CHAN_LOCK_TIMEOUT_USEC 500
 #define SCMI_CHAN_SEM_TIMEOUT_USEC 500
 
-#define S2R_DRAFT_FLOW
+//#define S2R_DRAFT_FLOW
 
 struct scmi_dev transport_dev;
 static scmi_notifier_callback_t cb_list[MAX_SCMI_PROTOCOLS];

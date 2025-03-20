@@ -59,10 +59,10 @@ static void system_notification(void *data)
 		(scmi_syspower_state_notifier_t *)data;
 	static int cnt = 0;
 
-	SCMI_LOG_INFO("%s has transited to %s %s",
+	SCMI_LOG_INFO("%s has transited to %s %s with timeout %d ms",
 			agentid2str(notifier->agent_id),
 			flags_to_str[notifier->flags],
-			system_state_to_str[notifier->system_state]);
+			system_state_to_str[notifier->system_state], notifier->timeout);
 
 #ifdef S2R_DRAFT_FLOW
 	/* Return if no S2R transition is requested. */
@@ -114,6 +114,19 @@ static void system_notification(void *data)
 
 		default:
 			SCMI_LOG_ERR("Invalid transition.");
+	}
+#else
+	if (((SYSTEM_STATE_SUSPEND == notifier->system_state) ||
+		(SYSTEM_STATE_SHUTDOWN == notifier->system_state)) &&
+		(SCMI_AGENT_ID_FRTOS_1ST != notifier->agent_id)) {
+		/* Prepare shutdown or suspend */
+		ret = scmi_system_power_state_set(notifier->flags, notifier->system_state);
+		if (ret) {
+			SCMI_LOG_ERR("Error: Failed to request system notification %d (ret %d).\r\n",
+					notifier->system_state, ret);
+			return;
+		}
+		/* Post shutdown or suspend */
 	}
 #endif
 }
@@ -240,8 +253,12 @@ int R_StateManager_RequestDeepStop(void)
 {
 	int ret;
 
-#ifdef S2R_DRAFT_FLOW
+	if (0 != CURRENT_CORE_IDX) {
+		SCMI_LOG_ERR("Only main FreeRTOS can request Deep Stop!");
+		return -1;
+	}
 	SCMI_LOG_INFO("System is suspending...");
+#ifdef S2R_DRAFT_FLOW
 	cur_s2r_transition = MYSELF;
 	SCMI_LOG_INFO("Step 2. S2R request");
 	ret = scmi_system_power_state_set(FLAGS_GRACEFUL, SYSTEM_STATE_SUSPEND);
@@ -258,6 +275,12 @@ int R_StateManager_RequestDeepStop(void)
 	ret = scmi_system_power_state_set(FLAGS_GRACEFUL, SYSTEM_STATE_SUSPEND);
 	if (ret) {
 		SCMI_LOG_ERR("Error: Failed to suspend system gracefully.");
+		return ret;
+	}
+#else
+	ret = scmi_system_power_state_set(FLAGS_GRACEFUL, SYSTEM_STATE_SUSPEND);
+	if (ret) {
+		SCMI_LOG_ERR("Error: Failed to request S2R");
 		return ret;
 	}
 #endif

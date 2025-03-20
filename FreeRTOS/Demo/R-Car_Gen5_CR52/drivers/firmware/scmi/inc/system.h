@@ -24,6 +24,7 @@ typedef struct {
     uint32_t agent_id;
     uint32_t flags;
     uint32_t system_state;
+	uint32_t timeout;
 } scmi_syspower_state_notifier_t;
 
 /**

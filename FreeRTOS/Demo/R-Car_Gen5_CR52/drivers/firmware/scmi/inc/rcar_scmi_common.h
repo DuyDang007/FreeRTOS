@@ -8,6 +8,7 @@
 #ifndef __RCAR_SCMI_COMMON_H_
 #define __RCAR_SCMI_COMMON_H_
 
+#include "cmsis_rcar_gen5.h"
 //#define S2R_DRAFT_FLOW
 
 #define SCMI_AGENT_ID_CA		10
@@ -49,6 +50,14 @@
 
 /* MFIS IRQ register mask bits (31-16bit unused) */
 #define X5H_MFIS_SCP_IRQ_REG_MASK           (0x0000FFFFU)
+
+#define CURRENT_CORE_MPIDR		(__get_MPIDR() & 0xF)
+#define CURRENT_CLUSTER_MPIDR	((__get_MPIDR() & 0xF0) >> 8)
+/* Realtime Core[m](m=0-11) for CR52 Agent */
+#define CURRENT_CORE_IDX \
+   (CURRENT_CLUSTER_MPIDR == 0 ? \
+		CURRENT_CORE_MPIDR : \
+		CURRENT_CORE_MPIDR + 4 * CURRENT_CLUSTER_MPIDR)
 
 #endif /* __RCAR_SCMI_COMMON_H_ */
 
