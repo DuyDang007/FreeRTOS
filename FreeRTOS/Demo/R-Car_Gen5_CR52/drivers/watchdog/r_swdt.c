@@ -19,7 +19,7 @@
 #define SWTCSRA_TME	(1 << 7)
 
 #define SWTCSRB		0x08
-#define OSCCLK		100000000 //HWUM is:131570
+#define OSCCLK		32800 //HWUM is:131570
 
 #define RST_DM0_BASE	0xC6560000
 #define RST_WDTRSTCR	0x0420
@@ -44,6 +44,7 @@ uint32_t R_SWDT_Start();
 uint32_t R_SWDT_Stop();
 
 static uint8_t cks;
+static uint8_t init_timeout;
 static void r_swdt_write(uintptr_t Addr, uint32_t val)
 {
 	*((volatile uint32_t *)Addr) = val;
@@ -71,6 +72,7 @@ static void r_swdt_wait_cycles(uint8_t cycles) {
 
 uint8_t R_SWDT_Init(uint8_t timeout_sec) {
 	uint16_t clks_per_sec;
+
 	/* for SWDT */
 	r_swdt_write(SWDT_BASE + SWTCSRA, (0xA5A5A5 << 8) | (r_swdt_read(SWDT_BASE + SWTCSRA) & ~SWTCSRA_TME));
 	r_swdt_wait_cycles(2);
@@ -85,6 +87,7 @@ uint8_t R_SWDT_Init(uint8_t timeout_sec) {
 			break;
 		}
 	}
+	init_timeout = timeout_sec;
 	/* for RST_CTRL */
 	r_swdt_write(RST_DM0_BASE + RST_RESFC, r_rst_read(RST_DM0_BASE + RST_RESFC) & ~RST_SRES1FC5);
 
@@ -98,9 +101,10 @@ uint8_t R_SWDT_Init(uint8_t timeout_sec) {
 	return 0;
 }
 
-uint8_t R_SWDT_Ping(uint8_t timeout_sec)
+uint8_t R_SWDT_Ping(uint8_t ping_rate)
 {
-	r_swdt_write(SWDT_BASE + SWTCNT, (0x5A5A << 16) | (65536 - MUL_BY_CLKS_PER_SEC(cks, timeout_sec)));
+	r_swdt_write(SWDT_BASE + SWTCNT, (0x5A5A << 16) | (65536 - MUL_BY_CLKS_PER_SEC(cks, init_timeout)));
+	vTaskDelay(ping_rate*1000);
 
 	return 0;
 }
