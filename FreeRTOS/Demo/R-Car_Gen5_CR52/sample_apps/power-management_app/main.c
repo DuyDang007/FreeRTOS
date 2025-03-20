@@ -147,6 +147,7 @@ static void pmAppExample(void)
 		pmPowerdomainTest(domain_id);
 	}
 
+#if 0
 	PM_LOG("Setting/getting APMU power domains");
 #ifdef TEST_ALL_PDS_LIST
 	for (domain_id = X5H_POWER_DOMAIN_ID_P_RPU_CORE00;
@@ -158,13 +159,15 @@ static void pmAppExample(void)
 	{
 		pmPowerdomainTest(domain_id);
 	}
+#endif
 
-	/*
+	//PM_LOG("Wait 30s before requesting DeepStop...");
+	//vTaskDelay(1000*30);
+
 	ret = R_StateManager_RequestDeepStop();
 	if (ret) {
 		PM_LOG("Error: Failed to request DeepStop.\r\n");
 		return;
 	}
-	*/
 }
 
