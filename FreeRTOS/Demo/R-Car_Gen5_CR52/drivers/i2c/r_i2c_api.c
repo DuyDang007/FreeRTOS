@@ -310,6 +310,8 @@ uint32_t RCar_I2C_Write(r_i2c_Unit_t Unit, uint32_t SlaveAddr, const uint8_t * B
 
     /* Set Master Control register (MDBS=1, MIE=1, ESG=1) */
     R_I2C_PRV_RegWrite32(i2c_base_addr + R_I2C_ICMCR, 0x89);
+
+    return 0;
 }
 
 static void rcar_i2c_irq_send(r_i2c_Unit_t Unit, uint32_t msr)
@@ -368,6 +370,8 @@ uint32_t RCar_I2C_Read(r_i2c_Unit_t Unit, uint32_t SlaveAddr, uint8_t *Bytes, ui
         for (uint32_t i = 0; i < r_i2c_msg.len; i++)
             Bytes[i] = r_i2c_msg.buf[i];
     }
+
+    return 0;
 }
 
 static void rcar_i2c_irq_recv(r_i2c_Unit_t Unit, uint32_t msr)
