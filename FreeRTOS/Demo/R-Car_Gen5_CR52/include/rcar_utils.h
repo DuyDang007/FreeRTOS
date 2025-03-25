@@ -7,6 +7,8 @@
  * @brief This module provides common RCAR UTILS function. 
  */
 
+ #include <stddef.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -85,6 +87,9 @@ uint64_t R_UTILS_GetTimerCounter(void);
  * @return uint64_t Timer frequency.
  */
 uint32_t R_UTILS_GetTimerFrequency(void);
+
+void * aligned_malloc(size_t align, size_t size);
+void aligned_free(void * ptr);
 
 
 /**-----------------------------------------------------------**/

@@ -68,16 +68,20 @@ void R_DMAC_RcarInterruptHandler(void* p_context)
 
     /* Select Interrupt Ch */
     Value = R_RTDMAC_Get_RDMOR(dev_p);
+    // printf("R_DMAC_RcarInterruptHandler 1\n");
 
     /* Check Address error Flag */
     if (0 != (Value & DRV_RTDMAC_REG_RDMOR_AE))
     {
+        // printf("R_DMAC_RcarInterruptHandler err\n");
+
         /* DMAC address error interrupt occurs during DMA transfer */
         R_RTDMAC_Clear_RDMCHCR_CAE(dev, ch);
         Value = R_RTDMAC_Clear_RDMCHCR_DE(dev, ch);
     }
     else
     {
+        // printf("R_DMAC_RcarInterruptHandler OK\n");
         /* Check TE Interrupt */
         Value = R_RTDMAC_Get_RDMCHCR(dev, ch);
         if (0 != (Value & DRV_RTDMAC_REG_RDMCHCR_TE))
@@ -195,7 +199,7 @@ uint16_t R_DMAC_RcarDmacExec(DMAC_t dev, uint8_t ch, rDmacCfg_t *cfg, rDmacDescC
             /* DMA Start */
             R_RTDMAC_Update_RDMCHCR(dev, ch, cfg, descCfg);
 
-            printf_delay("DMA Start: SrcAddr=0x%lx, DestAddr=0x%lx\n", cfg->mSrcAddr, cfg->mDestAddr);
+            // printf_delay("DMA Start: SrcAddr=0x%lx, DestAddr=0x%lx\n", cfg->mSrcAddr, cfg->mDestAddr);
         }
     }
     return ret;
