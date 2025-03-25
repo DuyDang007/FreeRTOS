@@ -71,7 +71,7 @@ rDmacIrqCfg_t rDmacIrqHandler_t_irq =
 {
 	.Unit = SYS_DMAC3,
 	.SubCh = DMAC_CH1,
-	.irq_channel = INTID_SYSDMA3_CH1
+	.irq_channel = INTID_SYSDMA3_CH1,
 };
 
 /*-----------------------------------------------------------*/
@@ -109,13 +109,18 @@ static void prvDMACTask( void *pvParameters )
 	( void ) pvParameters;
 	int ret;
 
+    Context_t usr_context = 
+    {
+        .ctx = &rDmacIrqHandler_t_irq,
+    };
+
 	/* Device Driver Part */
 	R_SYSDMAC_RcarDmacCtrlInit(SYS_DMAC3, DRV_RTDMAC_PRIO_FIX);
 
 	*(volatile uint32_t*)cfg.mSrcAddr = 0x479;
 	printf_delay("Value at SrcAddr: 0x%x \n",*(volatile uint32_t*)cfg.mSrcAddr);
 
-	ret = R_SYSDMAC_RcarCallBackSet(&rDmacIrqHandler_t_irq, dmacUserCallback, &rDmacIrqHandler_t_irq);
+	ret = R_SYSDMAC_RcarCallBackSet(&rDmacIrqHandler_t_irq, dmacUserCallback, &usr_context);
 	if (ret)
 		printf_delay("CallbackSet Failed: ret = %d\n", ret);
 

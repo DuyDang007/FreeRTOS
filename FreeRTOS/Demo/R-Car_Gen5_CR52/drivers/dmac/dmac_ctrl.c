@@ -29,9 +29,10 @@ uint16_t R_DMAC_RcarDmacStop(DMAC_t dev, uint8_t ch);
 static int R_DMAC_SetInterruptCallback(uint8_t irq, IrqHandlerFn handler, void *irq_arg);
 void R_DMAC_RcarInterruptHandler(void* p_context);
 
-uint16_t R_DMAC_RcarCallBackSet(dmac_ctrl_t *const p_ctrl, void ( *p_callback)(void *), void * const p_context)
+uint16_t R_DMAC_RcarCallBackSet(dmac_ctrl_t *const p_ctrl, void ( *p_callback)(void *), void * p_context)
 {
     rDmacIrqCfg_t *args = (rDmacIrqCfg_t *)p_ctrl;
+    Context_t * p_usr_context = (Context_t *)p_context;
 
     if (args == NULL) {
         return drv_FAIL;
@@ -39,7 +40,6 @@ uint16_t R_DMAC_RcarCallBackSet(dmac_ctrl_t *const p_ctrl, void ( *p_callback)(v
 
     /* Store callback and context */
     args->p_callback        = p_callback;
-    args->p_context         = p_context;
 
 	/* Get channel */
     uint16_t irq_ch = args->irq_channel;
@@ -59,7 +59,8 @@ uint16_t R_DMAC_RcarCallBackSet(dmac_ctrl_t *const p_ctrl, void ( *p_callback)(v
 */
 void R_DMAC_RcarInterruptHandler(void* p_context)
 {
-    rDmacIrqCfg_t *args = (rDmacIrqCfg_t *)p_context;
+    Context_t * p_usr_context = (Context_t *)p_context;
+    rDmacIrqCfg_t *args = (rDmacIrqCfg_t *)p_usr_context->ctx;
     uint8_t dev = args->Unit;
     uint8_t ch = args->SubCh;
     uint32_t Value;
@@ -97,14 +98,18 @@ void R_DMAC_RcarInterruptHandler(void* p_context)
             }
         }
     }
+
+    if (args->p_callback != NULL)
+        args->p_callback(args->p_context);
 }
 
 static int R_DMAC_SetInterruptCallback(uint8_t irq, IrqHandlerFn handler, void *irq_arg)
 {
-    rDmacIrqCfg_t *args = (rDmacIrqCfg_t *)irq_arg;
+    Context_t * p_usr_context = (Context_t *)irq_arg;
+    rDmacIrqCfg_t *args = (rDmacIrqCfg_t *)p_usr_context->ctx;
 
     /* Set Handler for Irq */
-    Irq_SetupEntry(args->irq_channel, handler, irq_arg);
+    Irq_SetupEntry(args->irq_channel, handler, (Context_t *)irq_arg);
     /* Set priority for Irq */
     Irq_SetPriority(args->irq_channel, IPRIORITY(3));
     /* Enable Irq */
@@ -210,7 +215,8 @@ uint16_t R_DMAC_RcarDmacStop(DMAC_t dev, uint8_t ch)
     uint8_t dev_p;
     uint16_t ret = drv_OK;
 
-    dev_p = DMACP(dev);       // Convert to RT_DMAC Public's register
+    // Convert to RT_DMAC Public's register
+    dev_p = DMACP(dev);
     /* RTDMAC Initial Check */
     Value = R_RTDMAC_Get_RDMOR(dev_p);
     if (0 == (Value & DRV_RTDMAC_REG_RDMOR_DME))
