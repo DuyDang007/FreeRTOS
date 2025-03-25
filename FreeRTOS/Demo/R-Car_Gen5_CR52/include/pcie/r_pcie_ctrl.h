@@ -51,6 +51,9 @@ typedef struct
 /** 
  * @brief Contain PCIe BAR information.
  */
+
+#define PCI_STD_NUM_BARS	6
+
 typedef enum pci_barno
 {
     PCIE_NO_BAR = -1,               ///< -1

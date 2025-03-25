@@ -255,4 +255,9 @@ int R_PCIE_EP_TransferDataDMA(struct st_pcie_ep *ep, uint64_t pcie_addr,
 * @brief Performing PCIe Inbound ATU
 */
 void R_PCIE_EP_Inbound_ATU(uint16_t channel);
+
+/**
+* @brief Receiving test cmd from Host
+*/
+void R_PCIE_EPF_Test_CmdHandler(enum pci_barno);
 #endif
