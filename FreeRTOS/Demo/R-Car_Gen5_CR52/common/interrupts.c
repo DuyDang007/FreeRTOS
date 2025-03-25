@@ -206,8 +206,8 @@ void Irq_SetupEntry(unsigned int id, IrqHandlerFn Handler, Context_t *Context)
 			;
 
 	ret = Irq_MergeSetup(id);
-	if(!ret)
-		printf("Merged Interrupt setup completed.\n");
+	// if(!ret)
+	// 	printf("Merged Interrupt setup completed.\n");
 
 	HandlerTable[id].Handler = Handler;
 	HandlerTable[id].Context = Context;
