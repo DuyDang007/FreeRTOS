@@ -115,7 +115,9 @@ set(bsp_source
     ${BSP_DIR}/drivers/ucie/ucie_ep.c
     ${BSP_DIR}/drivers/iommu/virtio_mmu.c
     ${SCMI_SRC_LIST}
-	${BSP_DIR}/drivers/state-manager/state_manager.c
+    ${BSP_DIR}/drivers/state-manager/state_manager.c
+    ${BSP_DIR}/drivers/wcrc/r_wcrc.c
+    ${BSP_DIR}/drivers/wcrc/r_crc_wrapper.c
 )
 
 set(posix_source
@@ -157,9 +159,9 @@ target_include_directories(freertos_bsp
         $<BUILD_INTERFACE:${BSP_DIR}/drivers/gpio>
         $<BUILD_INTERFACE:${BSP_DIR}/drivers/i2c>
         $<BUILD_INTERFACE:${BSP_DIR}/drivers/dmac>
-	$<BUILD_INTERFACE:${BSP_DIR}/drivers/watchdog>
+        $<BUILD_INTERFACE:${BSP_DIR}/drivers/watchdog>
         $<BUILD_INTERFACE:${BSP_DIR}/drivers/ucie>
-	$<BUILD_INTERFACE:${BSP_DIR}/drivers/iommu>
+        $<BUILD_INTERFACE:${BSP_DIR}/drivers/iommu>
         $<BUILD_INTERFACE:${BSP_DIR}/drivers/firmware>
         $<BUILD_INTERFACE:${BSP_DIR}/drivers/smmu>
         $<BUILD_INTERFACE:${BSP_DIR}/drivers/wcrc>
@@ -169,7 +171,7 @@ target_include_directories(freertos_bsp
         $<BUILD_INTERFACE:${POSIX_DIR}/include/private>
         $<BUILD_INTERFACE:${POSIX_DIR}/FreeRTOS-Plus-POSIX/include>
         $<BUILD_INTERFACE:${POSIX_DIR}/FreeRTOS-Plus-POSIX/include/portable>
-
+        
         $<INSTALL_INTERFACE:include/kernel/include>
         $<INSTALL_INTERFACE:include>
         # POSIX
@@ -263,6 +265,7 @@ add_subdirectory(sample_apps/cxl_app)
 add_subdirectory(sample_apps/viommufe_app)
 add_subdirectory(sample_apps/smmu_app)
 add_subdirectory(sample_apps/power-management_app)
+add_subdirectory(sample_apps/wcrc_app)
 if(ENABLE_OPENAMP)
     add_subdirectory(sample_apps/rpmsg_sample)
 endif()

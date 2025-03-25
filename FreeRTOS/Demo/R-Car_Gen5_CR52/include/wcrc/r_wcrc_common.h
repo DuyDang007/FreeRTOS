@@ -1,0 +1,214 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: MIT
+ *
+ */
+
+#ifndef R_WCRC_COMMON_H
+#define R_WCRC_COMMON_H
+
+/**
+ * @defgroup CRC_Module_Common CRC Module Common typedef
+ * @{
+ * @brief This module provides typedef to configure CRC.
+ *
+ * The CRC module contains 11 units (0 to 10):
+ *      Each unit is equal 1 CRC wrapper (WCRC). 
+ *      1 WCRC contains 1 CRC sub-module and 1 KCRC sub-module.
+ */
+
+/***********************************************************************************************************************
+ * Includes
+ **********************************************************************************************************************/
+#include <stdint.h>
+#include <stdbool.h>
+
+/***********************************************************************************************************************
+ * Macro definitions
+ **********************************************************************************************************************/
+
+/***********************************************************************************************************************
+ * Typedef definitions
+ **********************************************************************************************************************/
+
+/** 
+ * @brief Superset list of all possible WCRC.
+ */
+typedef enum e_wcrc_unit
+{
+    WCRC_00 = 0x00,                             ///< WCRC unit 00
+    WCRC_01 = 0x01,                             ///< WCRC unit 01
+    WCRC_02 = 0x02,                             ///< WCRC unit 02
+    WCRC_03 = 0x03,                             ///< WCRC unit 03
+    WCRC_04 = 0x04,                             ///< WCRC unit 04
+    WCRC_05 = 0x05,                             ///< WCRC unit 05
+    WCRC_06 = 0x06,                             ///< WCRC unit 06
+    WCRC_07 = 0x07,                             ///< WCRC unit 07
+    WCRC_08 = 0x08,                             ///< WCRC unit 08
+    WCRC_09 = 0x09,                             ///< WCRC unit 09
+    WCRC_10 = 0x0A,                             ///< WCRC unit 10
+} wcrc_unit_t;
+
+/** 
+ * @brief Enumeration for WCRC modes 
+ */
+typedef enum e_wcrc_mode
+{
+    INDEPENDENT_CRC_MODE = 0,                   ///< Independent CRC mode.
+    E2E_CRC_MODE,                               ///< E2E CRC mode.
+    DATA_THROUGH_MODE,                          ///< Data through mode.
+    E2E_DATA_THROUGH_MODE,                      ///< E2E and data through mode.
+    REGISTER_ACCESS_BY_CMD_MODE,                ///< Register access by command function.
+    COMPARING_CRC_RESULT_MODE                   ///< Comparing CRC result.
+} wcrc_mode_t;
+
+/* Polynomial modes */
+typedef enum e_wcrc_poly
+{
+    POLY_32_ETHERNET = 7,
+    POLY_16_CCITT_FALSE_CRC16,
+    POLY_8_SAE_J1850,
+    POLY_8_0X2F,
+    POLY_32_0XF4ACFB13,
+    POLY_32_0X1EDC6F41,
+    POLY_21_0X102899,
+    POLY_17_0X1685B,
+    POLY_15_0X4599
+} wcrc_poly_t;
+
+/** 
+ * @brief Enumeration for WCRC to use sub-modules.
+ */
+typedef enum e_wcrc_sub_module
+{
+    CRC_SUB_MODULE = 0,                         ///< CRC sub module.
+    KCRC_SUB_MODULE,                            ///< KCRC sub module.
+    CRC_KCRC_SUB_MODULE,                        ///< Both: CRC and KCRC sub modules.
+} wcrc_sub_module_t;
+
+/** 
+ * @brief Control structure for CRC operations.
+ */
+typedef void wcrc_ctrl_t;
+
+/** 
+ * @brief User configures KCRC poly size, used in open function.
+ */
+typedef enum e_kcrc_poly_size
+{
+    POLY_SIZE_32_BIT = 0,                       ///< KCRC poly size: 32 Bits.
+    POLY_SIZE_16_BIT,                           ///< KCRC poly size: 16 Bits.
+    POLY_SIZE_8_BIT                             ///< KCRC poly size:  8 Bits.
+} kcrc_poly_size_t;
+
+/** 
+ * @brief User configures CRC/KCRC width of data input, used in open function.
+ */
+typedef enum e_width_input
+{
+    WIDTH_32_BIT = 0,                           ///< KCRC poly size: 32 Bits.
+    WIDTH_16_BIT,                               ///< KCRC poly size: 16 Bits.
+    WIDTH_8_BIT                                 ///< KCRC poly size:  8 Bits.
+} width_input_t;
+
+/** 
+ * @brief Structure for CRC inputs.
+ */
+typedef struct st_crc_input
+{
+    const void *    p_input_buffer;             ///< Pointer to input buffer.
+    uint32_t        num_data;                   ///< Number data input.
+    uint32_t        crc_seed;                   ///< Initial CRC value.
+    width_input_t   bit_width;                  ///< The valid bit width of each input data.
+} crc_input_t;
+
+/** 
+ * @brief Structure for CRC outputs.
+ */
+typedef struct st_crc_output
+{
+    bool            is_done;                    ///< CRC generation is done or not.
+    uint32_t        num_data;                   ///< Number data output.
+    void    *       p_output_buffer;            ///< Pointer to output buffer.
+} crc_output_t;
+
+/** 
+ * @brief User configures CRC byte swap mode, used in open function.
+ */
+typedef enum e_byte_swap_mode
+{
+    BYTE_SWAP_00 = 0,                           ///< Mode byteswapp_00.
+    BYTE_SWAP_01,                               ///< Mode byteswapp_01.
+    BYTE_SWAP_10,                               ///< Mode byteswapp_10.
+    BYTE_SWAP_11,                               ///< Mode byteswapp_11.
+} byteswap_mode_t;
+
+/** 
+ * @brief User configures CRC sub-module, used in open function.
+ */
+typedef struct st_crc_module_cfg
+{
+    crc_input_t     input_cfg;                  ///< CRC input info.
+    wcrc_poly_t     poly;                       ///< CRC poly.
+    bool            is_out_exor;                ///< EXOR ON of output data: H’FFFF FFFF ^ data_out[31:0].
+    bool            is_out_bitswap;             ///< Bit swap of output data.
+    byteswap_mode_t out_byteswap;               ///< Byte swap of output data.
+    bool            is_in_exor;                 ///< EXOR ON of input data:  H’FFFF FFFF ^ data_int[31:0].
+    bool            is_in_bitswap;              ///< Bit swap of input data.
+    byteswap_mode_t in_byteswap;                ///< Byte swap of input data.
+} crc_module_cfg_t;
+
+/** 
+ * @brief User configures KCRC shift mode, used in open function.
+ */
+typedef enum e_kcrc_shift_mode
+{
+    MSB_SHIFT = 0,                              ///< KCRC CMD2: Mode M.
+    LSB_SHIFT                                   ///< KCRC CMD2: Mode L.
+} kcrc_shift_mode_t;
+
+/** 
+ * @brief User configures KCRC sub-module, used in open function.
+ */
+typedef struct st_kcrc_module_cfg
+{
+    crc_input_t         input_cfg;              ///< KCRC input info.
+    wcrc_poly_t         poly;                   ///< KCRC poly.
+    kcrc_poly_size_t    poly_size;              ///< KCRC poly size.
+    bool                is_out_reflect;         ///< Output is flipped bit by bit.
+    bool                is_in_reflect;          ///< Input is flipped bit by bit.
+    uint8_t             shift_mode;             ///< MSB shift or LSB shift.
+    uint32_t            xor_mask_out;           ///< Value XOR mask for Data output.
+} kcrc_module_cfg_t;
+
+/** 
+ * @brief User configures WCRC module, used in open function.
+ */
+typedef struct st_wcrc_cfg
+{
+    wcrc_unit_t         unit;                   ///< WCRC unit.
+    wcrc_mode_t         mode;                   ///< WCRC mode.
+    uint32_t            conv_size;              ///< Conversion size for E2E_* mode.
+    wcrc_sub_module_t   sub_module;             ///< WCRC chooses sub-module.
+    crc_module_cfg_t    crc_cfg;                ///< CRC sub-module configuration.
+    kcrc_module_cfg_t   kcrc_cfg;               ///< KCRC sub-module configuration.
+} wcrc_cfg_t;
+
+/** 
+ * @brief Driver instance control structure.
+ */
+typedef struct st_wcrc_instance_ctrl
+{
+    uint32_t            open;                   ///< Mark instance is opened.
+    wcrc_cfg_t const *  p_cfg;                  ///< Pointer to initial configurations.
+    crc_output_t        crc_data[2];            ///< crc_data[0] is used for CRC module.
+                                                ///< crc_data[1] is used for KCRC module.
+    void            (*  p_callback[2])(void *); ///< Pointer to the CRC/KCRC callback functions.
+    void             *  p_context[2];           ///< Pointer to context to be passed into callback.
+    void             *  p_extend;               ///< Pointer to extend hardware configurations.
+} wcrc_instance_ctrl_t;
+
+/** @} */ // end of CRC_Module
+
+#endif // R_WCRC_COMMON_H
