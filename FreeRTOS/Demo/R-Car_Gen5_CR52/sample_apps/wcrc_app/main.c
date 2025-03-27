@@ -248,12 +248,10 @@ static void prvCRCTask( void *pvParameters )
 
 void crcUserCallback(void *data) {
     uint32_t * crc_code = (uint32_t *)data;
-    printf("CRC: cb 0x%x\n", *crc_code);
 }
 
 void kcrcUserCallback(void *data) {
     uint32_t * kcrc_code = (uint32_t *)data;
-    printf("KCRC: callback 0x%x\n", *kcrc_code);
 }
 /*-----------------------------------------------------------*/
 
