@@ -1003,6 +1003,7 @@ static int wcrc_set_rtdma(uint8_t module, wcrc_instance_ctrl_t * const p_ctrl,
         p_wcrc_cfg_dma->cfg.mSrcAddrMode    = DRV_RTDMAC_ADDR_INCREMENTED;
         p_wcrc_cfg_dma->cfg.mDestAddrMode   = DRV_RTDMAC_ADDR_FIXED;
         p_wcrc_cfg_dma->cfg.mTransferUnit   = DRV_RTDMAC_TRANS_UNIT_4BYTE;
+        p_wcrc_cfg_dma->cfg.mResource       = DRV_RTDMAC_RESOUCE_MAX;
         p_wcrc_cfg_dma->cfg.mSourceRequest  = port_req_id;
         p_wcrc_cfg_dma->cfg.mLowSpeed       = DRV_RTDMAC_SPEED_NORMAL;
         p_wcrc_cfg_dma->cfg.mPrioLevel      = 0;
