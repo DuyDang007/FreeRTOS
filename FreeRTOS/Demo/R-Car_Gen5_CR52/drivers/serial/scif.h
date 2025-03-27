@@ -15,7 +15,11 @@
 /// \return 1 on success, 0 on error.
 
 #ifndef UART_BAUDRATE
+#if (BOARD == x5h_vdk)
+#define UART_BAUDRATE 115200
+#else
 #define UART_BAUDRATE 3000000
+#endif
 #endif
 
 uint32_t console_init(uint32_t port);
