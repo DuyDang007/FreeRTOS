@@ -143,8 +143,7 @@ static void prvDMACTask( void *pvParameters )
 
 void dmacUserCallback(void *data) {
 	rDmacIrqCfg_t * instance_ctrl = (rDmacIrqCfg_t *) data;
-	printf("Handle DMAC interrupt\n");
-    }
+}
 
 /*-----------------------------------------------------------*/
 
