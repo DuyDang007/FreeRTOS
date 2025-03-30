@@ -38,8 +38,12 @@
 
 /* GIC */
 #define __GIC_PRESENT           1
+
+#define X5H_VDK     1
+#define AI_ACC      1
+
 //#define GIC_DISTRIBUTOR_BASE	0xF0000000U
-#if (BOARD == x5h_vdk)
+#if (BOARD == X5H_VDK)
     #define CR52_GICD_ADDR          ((void *)0xF0000000U)
     #define CR52_GICR_ADDR          ((void *)0xF0100000U)
 #else

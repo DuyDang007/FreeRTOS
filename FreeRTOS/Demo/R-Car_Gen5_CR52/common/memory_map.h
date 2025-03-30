@@ -44,7 +44,7 @@ typedef struct st_memory_region {
 
 static const st_memory_region_t RCAR_MEMMORY_ARR[] = {
     {.type = OSAL,          .mem_addr = {.base_address = (uint32_t) OSAL_MEMORY_ADDRESS, .size = (uint32_t) OSAL_MEMORY_SIZE},    .attr = DEVICE_ATTR},
-#if (BOARD == x5h_vdk)
+#if BOARD == X5H_VDK
     {.type = SHARE_MEM,     .mem_addr = {.base_address = (uint32_t) SHARED_DRAM_ADDRESS_1, .size = (uint32_t) SHARED_DRAM_SIZE_1},    .attr = DEVICE_ATTR},
 #endif
     {.type = SHARE_MEM,     .mem_addr = {.base_address = (uint32_t) SHARED_DRAM_ADDRESS_2, .size = (uint32_t) SHARED_DRAM_SIZE_2},    .attr = DEVICE_ATTR},

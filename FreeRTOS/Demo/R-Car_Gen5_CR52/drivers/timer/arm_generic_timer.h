@@ -20,7 +20,7 @@
 
 #endif // __ASSEMBLER__
 
-#if (BOARD == x5h_vdk)
+#if (BOARD == X5H_VDK)
 #define GENERIC_TIMER_CLK     25000000UL
 #else
 /* The timer count up 16 counts with 66.667MHz clock.

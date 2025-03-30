@@ -32,6 +32,7 @@ if(NOT DEFINED RAM_REGION)
 endif()
 set(LDFILE ${BSP_DIR}/common/linker/lscript_sram.ld)
 if(BOARD STREQUAL "x5h_vdk")
+    set(BOARD_ID 1)
     list(FIND ALLOWED_RAM_REGION "${RAM_REGION}" INDEX)
     if(INDEX GREATER -1)
         message(STATUS "RAM REGION ${RAM_REGION} is using now.")
@@ -42,6 +43,7 @@ if(BOARD STREQUAL "x5h_vdk")
 else()
     message(STATUS "DRAM REGION is using now.")
     set(LDFILE ${BSP_DIR}/common/linker/lscript_dram.ld)
+    set(BOARD_ID 2)
 endif()
 
 ### Global compile definitions
@@ -50,12 +52,15 @@ set(global_definition
     -DconfigSUPPORT_POSIX=1
 )
 
+
+message(STATUS "board: ${BOARD}")
+
 ### Set common build flags
 set(CMAKE_ASM_FLAGS "--specs=nosys.specs -mfloat-abi=hard")
 set(CMAKE_C_FLAGS "-std=c99")
 add_compile_options(
     -ffreestanding -mfpu=neon-fp-armv8 -mcpu=cortex-r52 -mtune=cortex-r52 -mfloat-abi=softfp
-    -Wno-unknown-pragmas -DSCMI_DEBUG
+    -Wno-unknown-pragmas -DSCMI_DEBUG -DBOARD=${BOARD_ID}
     ${global_definition}
 )
 

@@ -16,7 +16,7 @@
 #include "scif.h"
 #include "serial/r_serial.h"
 
-#if (BOARD == x5h_vdk)
+#if (BOARD == X5H_VDK)
 /* PFC (Pin Function Controller) */
 #define RCAR_PFC_GPSR1  0xC0800840u       /* R/W 32 GPIO/Peripheral_Function Select register PortGroup 1 */
 #define RCAR_PFC_GPSR1_SCIF_ENABLE  0x0001F000u  /* bit16:HRX0, bit15:HSCK0, bit14:HRTS0#, bit13:HCTS0#, bit12:HTX0 */
@@ -28,6 +28,11 @@
 #define RCAR_PFC_IP2SR1_SCIF_CLEAR_MASK  0xFFFFFFF0u /* [3:0]: clear */
 #define RCAR_PFC_PMMR(addr)  ((addr) & 0xFFFFF800u) /* R/W 32 LSI Multiplexed Pin Setting Mask Register */
 #else
+/* Offset of RW, SET, CLEAR registers */
+#define PFC_RW_OFFSET   (0x0000U)
+#define PFC_SET_OFFSET  (0x0200U)
+#define PFC_CLR_OFFSET  (0x0400U)
+
 /* Read/Write registers */
 #define PFC_PORT_GRP_MASK   (0xFFFFF800U)
 
@@ -158,7 +163,7 @@ static void outbyte(char c)
 	console_putc(c);
 }
 
-#if (BOARD == x5h_vdk)
+#if (BOARD == X5H_VDK)
 static void uart_rcar_pfc_init(void)
 {
 	uint32_t drv_data;
