@@ -240,7 +240,14 @@ install(
     DESTINATION .
     FILES_MATCHING PATTERN "*.ld"
 )
-
+install(
+    DIRECTORY ${CMAKE_BINARY_DIR}/sample_apps/
+    DESTINATION bins
+    FILES_MATCHING
+        PATTERN "*.elf"
+        PATTERN "*.map"
+    PATTERN "CMakeFiles" EXCLUDE
+)
 #######################################################################################
 # Add subdirectory for applications below
 if(ENABLE_OPENAMP)
