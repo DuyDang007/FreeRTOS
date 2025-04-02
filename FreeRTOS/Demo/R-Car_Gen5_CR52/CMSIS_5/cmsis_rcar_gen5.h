@@ -40,7 +40,7 @@
 #define __GIC_PRESENT           1
 
 #define X5H_VDK     1
-#define AI_ACC      1
+#define AI_ACC      2
 
 //#define GIC_DISTRIBUTOR_BASE	0xF0000000U
 #if (BOARD == X5H_VDK)
@@ -52,7 +52,7 @@
 #endif
 
 #define CR52_CPU_ID             0
-#define CR52_GIC_BASE_ADDR      (0xF0000000U)
+#define CR52_GIC_BASE_ADDR      ((uint32_t)CR52_GICD_ADDR)
 
 #define BIT(nr)                   (1UL << (nr))
 /* Not going to list all the interrupts */

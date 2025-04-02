@@ -15,7 +15,7 @@
 /// \return 1 on success, 0 on error.
 
 #ifndef UART_BAUDRATE
-#if (BOARD == x5h_vdk)
+#if (BOARD == X5H_VDK)
 #define UART_BAUDRATE 115200
 #else
 #define UART_BAUDRATE 3000000
