@@ -120,7 +120,7 @@ static void uart_rcar_write_16(uint32_t offs, uint16_t value)
 
 static void uart_rcar_set_baudrate(uint32_t baud_rate)
 {
-	uint8_t reg_val;
+    uint16_t reg_val;
     const uint32_t clock_rate = 66660000u; // S0D12 Clock rate
 
     if (baud_rate >= 3000000) {
