@@ -1,15 +1,23 @@
+/*
+ *
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
 #include "smmu_private.h"
+#include "translation_table.h"
 #include "smmu/smmu.h"
 #include "stdio.h"
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 #include <inttypes.h>
 #include <stdbool.h>
 #include "cmsis_rcar_gen5.h"
 #include "FreeRTOS.h"
 #include "rcar_utils.h"
 
-// #include "task.h"
 /**
  * @brief Array storing base addresses for each SMMU domain.
  */
@@ -53,121 +61,278 @@ static const uintptr_t smmu_base_addresses[] = {
 };
 
 /*Default configured values */
-#define SMMU_STRTAB_FMT_LINEAR      0b00
-#define SMMU_STRTAB_FMT_2LVL        0b01
-
 #define SMMU_QUEUE_SIZE     ((1 << SMMU_QUEUE_LOG2SIZE) * 16)
 
-#define GENMASK(h, l)  (((~0UL) - (1UL << (l)) + 1) & (~0UL >> (BITS_PER_LONG - 1 - (h))))
+#define GENMASK(h, l)  (((~0UL) - (1UL << (l)) + 1) & \
+                       (~0UL >> (BITS_PER_LONG - 1 - (h))))
 
-#define SMMU_STRTAB_BASE_CFG	0x88
-#define STRTAB_BASE_CFG_FMT		GENMASK(17, 16)
-#define STRTAB_BASE_CFG_FMT_LINEAR	0
-#define STRTAB_BASE_CFG_FMT_2LVL	1
-#define STRTAB_BASE_CFG_SPLIT		GENMASK(10, 6)
-#define STRTAB_BASE_CFG_LOG2SIZE	GENMASK(5, 0)
-
-#define SMMU_CR0_OFFSET			0x20
-#define CR0_ATSCHK			(1 << 4)
-#define CR0_CMDQEN			(1 << 3)
-#define CR0_EVTQEN			(1 << 2)
-#define CR0_PRIQEN			(1 << 1)
-#define CR0_SMMUEN			(1 << 0)
+#define SMMU_CR0_OFFSET                 0x20
+#define CR0_ATSCHK                      (1 << 4)
+#define CR0_CMDQEN                      (1 << 3)
+#define CR0_EVTQEN                      (1 << 2)
+#define CR0_PRIQEN                      (1 << 1)
+#define CR0_SMMUEN                      (1 << 0)
 
 #define SMMU_CR0ACK_OFFSET              0x24
 
-#define SMMU_STRTAB_BASE_OFFSET		0x80
-#define STRTAB_BASE_RA			(1UL << 62)
-#define STRTAB_BASE_ADDR_MASK		GENMASK_ULL(51, 6)
+#define SMMU_STRTAB_OFFSET              0x80
+#define STRTAB_BASE_RA                  (1UL << 62)
+#define STRTAB_BASE_ADDR_MASK           GENMASK_ULL(51, 6)
 
-#define SMMU_STRTAB_BASE_CFG_OFFSET	0x88
-#define STRTAB_BASE_CFG_FMT		GENMASK(17, 16)
-#define STRTAB_BASE_CFG_FMT_LINEAR	0
-#define STRTAB_BASE_CFG_FMT_2LVL	1
-#define STRTAB_BASE_CFG_SPLIT		GENMASK(10, 6)
-#define STRTAB_BASE_CFG_LOG2SIZE	GENMASK(5, 0)
+#define SMMU_STRTAB_CFG_OFFSET          0x88
+#define STRTAB_BASE_CFG_FMT_LINEAR      0
+#define STRTAB_BASE_CFG_FMT_2LVL        1
 
-#define SMMU_CMDQ_BASE_OFFSET		0x90
-#define SMMU_CMDQ_PROD_OFFSET		0x98
-#define SMMU_CMDQ_CONS_OFFSET		0x9c
+#define SMMU_CMDQ_BASE_OFFSET           0x90
+#define SMMU_CMDQ_PROD_OFFSET           0x98
+#define SMMU_CMDQ_CONS_OFFSET           0x9c
 
-#define SMMU_EVTQ_BASE_OFFSET		0xa0
-#define SMMU_EVTQ_PROD_OFFSET		0xa8
-#define SMMU_EVTQ_CONS_OFFSET		0xac
+#define SMMU_EVTQ_BASE_OFFSET           0xa0
+#define SMMU_EVTQ_PROD_OFFSET           0xa8
+#define SMMU_EVTQ_CONS_OFFSET           0xac
+
+#define EXTRACT_BITS(x, index1, index2) \
+    (((x << (sizeof(x)*8 - 1 - index2)) >> (sizeof(x)*8 - 1 - index2 + index1)))
+
+#define TIME_OUT    1000000
 
 /**
  * @brief Initializes the SMMU.
  */
 
-static smmu_l1ste_tbl_t* arm_smmu_alloc_l1_ste(e_smmu_domain_t smmu_device);
-static st_smmu_cd_t* smmu_init_cd_table(e_smmu_domain_t smmu_device, uint32_t stream_id);
+static smmu_l1ste_tbl_t* smmu_alloc_l1ste(e_smmu_domain_t smmu_domain);
+static st_smmu_cd_t* smmu_init_cd_table(e_smmu_domain_t smmu_domain, uint32_t stream_id);
 
 static inline void write32(uintptr_t addr, uint32_t value);
-static void R_SMMU_InitCmdQueue(st_smmu_instance_ctrl_t * p_ctrl);
-static void R_SMMU_InitEvtQueue(st_smmu_instance_ctrl_t * p_ctrl);
-static int R_SMMU_WriteCmd(st_smmu_cmd_queue_t * cmd_queue, st_smmu_cmd_t *cmd);
+static void smmu_init_cmdq(e_smmu_domain_t smmu_domain);
+static void smmu_init_evtq(e_smmu_domain_t smmu_domain);
+static int smmu_write_cmd(st_smmu_cmdq_t * cmdq, st_smmu_cmd_t *cmd);
 
-static void cmd_queue_write(uint8_t * dest, st_smmu_cmd_t * cmd);
-static bool cmd_queue_has_space(st_smmu_cmd_queue_t cmd_queue);
-static bool cmd_queue_consumed(st_smmu_cmd_queue_t cmd_queue, uint32_t cur_rd, uint8_t cur_wrap);
+static void cmdq_write(uint8_t * dest, st_smmu_cmd_t * cmd);
+static bool cmdq_has_space(st_smmu_cmdq_t cmdq);
+static bool cmdq_consumed(st_smmu_cmdq_t cmdq, uint32_t cur_rd, uint8_t cur_wrap);
 
-int R_SMMU_Init(st_smmu_instance_ctrl_t * const p_ctrl) {
-	int res = -1;
+static int smmu_enable(e_smmu_domain_t smmu_domain);
+static void smmu_disable(e_smmu_domain_t smmu_domain);
+
+int R_SMMU_Init(e_smmu_domain_t smmu_domain) {
+    volatile st_smmu_cr0_t *reg_cr0;
+    volatile st_smmu_cr0_t *reg_cr0ack;
+    volatile st_smmu_strtab_cfg_t *strtab_cfg;
+    void *l1ste_tbl;
+
+    int res = -1;
+    uint32_t count = 0;
+    
+    uint32_t base = smmu_base_addresses[smmu_domain];
+    reg_cr0 = (st_smmu_cr0_t *)(base + SMMU_CR0_OFFSET);
+    reg_cr0ack = (st_smmu_cr0_t *)(base + SMMU_CR0ACK_OFFSET);
+    strtab_cfg = (st_smmu_strtab_cfg_t *)(base + SMMU_STRTAB_CFG_OFFSET);
+
+    strtab_cfg->FMT = 1;
+    strtab_cfg->SPLIT = 8;
+    strtab_cfg->LOG2SIZE = 20;
+
+    l1ste_tbl = smmu_alloc_l1ste(smmu_domain);
+    if(l1ste_tbl == NULL){
+        return res;
+    }
+    
+    smmu_init_cmdq(smmu_domain);
+    reg_cr0->CMDQEN = ENABLE;
+    
+    while (reg_cr0ack->CMDQEN != ENABLE && count < TIME_OUT) {
+        count++;
+    }
+
+    smmu_init_evtq(smmu_domain);
+    reg_cr0->EVENTQEN = ENABLE;
+    
+    count = 0;
+    while (reg_cr0ack->EVENTQEN != ENABLE && count < TIME_OUT) {
+        count++;
+    }
+
+    if ((reg_cr0ack->EVENTQEN != ENABLE) || (reg_cr0ack->CMDQEN != ENABLE)){
+        return res;
+    }
+
+    res = smmu_enable(smmu_domain);
+
+    return res;
+}
+
+void R_SMMU_Deinit(e_smmu_domain_t smmu_domain) {
+    volatile st_smmu_cmdq_base_t *cmdq_base;
+    volatile st_smmu_eventq_base_t *eventq_base;
+    volatile st_smmu_strtab_t *strtab_base;
+    volatile st_smmu_strtab_cfg_t *strtab_cfg;
+    volatile st_smmu_cr0_t *reg_cr0;
+
+    smmu_l1ste_tbl_t *l1ste_tbl;
+    uint8_t l1ste_bits;
+    uint8_t max_l1ste_bits;
+    
+    uint32_t base = smmu_base_addresses[smmu_domain];
+    cmdq_base = (st_smmu_cmdq_base_t *)(base + SMMU_CMDQ_BASE_OFFSET);
+    eventq_base = (st_smmu_eventq_base_t *)(base + SMMU_EVTQ_BASE_OFFSET);
+    strtab_base = (st_smmu_strtab_t *)(base + SMMU_STRTAB_OFFSET);
+    strtab_cfg = (st_smmu_strtab_cfg_t *)(base + SMMU_STRTAB_CFG_OFFSET);
+    reg_cr0 = (st_smmu_cr0_t *)(base + SMMU_CR0_OFFSET);
+
+    l1ste_tbl = (smmu_l1ste_tbl_t *)(uintptr_t)(strtab_base->ADDR << 6); 
+    l1ste_bits = strtab_cfg->LOG2SIZE - strtab_cfg->SPLIT;
+    max_l1ste_bits = l1ste_bits < MAX_L1STE_BITS ? l1ste_bits : MAX_L1STE_BITS;
+
+    for (uint16_t i = 0; i < 1 << max_l1ste_bits; i++) {
+        if ((void*)(uintptr_t)((l1ste_tbl + i)->l2tbl_base << 6) != NULL) {
+            aligned_free((void*)(uintptr_t)((l1ste_tbl + i)->l2tbl_base << 6));
+        }
+    }
+    
+    aligned_free(l1ste_tbl);
+    
+    aligned_free((void*)(uintptr_t)(cmdq_base->ADDR << 5));
+    reg_cr0->CMDQEN = DISABLE;
+
+    aligned_free((void*)(uintptr_t)(eventq_base->ADDR << 5));
+    reg_cr0->EVENTQEN = DISABLE;
+
+    smmu_disable(smmu_domain);
+}
+
+int R_SMMU_Attach(st_smmu_streamid_instance_ctrl_t *p_ctrl) {
+    void *res;
     if (!p_ctrl)
     {
         return -1; // Invalid input, return immediately
     }
 
-    volatile st_smmu_reg_cr0_t *reg_cr0 = (st_smmu_reg_cr0_t *)(smmu_base_addresses[p_ctrl->smmu_domain] + SMMU_CR0_OFFSET);
-    volatile st_smmu_reg_cr0_t *reg_cr0ack = (st_smmu_reg_cr0_t *)(smmu_base_addresses[p_ctrl->smmu_domain] + SMMU_CR0ACK_OFFSET);
-    volatile st_smmu_reg_cmdq_cons_t * reg_cons = (st_smmu_reg_cmdq_cons_t *)(smmu_base_addresses[p_ctrl->smmu_domain] + SMMU_CMDQ_CONS_OFFSET);
-    volatile st_smmu_reg_strtab_base_cfg_t *reg_strtab_cfg = (st_smmu_reg_strtab_base_cfg_t *)(smmu_base_addresses[p_ctrl->smmu_domain] + SMMU_STRTAB_BASE_CFG);
-    
-    reg_strtab_cfg->FMT = 1;
-    reg_strtab_cfg->SPLIT = 8;
-    reg_strtab_cfg->LOG2SIZE = 20;
-	
-    // Allocate and initialize Command queue and Event queue memory, base pointers and indexes.
-    R_SMMU_InitCmdQueue(p_ctrl);
-    reg_cr0->CMDQEN = ENABLE;
-    
-    uint32_t count = 0;
-    while (reg_cr0ack->CMDQEN != ENABLE && count < 100000) {
-        count++;
+    res = smmu_init_cd_table(p_ctrl->smmu_domain, p_ctrl->stream_id);
+    if (res == NULL) {
+        return -1;
     }
-
-    count = 0;
-    R_SMMU_InitEvtQueue(p_ctrl);
-    reg_cr0->EVENTQEN = ENABLE;
-    while (reg_cr0ack->EVENTQEN != ENABLE && count < 100000) {
-        count++;
-    }
-    if ((reg_cr0ack->EVENTQEN == ENABLE) && (reg_cr0ack->CMDQEN == ENABLE)){
-        res = 0;
-    } else {
-		res = -1;
-	}
-	return res;
+    return 0;
 }
 
-void R_SMMU_Attach(st_smmu_instance_ctrl_t * p_ctrl, uint32_t stream_id) {
+void R_SMMU_Detach(st_smmu_streamid_instance_ctrl_t *p_ctrl) {
+    volatile st_smmu_strtab_t *smmu_strtab ;
+    volatile st_smmu_strtab_cfg_t *smmu_strtab_cfg ;
+    
+    uint32_t base;
+    uint32_t l1ste_idx;
+    uint16_t l2ste_idx;
+    
+    smmu_l1ste_tbl_t *l1ste_tbl;
+    st_smmu_ste_t *l2ste_tbl;
+    st_smmu_cd_t *cd_tbl;
+    uint8_t split;
+    uint8_t log2size;
+    uint32_t stream_id;
+
     if (!p_ctrl)
     {
         return; // Invalid input, return immediately
     }
-    smmu_init_cd_table(p_ctrl->smmu_domain, stream_id);
+    
+    base = smmu_base_addresses[p_ctrl->smmu_domain];
+    smmu_strtab = (st_smmu_strtab_t *)(base + SMMU_STRTAB_OFFSET);
+    smmu_strtab_cfg = (st_smmu_strtab_cfg_t *)(base + SMMU_STRTAB_CFG_OFFSET);
+    
+    stream_id = p_ctrl->stream_id;
+    split = smmu_strtab_cfg->SPLIT;
+    log2size = smmu_strtab_cfg->LOG2SIZE;
+    l1ste_idx = EXTRACT_BITS(stream_id, split, log2size - 1);
+    l2ste_idx = EXTRACT_BITS(stream_id, 0, split - 1);
+
+    l1ste_tbl = (smmu_l1ste_tbl_t*)(uintptr_t)(smmu_strtab->ADDR << 6);
+    l2ste_tbl = (st_smmu_ste_t*)(uintptr_t)((l1ste_tbl + l1ste_idx)->l2tbl_base << 6);
+    cd_tbl = (st_smmu_cd_t*)(uintptr_t)((l2ste_tbl + l2ste_idx)->s1cdptr << 6);
+
+    cd_tbl->valid = 0;
+    aligned_free(cd_tbl);
+
+    (l2ste_tbl + l2ste_idx)->valid = 0;
+    L1C_InvalidateDCacheAll();
+    __DSB();
 }
 
-void R_SMMU_Detach(st_smmu_instance_ctrl_t * p_ctrl, uint32_t stream_id) {
-    // TODO
+void R_SMMU_Map(st_smmu_streamid_instance_ctrl_t *p_ctrl, uint64_t va, uint64_t pa, uint32_t size) {
+    volatile st_smmu_strtab_t *smmu_strtab ;
+    volatile st_smmu_strtab_cfg_t *smmu_strtab_cfg ;
+    uint32_t base;
+    uint32_t l1ste_idx;
+    uint16_t l2ste_idx;
+    smmu_l1ste_tbl_t *l1ste_tbl;
+    st_smmu_ste_t *l2ste_tbl;
+    st_smmu_cd_t *cd_tbl;
+    uint64_t *ttb0;
+    uint8_t split;
+    uint8_t log2size;
+    uint32_t stream_id;
+
+    if (!p_ctrl)
+    {
+        return; // Invalid input, return immediately
+    }
+    
+    base = smmu_base_addresses[p_ctrl->smmu_domain];
+    smmu_strtab = (st_smmu_strtab_t *)(base + SMMU_STRTAB_OFFSET);
+    smmu_strtab_cfg = (st_smmu_strtab_cfg_t *)(base + SMMU_STRTAB_CFG_OFFSET);
+    
+    stream_id = p_ctrl->stream_id;
+    split = smmu_strtab_cfg->SPLIT;
+    log2size = smmu_strtab_cfg->LOG2SIZE;
+    l1ste_idx = EXTRACT_BITS(stream_id, split, log2size - 1);
+    l2ste_idx = EXTRACT_BITS(p_ctrl->stream_id, 0, split - 1);
+
+    l1ste_tbl = (smmu_l1ste_tbl_t*)(uintptr_t)(smmu_strtab->ADDR << 6);
+    l2ste_tbl = (st_smmu_ste_t*)(uintptr_t)((l1ste_tbl + l1ste_idx)->l2tbl_base << 6);
+    cd_tbl = (st_smmu_cd_t*)(uintptr_t)((l2ste_tbl + l2ste_idx)->s1cdptr << 6);
+
+    ttb0 = (uint64_t*)(uintptr_t)(cd_tbl->ttb0_base << 4);
+    ttb0 = CreateTranslationTable(ttb0, va, pa, size);
+    cd_tbl->ttb0_base = ((uint64_t)(uintptr_t)ttb0) >> 4;
+    
+    L1C_InvalidateDCacheAll();
+    __DSB();
 }
 
-void R_SMMU_Map(st_smmu_instance_ctrl_t * p_ctrl, uint64_t va, uint64_t pa, uint32_t size) {
-    // TODO
-}
+void R_SMMU_Unmap(st_smmu_streamid_instance_ctrl_t *p_ctrl, uint64_t va, uint64_t pa, uint32_t size) {
+    volatile st_smmu_strtab_t *smmu_strtab ;
+    volatile st_smmu_strtab_cfg_t *smmu_strtab_cfg ;
+    uint32_t base;
+    uint32_t l1ste_idx;
+    uint16_t l2ste_idx;
+    smmu_l1ste_tbl_t *l1ste_tbl;
+    st_smmu_ste_t *l2ste_tbl;
+    st_smmu_cd_t *cd_tbl;
+    uint8_t split;
+    uint8_t log2size;
+    uint32_t stream_id;
 
-void R_SMMU_Unmap(st_smmu_instance_ctrl_t * p_ctrl, uint64_t va, uint64_t pa, uint32_t size) {
-    // TODO
+    if (!p_ctrl)
+    {
+        return; // Invalid input, return immediately
+    }
+    
+    base = smmu_base_addresses[p_ctrl->smmu_domain];
+    smmu_strtab = (st_smmu_strtab_t *)(base + SMMU_STRTAB_OFFSET);
+    smmu_strtab_cfg = (st_smmu_strtab_cfg_t *)(base + SMMU_STRTAB_CFG_OFFSET);
+    
+    stream_id = p_ctrl->stream_id;
+    split = smmu_strtab_cfg->SPLIT;
+    log2size = smmu_strtab_cfg->LOG2SIZE;
+    l1ste_idx = EXTRACT_BITS(stream_id, split, log2size - 1);
+    l2ste_idx = EXTRACT_BITS(stream_id, 0, split - 1);
+
+    l1ste_tbl = (smmu_l1ste_tbl_t*)(uintptr_t)(smmu_strtab->ADDR << 6);
+    l2ste_tbl = (st_smmu_ste_t*)(uintptr_t)((l1ste_tbl + l1ste_idx)->l2tbl_base << 6);
+    cd_tbl = (st_smmu_cd_t*)(uintptr_t)((l2ste_tbl + l2ste_idx)->s1cdptr << 6);
+
+    freeMemoryRegion((uint64_t*)(uintptr_t)(cd_tbl->ttb0_base << 4), va, pa, size);
+    L1C_InvalidateDCacheAll();
+    __DSB();
 }
 
 /**
@@ -180,39 +345,46 @@ void R_SMMU_ProcessEventQueue(void) {
 /**
  * @brief Issues a TLB invalidation command.
  */
-int R_SMMU_InvalidateTLB(st_smmu_instance_ctrl_t * p_ctrl) {
+int R_SMMU_InvalidateTLB(e_smmu_domain_t smmu_domain) {
     st_smmu_cmd_t cmd_inv_tlb = {0};
     cmd_inv_tlb.opcode = CMDQ_OP_TLBI_NSNH_ALL;
-    return R_SMMU_IssueCommand(p_ctrl, &cmd_inv_tlb, true);
+    return R_SMMU_IssueCommand(smmu_domain, &cmd_inv_tlb, 1);
 }
 
 /**
  * @brief Enables SMMU for translation.
  */
-int R_SMMU_Enable(st_smmu_instance_ctrl_t * p_ctrl)
+static int smmu_enable(e_smmu_domain_t smmu_domain)
 {
-    volatile st_smmu_reg_cr0_t *smmu_cr0ack = (st_smmu_reg_cr0_t*)(smmu_base_addresses[p_ctrl->smmu_domain] + SMMU_CR0ACK_OFFSET);
-    volatile st_smmu_reg_cr0_t *reg_cr0 = (st_smmu_reg_cr0_t *)(smmu_base_addresses[p_ctrl->smmu_domain] + SMMU_CR0_OFFSET);
+    volatile st_smmu_cr0_t *smmu_cr0ack;
+    volatile st_smmu_cr0_t *reg_cr0;
+    uint32_t count = 0;
+    
+    uint32_t base = smmu_base_addresses[smmu_domain];
+    smmu_cr0ack = (st_smmu_cr0_t*)(base + SMMU_CR0ACK_OFFSET);
+    reg_cr0 = (st_smmu_cr0_t *)(base + SMMU_CR0_OFFSET);
+
     reg_cr0->SMMUEN = ENABLE;
 
-    uint32_t count = 0;
-    while (smmu_cr0ack->SMMUEN != ENABLE && count < 100000) {
+    while (smmu_cr0ack->SMMUEN != ENABLE && count < TIME_OUT) {
         count++;
     }
-	if (smmu_cr0ack->SMMUEN == ENABLE) {
-		return 0;
-	} else {
-		return -1;
-	}
+    if (smmu_cr0ack->SMMUEN == ENABLE) {
+        return 0;
+    } else {
+        return -1;
+    }
 }
 
 /**
  * @brief Disables SMMU.
  */
-void R_SMMU_Disable(st_smmu_instance_ctrl_t * p_ctrl)
+static void smmu_disable(e_smmu_domain_t smmu_domain)
 {
-   volatile st_smmu_reg_cr0_t *reg_cr0 = (st_smmu_reg_cr0_t *)(smmu_base_addresses[p_ctrl->smmu_domain] + SMMU_CR0_OFFSET);
-   reg_cr0->SMMUEN = DISABLE;
+    volatile st_smmu_cr0_t *reg_cr0;
+    uint32_t base = smmu_base_addresses[smmu_domain];
+    reg_cr0 = (st_smmu_cr0_t *)(base + SMMU_CR0_OFFSET);
+    reg_cr0->SMMUEN = DISABLE;
 }
 
 
@@ -220,271 +392,314 @@ static inline void write32(uintptr_t addr, uint32_t value) {
     *(volatile uint32_t *)addr = value;
 }
 
-#define EXTRACT_BITS(x, index1, index2) \
-    (index1 > index2 ? 0 : ((x << (sizeof(x)*8 - 1 - index2)) >> (sizeof(x)*8 - 1 - index2 + index1)))
-
-static smmu_l1ste_tbl_t* arm_smmu_alloc_l1_ste(e_smmu_domain_t smmu_device) {
-    volatile st_smmu_reg_strtab_base_t *smmu_strtab = (st_smmu_reg_strtab_base_t *)(smmu_base_addresses[smmu_device] + SMMU_STRTAB_BASE_OFFSET);
-    volatile st_smmu_reg_strtab_base_cfg_t *smmu_strtab_cfg = (st_smmu_reg_strtab_base_cfg_t *)(smmu_base_addresses[smmu_device] + SMMU_STRTAB_BASE_CFG_OFFSET);
-
-    uint32_t num_l1_entry = (1 << (smmu_strtab_cfg->LOG2SIZE - smmu_strtab_cfg->SPLIT));
-    num_l1_entry = (num_l1_entry <= TOTAL_L1_STE_ENTRY_SUPPORT) ? num_l1_entry : TOTAL_L1_STE_ENTRY_SUPPORT;
-
-    /*TODO Not yet align. Must align follow spec of field ADDR of res SMMU_CMDQ_BASE */
-    //smmu_l1ste_tbl_t *l1_ste_tbl = pvPortMalloc(num_l1_entry*sizeof(smmu_l1ste_tbl_t));
-    smmu_l1ste_tbl_t *l1_ste_tbl = aligned_malloc(1 << (smmu_strtab_cfg->LOG2SIZE - smmu_strtab_cfg->SPLIT + 3),num_l1_entry*sizeof(smmu_l1ste_tbl_t));
-    if (l1_ste_tbl == NULL)  {
+static smmu_l1ste_tbl_t* smmu_alloc_l1ste(e_smmu_domain_t smmu_domain) {
+    volatile st_smmu_strtab_t *smmu_strtab;
+    volatile st_smmu_strtab_cfg_t *smmu_strtab_cfg;
+    uint32_t num_l1_entry;
+    smmu_l1ste_tbl_t *l1ste_tbl;
+    uint8_t log2size;
+    uint8_t split;
+    uint32_t l1ste_size;
+    uint32_t base = smmu_base_addresses[smmu_domain];
+    
+    smmu_strtab = (st_smmu_strtab_t *)(base + SMMU_STRTAB_OFFSET);
+    smmu_strtab_cfg = (st_smmu_strtab_cfg_t *)(base + SMMU_STRTAB_CFG_OFFSET);
+    
+    log2size = smmu_strtab_cfg->LOG2SIZE;
+    split = smmu_strtab_cfg->SPLIT;
+    num_l1_entry = (1 << (log2size - split));
+    num_l1_entry = num_l1_entry <= MAX_L1STE_ENTRY ? num_l1_entry : MAX_L1STE_ENTRY;
+    
+    l1ste_size = num_l1_entry*sizeof(smmu_l1ste_tbl_t);
+    l1ste_tbl = aligned_malloc(1 << (log2size - split + 3), l1ste_size);
+    if (l1ste_tbl == NULL)  {
         return NULL;
     }
-    
-    memset(l1_ste_tbl, 0, num_l1_entry*sizeof(smmu_l1ste_tbl_t));
 
-    smmu_strtab->ADDR = (uintptr_t)l1_ste_tbl >> 6;
+    memset(l1ste_tbl, 0, l1ste_size);
+
+    smmu_strtab->ADDR = (uintptr_t)l1ste_tbl >> 6;
     L1C_InvalidateDCacheAll();
     __DSB();
-    return l1_ste_tbl;
+    return l1ste_tbl;
 }
 
-static st_smmu_ste_t* arm_smmu_alloc_l2_ste(e_smmu_domain_t smmu_device, uint32_t l1_ste_idx) {
-    volatile st_smmu_reg_strtab_base_t *smmu_strtab = (st_smmu_reg_strtab_base_t *)(smmu_base_addresses[smmu_device] + SMMU_STRTAB_BASE_OFFSET);
-    volatile st_smmu_reg_strtab_base_cfg_t *smmu_strtab_cfg = (st_smmu_reg_strtab_base_cfg_t *)(smmu_base_addresses[smmu_device] + SMMU_STRTAB_BASE_CFG_OFFSET);
+static st_smmu_ste_t* smmu_alloc_l2ste(e_smmu_domain_t smmu_domain, uint32_t l1ste_idx) {
+    volatile st_smmu_strtab_t *smmu_strtab;
+    volatile st_smmu_strtab_cfg_t *smmu_strtab_cfg;
+    uintptr_t l1ste_base;
+    smmu_l1ste_tbl_t *l1ste_tbl;
+    uint32_t l2_tbl_size;
+    st_smmu_ste_t *l2ste_tbl;
+    uint8_t split; 
+    
+    uint32_t base = smmu_base_addresses[smmu_domain];
+    smmu_strtab = (st_smmu_strtab_t *)(base + SMMU_STRTAB_OFFSET);
+    smmu_strtab_cfg = (st_smmu_strtab_cfg_t *)(base + SMMU_STRTAB_CFG_OFFSET);
 
-    uint32_t max_l1_ste_idx = (1 << (smmu_strtab_cfg->LOG2SIZE - smmu_strtab_cfg->SPLIT)) - 1;
-    max_l1_ste_idx = max_l1_ste_idx < TOTAL_L1_STE_ENTRY_SUPPORT ? max_l1_ste_idx : TOTAL_L1_STE_ENTRY_SUPPORT;
+    l1ste_base = (smmu_strtab->ADDR) << 6;
+    l1ste_tbl = (smmu_l1ste_tbl_t*)l1ste_base;
 
-    if (l1_ste_idx > max_l1_ste_idx) {
-        return NULL;
-    }
-
-    uintptr_t l1_ste_base = (smmu_strtab->ADDR) << 6;
-    smmu_l1ste_tbl_t *l1_ste_tbl = (smmu_l1ste_tbl_t*)l1_ste_base;
-
-    if(l1_ste_tbl == NULL) {
-        l1_ste_tbl = arm_smmu_alloc_l1_ste(smmu_device);
-        if(l1_ste_tbl == NULL) {
+    if(l1ste_tbl == NULL) {
+        l1ste_tbl = smmu_alloc_l1ste(smmu_domain);
+        if(l1ste_tbl == NULL) {
             return NULL;
         }
     }
     
-    uint8_t l2_addr_align = 6 + smmu_strtab_cfg->SPLIT;
-    uint32_t l2_tbl_size = (1 << smmu_strtab_cfg->SPLIT);
-    /* Leak 1 << 14 byte mem */
-    st_smmu_ste_t *l2_ste_tbl = aligned_malloc(1 << l2_addr_align, l2_tbl_size*sizeof(st_smmu_ste_t));
-    if (l2_ste_tbl == NULL) {
+    split = smmu_strtab_cfg->SPLIT;
+    l2_tbl_size = (1 << split)*sizeof(st_smmu_ste_t);
+    l2ste_tbl = aligned_malloc(1 << (6 + split), l2_tbl_size);
+    if (l2ste_tbl == NULL) {
         return NULL;
     }
     
-    (l1_ste_tbl + l1_ste_idx)->l2tbl_base = (uintptr_t)l2_ste_tbl >> 6;
-    (l1_ste_tbl + l1_ste_idx)->span = smmu_strtab_cfg->SPLIT + 1;
+    memset(l2ste_tbl, 0, l2_tbl_size);
+
+    (l1ste_tbl + l1ste_idx)->l2tbl_base = (uintptr_t)l2ste_tbl >> 6;
+    (l1ste_tbl + l1ste_idx)->span = split + 1;
     L1C_InvalidateDCacheAll();
     __DSB();
-    return l2_ste_tbl;
+    return l2ste_tbl;
 }
 
-static st_smmu_ste_t* arm_smmu_init_ste(e_smmu_domain_t smmu_device, uint32_t stream_id){
-    volatile st_smmu_reg_strtab_base_t *smmu_strtab = (st_smmu_reg_strtab_base_t *)(smmu_base_addresses[smmu_device] + SMMU_STRTAB_BASE_OFFSET);
-    volatile st_smmu_reg_strtab_base_cfg_t *smmu_strtab_cfg = (st_smmu_reg_strtab_base_cfg_t *)(smmu_base_addresses[smmu_device] + SMMU_STRTAB_BASE_CFG_OFFSET);
-    uint32_t max_l1_ste_idx = (1 << (smmu_strtab_cfg->LOG2SIZE - smmu_strtab_cfg->SPLIT)) - 1;
-    max_l1_ste_idx = max_l1_ste_idx < TOTAL_L1_STE_ENTRY_SUPPORT ? max_l1_ste_idx : TOTAL_L1_STE_ENTRY_SUPPORT;
+static st_smmu_ste_t* smmu_init_ste(e_smmu_domain_t smmu_domain, uint32_t stream_id){
+    volatile st_smmu_strtab_t *smmu_strtab;
+    volatile st_smmu_strtab_cfg_t *smmu_strtab_cfg;
+    uint32_t stream_id_bits;
+    uint32_t l1ste_idx;
+    uint16_t l2ste_idx;
+    uintptr_t l1ste_base;
+    smmu_l1ste_tbl_t *l1ste_tbl;
+    uintptr_t l2ste_base;
+    st_smmu_ste_t *l2ste_tbl;
+    uint8_t split;
+    uint8_t log2size;
 
-    uint16_t max_l2_ste_idx = (1 << smmu_strtab_cfg->SPLIT) - 1;
+    uint32_t base = smmu_base_addresses[smmu_domain];
+    smmu_strtab = (st_smmu_strtab_t *)(base + SMMU_STRTAB_OFFSET);
+    smmu_strtab_cfg = (st_smmu_strtab_cfg_t *)(base + SMMU_STRTAB_CFG_OFFSET);
+    
+    log2size = smmu_strtab_cfg->LOG2SIZE;
+    split = smmu_strtab_cfg->SPLIT;
 
-    uint32_t l1_ste_idx = EXTRACT_BITS(stream_id, smmu_strtab_cfg->SPLIT, smmu_strtab_cfg->LOG2SIZE - 1);
-
-    uint16_t l2_ste_idx = EXTRACT_BITS(stream_id, 0, smmu_strtab_cfg->SPLIT - 1);
-
-    if (l1_ste_idx > max_l1_ste_idx || l2_ste_idx > max_l2_ste_idx) {
+    stream_id_bits = MAX_L1STE_BITS + split;
+    stream_id_bits = log2size < stream_id_bits ? log2size : stream_id_bits;
+    if (stream_id > (1 << stream_id_bits) - 1) {
+        printf("Fail to init stream table entry. Stream id is too large\n");
         return NULL;
     }
 
-    uintptr_t l1_ste_base = smmu_strtab->ADDR << 6;
-    smmu_l1ste_tbl_t *l1_ste_tbl = (smmu_l1ste_tbl_t*)l1_ste_base;
-    if (l1_ste_tbl == NULL) {
-        l1_ste_tbl = arm_smmu_alloc_l1_ste(smmu_device);
-        if(l1_ste_tbl == NULL){
+    l1ste_idx = EXTRACT_BITS(stream_id, split, log2size - 1);
+    l2ste_idx = EXTRACT_BITS(stream_id, 0, split - 1);
+
+    l1ste_base = smmu_strtab->ADDR << 6;
+    l1ste_tbl = (smmu_l1ste_tbl_t*)l1ste_base;
+    if (l1ste_tbl == NULL) {
+        l1ste_tbl = smmu_alloc_l1ste(smmu_domain);
+        if(l1ste_tbl == NULL){
             return NULL;
         }
     }
 
-    uintptr_t l2_ste_base = (l1_ste_tbl + l1_ste_idx)->l2tbl_base << 6;
-    st_smmu_ste_t *l2_ste_tbl = (st_smmu_ste_t*)l2_ste_base;
-    if(l2_ste_tbl == NULL) {
-        l2_ste_tbl = arm_smmu_alloc_l2_ste(smmu_device, l1_ste_idx);
-        if(l2_ste_tbl == NULL) {
+    l2ste_base = (l1ste_tbl + l1ste_idx)->l2tbl_base << 6;
+    l2ste_tbl = (st_smmu_ste_t*)l2ste_base;
+    if(l2ste_tbl == NULL) {
+        l2ste_tbl = smmu_alloc_l2ste(smmu_domain, l1ste_idx);
+        if(l2ste_tbl == NULL) {
             return NULL;
         }
     }
-    
-    (l2_ste_tbl + l2_ste_idx)->valid = STRTAB_STE_V;
-    // (l2_ste_tbl + l2_ste_idx)->config = STRTAB_STE_CFG_BYPASS;
-    (l2_ste_tbl + l2_ste_idx)->config = STRTAB_STE_CFG_S1_TRANS; // translate S1, bypass S2
-    (l2_ste_tbl + l2_ste_idx)->s1cdmax = 0;
-    (l2_ste_tbl + l2_ste_idx)->s1cir = STRTAB_STE_1_S1C_CACHE_WBRA;
-    (l2_ste_tbl + l2_ste_idx)->s1cor = STRTAB_STE_1_S1C_CACHE_WBRA;
-    (l2_ste_tbl + l2_ste_idx)->s1csh = STRTAB_STE_1_S1C_SH_ISH;
-    (l2_ste_tbl + l2_ste_idx)->strw = STRTAB_STE_1_STRW_EL2;
-    (l2_ste_tbl + l2_ste_idx)->s1stalld = STRTAB_STE_1_S1STALLD;
+
+    (l2ste_tbl + l2ste_idx)->valid = STRTAB_STE_V;
+    (l2ste_tbl + l2ste_idx)->config = STRTAB_STE_CFG_S1_TRANS;
+    (l2ste_tbl + l2ste_idx)->s1cdmax = 0;
+    (l2ste_tbl + l2ste_idx)->s1cir = STRTAB_STE_1_S1C_CACHE_WBRA;
+    (l2ste_tbl + l2ste_idx)->s1cor = STRTAB_STE_1_S1C_CACHE_WBRA;
+    (l2ste_tbl + l2ste_idx)->s1csh = STRTAB_STE_1_S1C_SH_ISH;
+    (l2ste_tbl + l2ste_idx)->strw = STRTAB_STE_1_STRW_EL2;
+    (l2ste_tbl + l2ste_idx)->s1stalld = STRTAB_STE_1_S1STALLD;
+
     L1C_InvalidateDCacheAll();
     __DSB();
 
-    return l2_ste_tbl + l2_ste_idx;
+    return l2ste_tbl + l2ste_idx;
 }
 
-static st_smmu_cd_t* smmu_init_cd_table(e_smmu_domain_t smmu_device, uint32_t stream_id) {
- 
-    st_smmu_ste_t *l2_ste_ptr = arm_smmu_init_ste(smmu_device, stream_id); 
-    if (l2_ste_ptr == NULL) {
+static st_smmu_cd_t* smmu_init_cd_table(e_smmu_domain_t smmu_domain, uint32_t stream_id) {
+
+    st_smmu_ste_t *l2ste_ptr;
+    st_smmu_cd_t *cd_tbl;
+    
+    l2ste_ptr = smmu_init_ste(smmu_domain, stream_id);
+    if (l2ste_ptr == NULL) {
         return NULL;
     }
 
-    /* Leak 1 << 6 byte mem */
-    st_smmu_cd_t *cd_tbl = aligned_malloc(1 << 6, sizeof(st_smmu_cd_t));
+    cd_tbl = aligned_malloc(1 << 6, sizeof(st_smmu_cd_t));
     if (cd_tbl == NULL) {
         return NULL;
     }
     
-    // cd_tbl->t0sz = 16;
-    cd_tbl->t0sz = 32;
+    memset(cd_tbl, 0, sizeof(st_smmu_cd_t));
+
+    cd_tbl->t0sz = 16;
     cd_tbl->ir0 = CTXDESC_CD_IR_RAWAWB;
     cd_tbl->or0 = CTXDESC_CD_OR_RAWAWB;
     cd_tbl->sh0 = CTXDESC_CD_SH_ISH;
     cd_tbl->epd1 = CTXDESC_CD_TCR_EPD1;
     cd_tbl->valid = 1;
-    // cd_tbl->ips = 3; // IPA 42 bit
-    cd_tbl->ips = 0;    // IPA 32 bit
+    cd_tbl->ips = 3; // IPA 42 bit
     cd_tbl->aa64 = CTXDESC_CD_AA64;
     cd_tbl->ars = (CTXDESC_CD_A << 2 | CTXDESC_CD_R << 1);
     cd_tbl->aset = CTXDESC_CD_ASET;
+    cd_tbl->asid = 1;
     cd_tbl->mair0 = 0xf404ff44;
-    
-    //TODO: remove me
-    uint32_t ttb0;
-//    initTranslationTable(&ttb0, 0x60000000UL, 0x60000000UL, 0x4000);
-//    cd_tbl->ttb0_base = (ttb0 >> 4);
-   
-    l2_ste_ptr->s1cdptr = (uintptr_t)cd_tbl >> 6;
-    
+
+    l2ste_ptr->s1cdptr = (uintptr_t)cd_tbl >> 6;
+
     L1C_InvalidateDCacheAll();
     __DSB();
 
     return cd_tbl;
 }
 
-int R_SMMU_IssueCommand(st_smmu_instance_ctrl_t * p_ctrl, st_smmu_cmd_t *cmd, bool sync){
+int R_SMMU_IssueCommand(e_smmu_domain_t smmu_domain, st_smmu_cmd_t *p_cmd, uint8_t sync){
+    st_smmu_cmdq_t cmdq;
+    uint32_t base = smmu_base_addresses[smmu_domain];
+    cmdq.base_reg = (st_smmu_cmdq_base_t *)(base + SMMU_CMDQ_BASE_OFFSET);
+    cmdq.cons_reg = (st_smmu_cmdq_cons_t *)(base + SMMU_CMDQ_CONS_OFFSET);
+    cmdq.prod_reg = (st_smmu_cmdq_prod_t *)(base + SMMU_CMDQ_PROD_OFFSET);
+
     /* 1. Determine if there is space to insert commands */
     // Increase WR of CMDQ_PROD
-    if ( !cmd_queue_has_space(p_ctrl->cmd_queue)) {
+    if ( !cmdq_has_space(cmdq)) {
         return - 1;
     }
-    
+
     /*2. Write command into the queue */
-    R_SMMU_WriteCmd(&(p_ctrl->cmd_queue), cmd);
+    smmu_write_cmd(&cmdq, p_cmd);
 
     /* 5. If we are inserting a CMD_SYNC, we must wait for it to complete */
     if (sync) {
         // Get Read index before sending CMD_SYNC
-        uint32_t cur_rd = p_ctrl->cmd_queue.cons_reg->RD;
-        uint8_t cur_wrap = p_ctrl->cmd_queue.cons_reg->RD_WRAP;
-
+        uint32_t cur_rd = cmdq.cons_reg->RD;
+        uint8_t cur_wrap = cmdq.cons_reg->RD_WRAP;
+        uint32_t count = 0;
         st_smmu_cmd_t cmd_sync = {0};
         cmd_sync.opcode = CMDQ_OP_CMD_SYNC;
-        R_SMMU_WriteCmd(&(p_ctrl->cmd_queue), &cmd_sync);
+        smmu_write_cmd(&(cmdq), &cmd_sync);
+        
         // Pull until completion
-        uint32_t count = 0;
-        while (!cmd_queue_consumed(p_ctrl->cmd_queue, cur_rd, cur_wrap)) {
+        while (!cmdq_consumed(cmdq, cur_rd, cur_wrap)) {
             count++;
-            if (count >= 1000000) {
+            if (count >= TIME_OUT) {
                 return -1;
             }
         }
-        if (count < 1000000)
-            return 0;
     }
-	return 0; // Don't verify if command has completed
+    return 0; // Don't verify if command has completed
 }
 
-static void R_SMMU_InitCmdQueue(st_smmu_instance_ctrl_t * p_ctrl){
+static void smmu_init_cmdq(e_smmu_domain_t smmu_domain){
+    volatile st_smmu_cmdq_t cmdq;
+    uint64_t cmdq_ptr;
+    uint32_t base = smmu_base_addresses[smmu_domain];
+
     // Initialize CMDQ_BASE
-    p_ctrl->cmd_queue.base_reg = (st_smmu_reg_cmdq_base_t *)(smmu_base_addresses[p_ctrl->smmu_domain] + SMMU_CMDQ_BASE_OFFSET);
-    // p_ctrl->cmd_queue.base_reg->ADDR = (uint64_t)pvPortMalloc(SMMU_QUEUE_SIZE);
-    uint64_t cmd_queue_ptr = (uintptr_t)aligned_malloc(1<<12, SMMU_QUEUE_SIZE);// align 4k
-    p_ctrl->cmd_queue.base_reg->ADDR = cmd_queue_ptr >> 5;
-    p_ctrl->cmd_queue.base_reg->LOG2SIZE = SMMU_QUEUE_LOG2SIZE;
-    p_ctrl->cmd_queue.base_reg->RA = 0;
+    cmdq.base_reg = (st_smmu_cmdq_base_t *)(base + SMMU_CMDQ_BASE_OFFSET);
+    cmdq_ptr = (uintptr_t)aligned_malloc(1<<12, SMMU_QUEUE_SIZE);
+    cmdq.base_reg->ADDR = cmdq_ptr >> 5;
+    cmdq.base_reg->LOG2SIZE = SMMU_QUEUE_LOG2SIZE;
+    cmdq.base_reg->RA = 0;
 
 
     // Initialize CMDQ_PROD and CMDQ_CONS
-    p_ctrl->cmd_queue.prod_reg = (st_smmu_reg_cmdq_prod_t *)(smmu_base_addresses[p_ctrl->smmu_domain] + SMMU_CMDQ_PROD_OFFSET);
-    p_ctrl->cmd_queue.cons_reg = (st_smmu_reg_cmdq_cons_t *)(smmu_base_addresses[p_ctrl->smmu_domain] + SMMU_CMDQ_CONS_OFFSET);
+    cmdq.prod_reg = (st_smmu_cmdq_prod_t *)(base + SMMU_CMDQ_PROD_OFFSET);
+    cmdq.cons_reg = (st_smmu_cmdq_cons_t *)(base + SMMU_CMDQ_CONS_OFFSET);
 
-    p_ctrl->cmd_queue.prod_reg->WR = 0;
-    p_ctrl->cmd_queue.prod_reg->WR_WRAP = 0;
+    cmdq.prod_reg->WR = 0;
+    cmdq.prod_reg->WR_WRAP = 0;
 
-    p_ctrl->cmd_queue.cons_reg->RD = 0;
-    p_ctrl->cmd_queue.cons_reg->RD_WRAP = 0;
-
+    cmdq.cons_reg->RD = 0;
+    cmdq.cons_reg->RD_WRAP = 0;
 }
 
-static void R_SMMU_InitEvtQueue(st_smmu_instance_ctrl_t * p_ctrl){
+static void smmu_init_evtq(e_smmu_domain_t smmu_domain){
+    volatile st_smmu_eventq_t evtq;
+    uint64_t evtq_ptr;
+    uint32_t base = smmu_base_addresses[smmu_domain];
+
     // Initialize CMDQ_BASE
-    p_ctrl->evt_queue.base_reg = (st_smmu_reg_eventq_base_t *)(smmu_base_addresses[p_ctrl->smmu_domain] + SMMU_CMDQ_BASE_OFFSET);
-    p_ctrl->evt_queue.base_reg->ADDR = (uintptr_t)pvPortMalloc(SMMU_QUEUE_SIZE) >> 5;
-    p_ctrl->evt_queue.base_reg->LOG2SIZE = SMMU_QUEUE_LOG2SIZE;
-    p_ctrl->evt_queue.base_reg->WA = 0;
+    evtq.base_reg = (st_smmu_eventq_base_t *)(base + SMMU_EVTQ_BASE_OFFSET);
+    evtq_ptr = (uintptr_t)aligned_malloc(1<<12, SMMU_QUEUE_SIZE);
+    evtq.base_reg->ADDR = evtq_ptr >> 5;
+    evtq.base_reg->LOG2SIZE = SMMU_QUEUE_LOG2SIZE;
+    evtq.base_reg->WA = 0;
 
     // Initialize CMDQ_PROD and CMDQ_CONS
-    p_ctrl->evt_queue.prod_reg = (st_smmu_reg_eventq_prod_t *)(smmu_base_addresses[p_ctrl->smmu_domain] + SMMU_CMDQ_PROD_OFFSET);
-    p_ctrl->evt_queue.cons_reg = (st_smmu_reg_eventq_cons_t *)(smmu_base_addresses[p_ctrl->smmu_domain] + SMMU_CMDQ_CONS_OFFSET);
+    evtq.prod_reg = (st_smmu_eventq_prod_t *)(base + SMMU_EVTQ_PROD_OFFSET);
+    evtq.cons_reg = (st_smmu_eventq_cons_t *)(base + SMMU_EVTQ_CONS_OFFSET);
 
-    p_ctrl->evt_queue.prod_reg->WR = 0;
-    p_ctrl->evt_queue.prod_reg->WR_WRAP = 0;
+    evtq.prod_reg->WR = 0;
+    evtq.prod_reg->WR_WRAP = 0;
 
-    p_ctrl->evt_queue.cons_reg->RD = 0;
-    p_ctrl->evt_queue.cons_reg->RD_WRAP = 0;
+    evtq.cons_reg->RD = 0;
+    evtq.cons_reg->RD_WRAP = 0;
 }
 
-static int R_SMMU_WriteCmd(st_smmu_cmd_queue_t * cmd_queue, st_smmu_cmd_t *cmd) {
-    uint32_t queue_index = cmd_queue->prod_reg->WR;       // Get current WR index
+static int smmu_write_cmd(st_smmu_cmdq_t * cmdq, st_smmu_cmd_t *cmd) {
+    uint32_t q_index = cmdq->prod_reg->WR;       // Get current WR index
+    uint8_t q_wrap = cmdq->prod_reg->WR_WRAP;
+    uint16_t wr_mask = (1 << SMMU_QUEUE_LOG2SIZE) -1;
 
     // Get pointer to queue entry
-    uint8_t *entry_addr = (uint8_t *)(uintptr_t)(cmd_queue->base_reg->ADDR << 5); // 16 bytes = 2x u64
-    entry_addr += 16 * queue_index; // go to next entry
+    uint8_t *entry_addr = (uint8_t *)(uintptr_t)(cmdq->base_reg->ADDR << 5);
+    entry_addr += 16 * q_index; // go to next entry
 
     // Write the command to queue
-    cmd_queue_write(entry_addr, cmd);
+    cmdq_write(entry_addr, cmd);
 
     // Ensure memory ordering before updating producer register
     __DSB();
 
     // Increment producer index (WR)
-    queue_index++;
-    if (queue_index == (1 << SMMU_QUEUE_LOG2SIZE)) {
-        queue_index = 0;
-        cmd_queue->prod_reg->WR_WRAP ^= 1; // Toggle wrap bit on wraparound
+    q_index++;
+    if (q_index >= (1 << SMMU_QUEUE_LOG2SIZE)) {
+        q_index = 0;
+        q_wrap ^= 1; // Toggle wrap bit on wraparound
     }
-    cmd_queue->prod_reg->WR = queue_index;
+
+    // Update WR and WR_WRAP at the same time
+    *((volatile uint32_t *)cmdq->prod_reg) = (q_index & wr_mask) \
+                                            | (q_wrap << SMMU_QUEUE_LOG2SIZE);
 }
 
-static void cmd_queue_write(uint8_t * dest, st_smmu_cmd_t * cmd)
+static void cmdq_write(uint8_t * dest, st_smmu_cmd_t * cmd)
 {
     for (uint8_t i = 0; i < 16; i++) {
        dest[i] = *((uint8_t *)cmd + i);
     }
 }
 
-static bool cmd_queue_has_space(st_smmu_cmd_queue_t cmd_queue) {
-    if ((cmd_queue.cons_reg->RD != cmd_queue.prod_reg->WR) || (cmd_queue.prod_reg->WR_WRAP == cmd_queue.cons_reg->RD_WRAP)) {
+static bool cmdq_has_space(st_smmu_cmdq_t cmdq) {
+    volatile st_smmu_cmdq_cons_t *cons = cmdq.cons_reg;
+    volatile st_smmu_cmdq_prod_t *prod = cmdq.prod_reg;
+
+    if ((cons->RD != prod->WR) || (prod->WR_WRAP == cons->RD_WRAP)) {
         return true;
     }
     return false;
 }
 
-static bool cmd_queue_consumed(st_smmu_cmd_queue_t cmd_queue, uint32_t cur_rd, uint8_t cur_wrap) {
-     if (cur_wrap == cmd_queue.cons_reg->RD_WRAP && cur_rd < cmd_queue.cons_reg->RD) {
+static bool cmdq_consumed(st_smmu_cmdq_t cmdq, uint32_t cur_rd, uint8_t cur_wrap) {
+     volatile st_smmu_cmdq_cons_t *cons = cmdq.cons_reg;
+
+     if (cur_wrap == cons->RD_WRAP && cur_rd < cons->RD) {
          return true;
      }
-     if (cur_wrap != cmd_queue.cons_reg->RD_WRAP && cur_rd > cmd_queue.cons_reg->RD) {
+     if (cur_wrap != cons->RD_WRAP && cur_rd > cons->RD) {
          return true;
     }
-	return false;
+        return false;
 }
