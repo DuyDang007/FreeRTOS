@@ -1,22 +1,21 @@
+/*
+ *
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: MIT
+ *
+ */
+
 #ifndef R_SMMU_H_
 #define R_SMMU_H_
 
-#include <stdint.h>
-#include <string.h>
-#include <stdbool.h>
-
-/**
- * @brief Defines the log2 size of the SMMU queue.
- */
-#define SMMU_QUEUE_LOG2SIZE 3
-
 /**
  * @brief Enum representing different SMMU domain types.
- * 
+ *
  * This enum includes a list of different domain types that can be used for
  * SMMU operations.
  */
-typedef enum e_smmu_domain_type {
+typedef enum e_smmu_domain {
     SMMU_DSP,          /**< DSP domain */
     SMMU_HCN,          /**< HCN domain */
     SMMU_HCS0,         /**< HCS0 domain */
@@ -66,11 +65,13 @@ typedef enum
 
 /**
  * @brief Structure representing a command sent to the SMMU.
- * 
+ *
  * This structure contains the command opcode and specific command parameters
  * depending on the operation to be performed.
  */
-typedef struct smmu_cmd {
+
+#pragma pack(1)
+typedef struct st_smmu_cmd {
     uint64_t opcode : 8; /**< [7:0] Command opcode */
 
     union {
@@ -141,206 +142,113 @@ typedef struct smmu_cmd {
         } st_cmd_cfgi_cd_t;
     };
 } st_smmu_cmd_t;
-
-/**
- * @brief Structure for Command Queue base register.
- */
-typedef struct st_smmu_reg_cmdq_base
-{
-    uint64_t LOG2SIZE : 5;   /**< [4:0] Log2 of queue size (entries) */
-    uint64_t ADDR : 47;      /**< [51:5] Physical address of Command Queue base (ignores [4:0]) */
-    uint64_t Reserved1 : 10; /**< [61:52] Reserved */
-    uint64_t RA : 1;         /**< [62] Read Allocate hint */
-    uint64_t Reserved2 : 1;  /**< [63] Reserved */
-} st_smmu_reg_cmdq_base_t;
-
-/**
- * @brief Structure for Command Queue Consumer register.
- */
-typedef struct st_smmu_reg_cmdq_cons
-{
-    volatile uint32_t RD : SMMU_QUEUE_LOG2SIZE;                       /**< [QS-1:0] Read index */
-    volatile uint32_t RD_WRAP : 1;                                    /**< [QS] Read index wrap flag */
-    volatile uint32_t Reserved1 : (20 - SMMU_QUEUE_LOG2SIZE - 1 + 4); /**< [23:20] Reserved */
-    volatile uint32_t ERR : 7;                                        /**< [30:24] Error code */
-    volatile uint32_t Reserved : 1;                                   /**< [31] Reserved */
-} st_smmu_reg_cmdq_cons_t;
-
-/**
- * @brief Structure for Command Queue Producer register.
- */
-typedef struct smmu_reg_cmdq_prod_st
-{
-    volatile uint32_t WR : SMMU_QUEUE_LOG2SIZE;                       /**< [QS-1:0] Write index */
-    volatile uint32_t WR_WRAP : 1;                                    /**< [QS] Write index wrap flag */
-    volatile uint32_t Reserved : (32 - 1 - SMMU_QUEUE_LOG2SIZE);      /**< [31:20] Reserved */
-} st_smmu_reg_cmdq_prod_t;
-
-/**
- * @brief Structure for Event Queue base register.
- */
-typedef struct st_smmu_reg_eventq_base
-{
-    volatile uint64_t LOG2SIZE : 5;   /**< [4:0] Log2 of queue size (entries) */
-    volatile uint64_t ADDR : 47;      /**< [51:5] Physical address of Event Queue base */
-    volatile uint64_t Reserved1 : 10; /**< [61:52] Reserved */
-    volatile uint64_t WA : 1;         /**< [62] Write Allocate hint */
-    volatile uint64_t Reserved2 : 1;  /**< [63] Reserved */
-} st_smmu_reg_eventq_base_t;
-
-/**
- * @brief Structure for Event Queue Consumer register.
- */
-typedef struct st_smmu_reg_eventq_cons
-{
-    volatile uint32_t RD : SMMU_QUEUE_LOG2SIZE;                       /**< [QS-1:0] Read index */
-    volatile uint32_t RD_WRAP : 1;                                    /**< [QS] Read index wrap flag */
-    volatile uint32_t Reserved : (20 - SMMU_QUEUE_LOG2SIZE - 1 + 11); /**< [30:20] Reserved */
-    volatile uint32_t OVACKFLG : 1;                                   /**< [31] Overflow acknowledge flag */
-} st_smmu_reg_eventq_cons_t;
-
-/**
- * @brief Structure for Event Queue Producer register.
- */
-typedef struct st_smmu_reg_eventq_prod
-{
-    volatile uint32_t WR : SMMU_QUEUE_LOG2SIZE;                       /**< [QS-1:0] Write index */
-    volatile uint32_t WR_WRAP : 1;                                    /**< [QS] Write index wrap flag */
-    volatile uint32_t Reserved : (20 - SMMU_QUEUE_LOG2SIZE - 1 + 11); /**< [30:20] Reserved */
-    volatile uint32_t OVFLG : 1;                                      /**< [31] Overflow flag */
-} st_smmu_reg_eventq_prod_t;
-
-/**
- * @brief Structure for SMMU Command Queue.
- */
-typedef struct st_smmu_cmd_queue {
-    volatile st_smmu_reg_cmdq_base_t *base_reg; /**< Base register */
-    volatile st_smmu_reg_cmdq_prod_t *prod_reg; /**< Producer register */
-    volatile st_smmu_reg_cmdq_cons_t *cons_reg; /**< Consumer register */
-} st_smmu_cmd_queue_t;
-
-/**
- * @brief Structure for SMMU Event Queue.
- */
-typedef struct st_smmu_event_queue {
-    volatile st_smmu_reg_eventq_base_t *base_reg; /**< Base register */
-    volatile st_smmu_reg_eventq_prod_t *prod_reg; /**< Producer register */
-    volatile st_smmu_reg_eventq_cons_t *cons_reg; /**< Consumer register */
-} st_smmu_event_queue_t;
+#pragma pack()
 
 /**
  * @brief Structure to hold instance control information for SMMU.
  */
-typedef struct st_smmu_instance_ctrl
-{
+typedef struct st_smmu_streamid_instance_ctrl
+{   
+    uint32_t stream_id;                /**< The stream id of SMMU domain */
+    void *p_context;                   /**< Context */
     const e_smmu_domain_t smmu_domain; /**< The SMMU domain type */
-    st_smmu_cmd_queue_t cmd_queue;    /**< Command queue */
-    st_smmu_event_queue_t evt_queue;  /**< Event queue */
-} st_smmu_instance_ctrl_t;
+} st_smmu_streamid_instance_ctrl_t;
 
 /**
- * @brief Initializes the SMMU.
- * 
+ * @brief Initializes and enables the SMMU.
+ *
  * This function initializes the SMMU for the specified instance.
- * 
- * @param[in] p_ctrl Pointer to the instance control structure.
- * 
+ * And enables the SMMU to start performing address translation.
+ *
+ * @param[in] smmu_domain SMMU domain.
+ *
  * @return 0 if initialization is successful, non-zero if an error occurs.
  */
-int R_SMMU_Init(st_smmu_instance_ctrl_t * p_ctrl);
+int R_SMMU_Init(e_smmu_domain_t smmu_domain);
+
+/**
+ * @brief Disables the SMMU.
+ *
+ * This function disables the SMMU and stops address translation.
+ * Release all SMMU resource.
+ *
+ * @param[in] smmu_domain SMMU domain.
+ */
+void R_SMMU_Deinit(e_smmu_domain_t smmu_domain);
 
 /**
  * @brief Attach stream id into the specified SMMU domain.
- * 
+ *
  * This function attaches a stream ID to the SMMU domain for translation.
- * 
+ *
  * @param[in] p_ctrl Pointer to the instance control structure.
- * @param[in] stream_id The stream ID to attach.
+ *
+ * @return 0 if successful, non-zero if an error occurs.
  */
-void R_SMMU_Attach(st_smmu_instance_ctrl_t * p_ctrl, uint32_t stream_id);
+int R_SMMU_Attach(st_smmu_streamid_instance_ctrl_t *p_ctrl);
 
 /**
  * @brief Detach stream id from the specified SMMU domain.
- * 
+ *
  * This function detaches a stream ID from the SMMU domain.
- * 
+ *
  * @param[in] p_ctrl Pointer to the instance control structure.
- * @param[in] stream_id The stream ID to detach.
  */
-void R_SMMU_Detach(st_smmu_instance_ctrl_t * p_ctrl, uint32_t stream_id);
+void R_SMMU_Detach(st_smmu_streamid_instance_ctrl_t *p_ctrl);
 
 /**
  * @brief Maps a virtual address (VA) to a physical address (PA).
- * 
+ *
  * This function maps a given VA to a PA for translation by the SMMU.
- * 
+ *
  * @param[in] p_ctrl Pointer to the instance control structure.
  * @param[in] va Virtual address to map.
  * @param[in] pa Physical address to map.
  * @param[in] size Size of the memory region to map.
  */
-void R_SMMU_Map(st_smmu_instance_ctrl_t * p_ctrl, uint64_t va, uint64_t pa, uint32_t size);
+void R_SMMU_Map(st_smmu_streamid_instance_ctrl_t *p_ctrl, uint64_t va, uint64_t pa, uint32_t size);
 
 /**
  * @brief Unmaps a previously mapped virtual address (VA) from a physical address (PA).
- * 
+ *
  * This function unmaps a given VA from the corresponding PA.
- * 
+ *
  * @param[in] p_ctrl Pointer to the instance control structure.
  * @param[in] va Virtual address to unmap.
  * @param[in] pa Physical address to unmap.
  * @param[in] size Size of the memory region to unmap.
  */
-void R_SMMU_Unmap(st_smmu_instance_ctrl_t * p_ctrl, uint64_t va, uint64_t pa, uint32_t size);
+void R_SMMU_Unmap(st_smmu_streamid_instance_ctrl_t *p_ctrl, uint64_t va, uint64_t pa, uint32_t size);
 
 /**
  * @brief Reads and processes events from the Event Queue (EVTQ).
- * 
+ *
  * This function reads and processes the events that are stored in the event queue.
  */
 void R_SMMU_ProcessEventQueue(void);
 
 /**
  * @brief Issues a TLB invalidation command.
- * 
+ *
  * This function invalidates the TLB entries for the specified SMMU instance.
- * 
- * @param[in] p_ctrl Pointer to the instance control structure.
- * 
+ *
+ * @param[in] smmu_domain SMMU domain.
+ *
  * @return 0 if the TLB invalidation is successful, non-zero otherwise.
  */
-int R_SMMU_InvalidateTLB(st_smmu_instance_ctrl_t * p_ctrl);
-
-/**
- * @brief Enables the SMMU for address translation.
- * 
- * This function enables the SMMU to start performing address translation.
- * 
- * @param[in] p_ctrl Pointer to the instance control structure.
- * 
- * @return 0 if the SMMU is successfully enabled, non-zero otherwise.
- */
-int R_SMMU_Enable(st_smmu_instance_ctrl_t * p_ctrl);
-
-/**
- * @brief Disables the SMMU.
- * 
- * This function disables the SMMU and stops address translation.
- * 
- * @param[in] p_ctrl Pointer to the instance control structure.
- */
-void R_SMMU_Disable(st_smmu_instance_ctrl_t * p_ctrl);
+int R_SMMU_InvalidateTLB(e_smmu_domain_t smmu_domain);
 
 /**
  * @brief Issues a command to the command queue.
- * 
+ *
  * This function issues a command to the SMMU command queue.
- * 
- * @param[in] p_ctrl Pointer to the instance control structure.
+ *
+ * @param[in] smmu_domain SMMU domain.
  * @param[in] p_cmd Pointer to the command to be issued.
- * 
+ * @param[in] sync Pass 0 if don't want to sync and another if want to sync. 
+ *
  * @return 0 if command is successfully issued, non-zero otherwise.
  */
-int R_SMMU_IssueCommand(st_smmu_instance_ctrl_t * p_ctrl, st_smmu_cmd_t * p_cmd, bool sync);
+int R_SMMU_IssueCommand(e_smmu_domain_t smmu_domain, st_smmu_cmd_t *p_cmd, uint8_t sync);
 
 #endif /* R_SMMU_H_ */

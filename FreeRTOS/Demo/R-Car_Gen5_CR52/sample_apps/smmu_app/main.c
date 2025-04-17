@@ -33,14 +33,12 @@
 #include "interrupts.h"
 
 #include "interrupts.h"
-#include "stdio.h"
-
+#include <stdio.h>
+#include <string.h>
 #include "smmu/smmu.h"
 #include "dmac/dmac_common.h"
 #include "dmac/rtdmac_ctrl.h"
 #include "dmac/sysdmac_ctrl.h"
-
-#include "cmsis_rcar_gen5.h"
 
 #define main_SMMU_TASK_PRIORITY        ( tskIDLE_PRIORITY + 1 )
 
@@ -61,7 +59,7 @@ rDmacCfg_t cfg =
 	// .mSrcAddr = 0x189E7000,
 	// .mDestAddr = 0x189E7100,
     .mSrcAddr = 0x60000000,
-	.mDestAddr = 0x60001000,
+	.mDestAddr = 0x65003678,
 	.mTransferCount = 1,
 	.mDMAMode = DRV_DMAC_DMA_NO_DESCRIPTOR, // Assuming DRV_DMAC_DMA_NO_DESCRIPTOR is defined
 	.mSrcAddrMode = DRV_RTDMAC_ADDR_FIXED, // Assuming ADDR_MODE_FIXED is defined
@@ -113,14 +111,15 @@ static void prvSMMUTask( void *pvParameters )
     (void)pvParameters;
     int ret;
 
-    st_smmu_instance_ctrl_t smmu_crtl = {
+    st_smmu_streamid_instance_ctrl_t smmu_crtl = {
+        .stream_id = 0x40000,
         .smmu_domain = SMMU_PERW,
     };
+
     st_smmu_cmd_t cmd_ste_cfg = {0};
 
-    ret = R_SMMU_Init(&smmu_crtl);
-
-    printf("*Test case 1: Enable command queue and event queue*\r\n");
+    printf("* Test case 1: Initializes and Enable SMMU. *\r\n");
+    ret = R_SMMU_Init(SMMU_PERW);
     if (ret == 0) {
         printf("Result: Passed\r\n");
     } else {
@@ -128,43 +127,35 @@ static void prvSMMUTask( void *pvParameters )
     }
     printf("**********************************************\r\n");
 
-    printf("*Test case 2: Issue command*\r\n");
-    uint32_t stream_id = 0x40000;
-    R_SMMU_Attach(&smmu_crtl, stream_id);
-    
-    vTaskDelay(100);
-
-    int ret_cmd1, ret_cmd2 = -1;
-    memset(&cmd_ste_cfg, 0, sizeof(cmd_ste_cfg));
-    cmd_ste_cfg.opcode = CMDQ_OP_CFGI_STE;
-    cmd_ste_cfg.st_cmd_cfgi_ste_t.sid = 0x40000;
-    cmd_ste_cfg.st_cmd_cfgi_ste_t.leaf = 1;
-    ret_cmd1 = R_SMMU_IssueCommand(&smmu_crtl, &cmd_ste_cfg, true);
-
-    vTaskDelay(100);
-
-    // Issue commands to invalidate all cached configuration and TLB entrie
-    ret_cmd2 = R_SMMU_InvalidateTLB(&smmu_crtl);
-    if ((ret_cmd1 == 0) && (ret_cmd2 == 0)) {
-       printf("Result: Passed\r\n");
+    printf("* Test case 2: Attach stream id. *\r\n");
+    ret = R_SMMU_Attach(&smmu_crtl);
+    if (ret == 0) {
+        printf("Result: Passed\r\n");
     } else {
         printf("Result: Failed\r\n");
     }
     printf("**********************************************\r\n");
-
-    vTaskDelay(1000);
-    printf("*Test case 3: Enable SMMU*\r\n");
-    ret = R_SMMU_Enable(&smmu_crtl);
     
-    L1C_InvalidateDCacheAll();
-    __DSB();
-    if (ret == 0 ) {
-        printf("Result: Passed\n");
+    R_SMMU_Map(&smmu_crtl, 0x60000000, 0x60000000, 0x5006000);
+    
+    printf("* Test case 3: Issue command *\r\n");
+    int ret_cmd1, ret_cmd2 = -1;
+
+    memset(&cmd_ste_cfg, 0, sizeof(cmd_ste_cfg));
+    cmd_ste_cfg.opcode = CMDQ_OP_CFGI_STE;
+    cmd_ste_cfg.st_cmd_cfgi_ste_t.sid = smmu_crtl.stream_id;
+    cmd_ste_cfg.st_cmd_cfgi_ste_t.leaf = 1;
+    ret_cmd1 = R_SMMU_IssueCommand(SMMU_PERW, &cmd_ste_cfg, true);
+
+    // Issue commands to invalidate all cached configuration and TLB entrie
+    ret_cmd2 = R_SMMU_InvalidateTLB(SMMU_PERW);
+    
+    if ((ret_cmd1 == 0) && (ret_cmd2 == 0)) {
+       printf("Result: Passed\r\n");
     } else {
-        printf("Result: Failed\n");
+        printf("Result: Failed \r\n");
     }
     printf("**********************************************\r\n");
-    vTaskDelay(1000);
 
     /* Device Driver Part */
     R_SYSDMAC_RcarDmacCtrlInit(SYS_DMAC3, DRV_RTDMAC_PRIO_FIX);
@@ -183,7 +174,8 @@ static void prvSMMUTask( void *pvParameters )
     // Verify destination data
     uint32_t destData = *(volatile uint32_t *)cfg.mDestAddr;
 
-    printf("*Test case 4: Test transaction data*\r\n");
+    printf("* Test case 4: Test transaction data *\r\n");
+    printf("src: 0x%lx, dest: 0x%lx\n", *(volatile uint32_t *)cfg.mSrcAddr, destData);
     if (destData == (*(volatile uint32_t *)cfg.mSrcAddr)) {
         printf("Result: Passed\n");
     } else {

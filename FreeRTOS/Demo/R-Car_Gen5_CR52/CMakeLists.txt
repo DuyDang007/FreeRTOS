@@ -52,7 +52,7 @@ set(global_definition
 
 ### Set common build flags
 set(CMAKE_ASM_FLAGS "--specs=nosys.specs -mfloat-abi=hard")
-set(CMAKE_C_FLAGS "-std=c11")
+set(CMAKE_C_FLAGS "-std=c99")
 add_compile_options(
     -ffreestanding -mfpu=neon-fp-armv8 -mcpu=cortex-r52 -mtune=cortex-r52 -mfloat-abi=softfp
     -Wno-unknown-pragmas -DSCMI_DEBUG
@@ -91,6 +91,7 @@ set(bsp_source
     ${BSP_DIR}/CMSIS_5/irq_ctrl_gic.c
     ${BSP_DIR}/drivers/gic/gic.c
     ${BSP_DIR}/drivers/smmu/smmu.c
+    ${BSP_DIR}/drivers/smmu/translation_table.c
     ${BSP_DIR}/drivers/serial/serial.c
     ${BSP_DIR}/drivers/serial/scif.c
     ${BSP_DIR}/drivers/mpu/mpu.c
@@ -179,7 +180,7 @@ target_include_directories(freertos_bsp
         $<INSTALL_INTERFACE:include/POSIX/include/private>
         $<INSTALL_INTERFACE:include/POSIX/include/portable>
         
-   PUBLIC 
+    PRIVATE 
         $<BUILD_INTERFACE:${BSP_DIR}>
         $<BUILD_INTERFACE:${BSP_DIR}/CMSIS_5>
         $<BUILD_INTERFACE:${BSP_DIR}/CMSIS_5/CMSIS/Core_R/Include>

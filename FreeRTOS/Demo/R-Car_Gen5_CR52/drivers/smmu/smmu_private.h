@@ -1,3 +1,10 @@
+/*
+ *
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
 #ifndef R_SMMU_PRIVATE_H_
 #define R_SMMU_PRIVATE_H_
 
@@ -6,7 +13,7 @@
 #include <stdbool.h>
 
 // SMMU_CR0
-typedef struct st_smmu_reg_cr0
+typedef struct st_smmu_cr0
 {
     uint32_t SMMUEN : 1;     /**< [0] Non-secure SMMU enable (0 = Bypass, 1 = Enable translation) */
     uint32_t PRIQEN : 1;     /**< [1] Enable PRI queue writes (0 = Disabled, 1 = Enabled) */
@@ -16,27 +23,27 @@ typedef struct st_smmu_reg_cr0
     uint32_t Reserved1 : 1;  /**< [5] Reserved, must be 0 */
     uint32_t VMW : 3;        /**< [8:6] VMID Wildcard Matching */
     uint32_t Reserved2 : 23; /**< [31:9] Reserved, must be 0 */
-} st_smmu_reg_cr0_t;
+} st_smmu_cr0_t;
 
 // SMMU_STRTAB_BASE
-typedef struct st_smmu_reg_strtab_base
+typedef struct st_smmu_strtab_base
 {
     volatile uint64_t Reserved1 : 6;  /**< [5:0] Reserved, must be 0 */
     volatile uint64_t ADDR : 46;      /**< [51:6] Physical address of Stream Table base (aligned to 64 bytes) */
     volatile uint64_t Reserved2 : 10; /**< [61:52] Reserved, must be 0 */
     volatile uint64_t RA : 1;         /**< [62] Read Allocate hint (0 = No Read-Allocate, 1 = Read-Allocate) */
     volatile uint64_t Reserved3 : 1;  /**< [63] Reserved, must be 0 */
-} st_smmu_reg_strtab_base_t;
+} st_smmu_strtab_t;
 
 // SMMU_STRTAB_BASE_CFG
-typedef struct st_smmu_reg_strtab_base_cfg
+typedef struct st_smmu_strtab_base_cfg
 {
     uint32_t LOG2SIZE : 6;   /**< [5:0] Log2 of Stream Table size (entries) */
     uint32_t SPLIT : 5;      /**< [10:6] StreamID split point for multi-level table */
     uint32_t Reserved1 : 5;  /**< [15:11] Reserved, must be 0 */
     uint32_t FMT : 2;        /**< [17:16] Format of Stream Table (00 = Linear, 01 = 2-Level) */
     uint32_t Reserved2 : 14; /**< [31:18] Reserved, must be 0 */
-} st_smmu_reg_strtab_base_cfg_t;
+} st_smmu_strtab_cfg_t;
 
 /**
  * @brief Level 1 Stream Table Descriptor structure in 2-level Stream table
@@ -110,27 +117,27 @@ typedef struct st_smmu_ste
 } st_smmu_ste_t;
 
 /**
- * @brief CD table define 
+ * @brief CD table define
  */
-#define CTXDESC_CD_IR_RAWAWB        1
-#define CTXDESC_CD_OR_RAWAWB        1
-#define CTXDESC_CD_SH_ISH           3
+#define CTXDESC_CD_IR_RAWAWB    1
+#define CTXDESC_CD_OR_RAWAWB    1
+#define CTXDESC_CD_SH_ISH       3
 
-#define CTXDESC_CD_TCR_EPD1		    1
+#define CTXDESC_CD_TCR_EPD1     1
 
-#define CTXDESC_CD_V			    1
+#define CTXDESC_CD_V            1
 
-#define CTXDESC_CD_TCR_TBI0		    1
+#define CTXDESC_CD_TCR_TBI0     1
 
-#define CTXDESC_CD_AA64		        1
-#define CTXDESC_CD_S			    1
-#define CTXDESC_CD_R			    1
-#define CTXDESC_CD_A			    1
-#define CTXDESC_CD_ASET		        1
+#define CTXDESC_CD_AA64         1
+#define CTXDESC_CD_S            1
+#define CTXDESC_CD_R            1
+#define CTXDESC_CD_A            1
+#define CTXDESC_CD_ASET         1
 
 /**
- * @brief Level 1 Context Descriptor structure in two-level Context descriptor tables 
-*/
+ * @brief Level 1 Context Descriptor structure in two-level Context descriptor tables
+ */
 typedef struct st_smmu_l1cd_tbl
 {
     uint64_t valid : 1;       /**< [0] validity of CD */
@@ -196,27 +203,121 @@ typedef struct st_smmu_cd
     uint32_t res5[5];     /**< Unknown */
 } st_smmu_cd_t;
 
-/** 
+/**
  * @brief Stream table define
  */
 
-#define STRTAB_STE_V			    1
+#define STRTAB_STE_V                1
 
-#define STRTAB_STE_CFG_ABORT		0
-#define STRTAB_STE_CFG_BYPASS		4
-#define STRTAB_STE_CFG_S1_TRANS	    5
+#define STRTAB_STE_CFG_ABORT        0
+#define STRTAB_STE_CFG_BYPASS       4
+#define STRTAB_STE_CFG_S1_TRANS     5
 
-#define STRTAB_STE_S1FMT_LINEAR	    0
+#define STRTAB_STE_S1FMT_LINEAR     0
 
-#define STRTAB_STE_1_S1DSS_SSID0	2
+#define STRTAB_STE_1_S1DSS_SSID0    2
 
-#define STRTAB_STE_1_S1C_CACHE_WBRA	1
+#define STRTAB_STE_1_S1C_CACHE_WBRA 1
 #define STRTAB_STE_1_S1C_SH_ISH     3
 
-#define STRTAB_STE_1_S1STALLD		1
+#define STRTAB_STE_1_S1STALLD       1
 
-#define STRTAB_STE_1_STRW_EL2		2
+#define STRTAB_STE_1_STRW_EL2       2
 
-#define TOTAL_L1_STE_ENTRY_SUPPORT  (1 << 12)
+#define MAX_L1STE_BITS     12
+#define MAX_L1STE_ENTRY  (1 << MAX_L1STE_BITS)
+
+/**
+ * @brief Defines the log2 size of the SMMU queue.
+ */
+#define SMMU_QUEUE_LOG2SIZE 6
+
+/**
+ * @brief Structure for Command Queue base register.
+ */
+typedef struct st_smmu_cmdq_base
+{
+    uint64_t LOG2SIZE  : 5;   /**< [4:0] Log2 of queue size (entries) */
+    uint64_t ADDR      : 47;      /**< [51:5] Physical address of Command Queue base (ignores [4:0]) */
+    uint64_t Reserved1 : 10; /**< [61:52] Reserved */
+    uint64_t RA        : 1;         /**< [62] Read Allocate hint */
+    uint64_t Reserved2 : 1;  /**< [63] Reserved */
+} st_smmu_cmdq_base_t;
+
+/**
+ * @brief Structure for Command Queue Consumer register.
+ */
+typedef struct st_smmu_cmdq_cons
+{
+    volatile uint32_t RD        : SMMU_QUEUE_LOG2SIZE;                       /**< [QS-1:0] Read index */
+    volatile uint32_t RD_WRAP   : 1;                                    /**< [QS] Read index wrap flag */
+    volatile uint32_t Reserved1 : (20 - SMMU_QUEUE_LOG2SIZE - 1 + 4); /**< [23:20] Reserved */
+    volatile uint32_t ERR       : 7;                                        /**< [30:24] Error code */
+    volatile uint32_t Reserved  : 1;                                   /**< [31] Reserved */
+} st_smmu_cmdq_cons_t;
+
+/**
+ * @brief Structure for Command Queue Producer register.
+ */
+typedef struct smmu_cmdq_prod_st
+{
+    volatile uint32_t WR       : SMMU_QUEUE_LOG2SIZE;                  /**< [QS-1:0] Write index */
+    volatile uint32_t WR_WRAP  : 1;                               /**< [QS] Write index wrap flag */
+    volatile uint32_t Reserved : (32 - 1 - SMMU_QUEUE_LOG2SIZE); /**< [31:20] Reserved */
+} st_smmu_cmdq_prod_t;
+
+/**
+ * @brief Structure for Event Queue base register.
+ */
+typedef struct st_smmu_eventq_base
+{
+    volatile uint64_t LOG2SIZE  : 5;   /**< [4:0] Log2 of queue size (entries) */
+    volatile uint64_t ADDR      : 47;      /**< [51:5] Physical address of Event Queue base */
+    volatile uint64_t Reserved1 : 10; /**< [61:52] Reserved */
+    volatile uint64_t WA        : 1;         /**< [62] Write Allocate hint */
+    volatile uint64_t Reserved2 : 1;  /**< [63] Reserved */
+} st_smmu_eventq_base_t;
+
+/**
+ * @brief Structure for Event Queue Consumer register.
+ */
+typedef struct st_smmu_eventq_cons
+{
+    volatile uint32_t RD       : SMMU_QUEUE_LOG2SIZE;                       /**< [QS-1:0] Read index */
+    volatile uint32_t RD_WRAP  : 1;                                    /**< [QS] Read index wrap flag */
+    volatile uint32_t Reserved : (20 - SMMU_QUEUE_LOG2SIZE - 1 + 11); /**< [30:20] Reserved */
+    volatile uint32_t OVACKFLG : 1;                                   /**< [31] Overflow acknowledge flag */
+} st_smmu_eventq_cons_t;
+
+/**
+ * @brief Structure for Event Queue Producer register.
+ */
+typedef struct st_smmu_eventq_prod
+{
+    volatile uint32_t WR       : SMMU_QUEUE_LOG2SIZE;                       /**< [QS-1:0] Write index */
+    volatile uint32_t WR_WRAP  : 1;                                    /**< [QS] Write index wrap flag */
+    volatile uint32_t Reserved : (20 - SMMU_QUEUE_LOG2SIZE - 1 + 11); /**< [30:20] Reserved */
+    volatile uint32_t OVFLG    : 1;                                      /**< [31] Overflow flag */
+} st_smmu_eventq_prod_t;
+
+/**
+ * @brief Structure for SMMU Command Queue.
+ */
+typedef struct st_smmu_cmdq
+{
+    volatile st_smmu_cmdq_base_t *base_reg; /**< Base register */
+    volatile st_smmu_cmdq_prod_t *prod_reg; /**< Producer register */
+    volatile st_smmu_cmdq_cons_t *cons_reg; /**< Consumer register */
+} st_smmu_cmdq_t;
+
+/**
+ * @brief Structure for SMMU Event Queue.
+ */
+typedef struct st_smmu_eventq
+{
+    volatile st_smmu_eventq_base_t *base_reg; /**< Base register */
+    volatile st_smmu_eventq_prod_t *prod_reg; /**< Producer register */
+    volatile st_smmu_eventq_cons_t *cons_reg; /**< Consumer register */
+} st_smmu_eventq_t;
 
 #endif // R_SMMU_PRIVATE_H
