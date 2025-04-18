@@ -138,8 +138,8 @@ int main( void )
 {
         /* Configure the hardware ready to run the demo. */
         prvSetupHardware();
-        
-        
+
+
         xTaskCreate( prvDMACTask, "DMACTask", configMINIMAL_STACK_SIZE, NULL, main_DMAC_TASK_PRIORITY, NULL );
         /* Start the tasks and timer running. */
         vTaskStartScheduler();
