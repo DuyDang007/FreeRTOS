@@ -13,6 +13,7 @@
 #include "dmac/sysdmac_ctrl.h"
 #include <stdio.h>
 #include <stdbool.h>
+#include "interrupts.h"
 #define printf_delay(fmt, ...)      \
         vTaskDelay(1);             \
 printf(fmt, ##__VA_ARGS__);         \
@@ -198,14 +199,14 @@ static int rcar_i2c_dma_unmap(r_i2c_Unit_t Unit)
     uintptr_t i2c_base_addr = R_I2C_PRV_GetRegbase(Unit);
 
     ID_DONE = true;
-    R_I2C_PRV_RegWrite32(i2c_base_addr + R_I2C_ICDMAER, 0);
+    R_I2C_PRV_RegWrite32(i2c_base_addr + R_I2C_ICDMAER, (uint32_t)0);
 
     return 0;
 }
 
 static void rcar_i2c_dma_callback(r_i2c_Unit_t Unit )
 {
-    r_i2c_msg.pos = r_i2c_msg.pos;
+    r_i2c_msg.pos = r_i2c_msg.len;
 
     rcar_i2c_dma_unmap(Unit);
 }
@@ -217,8 +218,12 @@ static bool rcar_i2c_dma(r_i2c_Unit_t Unit, bool is_read)
     uint8_t *buf;
     uint32_t len;
     int ret;
+    Context_t p_usr_context;
 
-    if (r_i2c_msg.dma_single == 0)
+    if (is_read)
+	return false;
+
+    if (r_i2c_msg.dma_single == 0 || r_i2c_msg.len < (uint32_t)8)
         return false;
 
     if (is_read) {
@@ -246,7 +251,7 @@ static bool rcar_i2c_dma(r_i2c_Unit_t Unit, bool is_read)
         .mDMAMode = DRV_DMAC_DMA_NO_DESCRIPTOR, // Assuming DRV_DMAC_DMA_NO_DESCRIPTOR is defined
         .mSrcAddrMode = (is_read) ? DRV_RTDMAC_ADDR_FIXED : DRV_RTDMAC_ADDR_INCREMENTED,
         .mDestAddrMode = (is_read) ? DRV_RTDMAC_ADDR_INCREMENTED:  DRV_RTDMAC_ADDR_FIXED,
-        .mResource = (is_read) ? MID_RID_I2C1_MST_RX : MID_RID_I2C1_MST_TX,
+        .mSourceRequest = (is_read) ? MID_RID_I2C1_MST_RX : MID_RID_I2C1_MST_TX,
         .mTransferUnit = DRV_RTDMAC_TRANS_UNIT_1BYTE,
         .mResource = DRV_RTDMAC_RESOUCE_MAX, // Assuming DRV_RTDMAC_MEMORY is defined
         .mLowSpeed = DRV_RTDMAC_SPEED_NORMAL, // Assuming DRV_RTDMAC_SPEED_NORMAL is defined
@@ -255,26 +260,25 @@ static bool rcar_i2c_dma(r_i2c_Unit_t Unit, bool is_read)
 
     rDmacIrqCfg_t rDmacIrqHandler_t_irq =
     {
-        .Unit = SYS_DMAC3,
-        .SubCh = DMAC_CH1,
-        .irq_channel = INTID_SYSDMA3_CH1
+        .Unit = SYS_DMAC2,
+        .SubCh = DMAC_CH0,
+        .irq_channel = INTID_SYSDMA2_CH0
     };
+    p_usr_context.ctx = &rDmacIrqHandler_t_irq;
     // Initialize DMA transfer
-    R_SYSDMAC_RcarDmacCtrlInit(SYS_DMAC3, DRV_RTDMAC_PRIO_FIX);
+    R_SYSDMAC_RcarDmacCtrlInit(SYS_DMAC2, DRV_RTDMAC_PRIO_FIX);
 
-    //ret = R_SYSDMAC_RcarCallBackSet(&rDmacIrqHandler_t_irq, (void *)rcar_i2c_dma_callback, &rDmacIrqHandler_t_irq);
-    //if (ret)
-    //    printf_delay("CallbackSet Failed: ret = %d\n", ret);
+    ret = R_SYSDMAC_RcarCallBackSet(&rDmacIrqHandler_t_irq, (void *)rcar_i2c_dma_callback, &p_usr_context);
+    if (ret)
+        return false;
 
+    int dmaStatus = R_SYSDMAC_RcarDmacExec(SYS_DMAC2, DMAC_CH0, &cfg, 0);
     /* Enable DMA Master Received/Transmitted */
     if (is_read == true) {
         R_I2C_PRV_RegWrite32(i2c_base_addr + R_I2C_ICDMAER, R_I2C_RMDMAE);
-    }
-    else {
+    } else {
         R_I2C_PRV_RegWrite32(i2c_base_addr + R_I2C_ICDMAER, R_I2C_TMDMAE);
     }
-    /* Call DMA API to start transfer */
-    int dmaStatus = R_SYSDMAC_RcarDmacExec(SYS_DMAC3, DMAC_CH1, &cfg, 0);
 
     return (dmaStatus) ? false : true;
 }
@@ -328,9 +332,11 @@ static void rcar_i2c_irq_send(r_i2c_Unit_t Unit, uint32_t msr)
         R_I2C_PRV_RegWrite32(i2c_base_addr + R_I2C_ICMCR, 0x88);
     }
 
-    if (r_i2c_msg.pos == (uint32_t)1 && rcar_i2c_dma(Unit, false)) {
-	    return;
+    if (r_i2c_msg.pos == (uint32_t)1 && (rcar_i2c_dma(Unit, false))) {
+	return;
     }
+
+    while( (R_I2C_PRV_RegRead32(i2c_base_addr + R_I2C_ICDMAER) != (uint32_t)0));
 
     if (r_i2c_msg.pos < r_i2c_msg.len) {
         R_I2C_PRV_RegWrite32(i2c_base_addr + R_I2C_ICTXD, r_i2c_msg.buf[r_i2c_msg.pos]);
