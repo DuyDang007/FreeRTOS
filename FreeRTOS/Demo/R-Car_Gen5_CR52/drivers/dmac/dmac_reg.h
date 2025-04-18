@@ -72,23 +72,6 @@
 #define DRV_RTDMAC_REG_RDMCHCR_DPM_REP      (0x20000000U)
 #define DRV_RTDMAC_REG_RDMCHCR_DPM_READ     (0x30000000U)
 
-#define MID_RID_I2C1_MST_RX                 (0x92U)	/* I2C1 DMARS ID Master RX */
-#define MID_RID_I2C1_MST_TX                 (0x93U)	/* I2C1 DMARS ID Master TX*/
-#define MID_RID_I2C2_MST_RX                 (0x94U)	/* I2C2 DMARS ID Master RX */
-#define MID_RID_I2C2_MST_TX                 (0x95U)	/* I2C2 DMARS ID Master TX*/
-#define MID_RID_I2C3_MST_RX                 (0x96U)	/* I2C3 DMARS ID Master RX */
-#define MID_RID_I2C3_MST_TX                 (0x97U)	/* I2C3 DMARS ID Master TX*/
-#define MID_RID_I2C4_MST_RX                 (0x98U)	/* I2C4 DMARS ID Master RX */
-#define MID_RID_I2C4_MST_TX                 (0x99U)	/* I2C4 DMARS ID Master TX*/
-#define MID_RID_I2C5_MST_RX                 (0x9AU)	/* I2C5 DMARS ID Master RX */
-#define MID_RID_I2C5_MST_TX                 (0x9BU)	/* I2C5 DMARS ID Master TX*/
-#define MID_RID_I2C6_MST_RX                 (0x9CU)	/* I2C6 DMARS ID Master RX */
-#define MID_RID_I2C6_MST_TX                 (0x9DU)	/* I2C6 DMARS ID Master TX*/
-#define MID_RID_I2C7_MST_RX                 (0x9EU)	/* I2C7 DMARS ID Master RX */
-#define MID_RID_I2C7_MST_TX                 (0x9FU)	/* I2C7 DMARS ID Master TX*/
-#define MID_RID_I2C8_MST_RX                 (0xB0U)	/* I2C8 DMARS ID Master RX */
-#define MID_RID_I2C8_MST_TX                 (0xB1U)	/* I2C8 DMARS ID Master TX*/
-
 #define DRV_RTDMAC_REG_PRIO_FIX             0U
 #define DRV_RTDMAC_REG_PRIO_RR              3U
 

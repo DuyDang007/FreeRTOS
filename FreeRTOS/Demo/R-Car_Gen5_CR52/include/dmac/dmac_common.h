@@ -180,22 +180,22 @@ typedef enum e_rDmacLowSpeedMode {
  *
  */
 typedef enum e_rDmacTransferRequest {
-    MID_RID_I2C1_MST_RX,   /*!< I2C1 DMARS ID Master RX */
-    MID_RID_I2C1_MST_TX,   /*!< I2C1 DMARS ID Master TX*/
-    MID_RID_I2C2_MST_RX,   /*!< I2C2 DMARS ID Master RX */
-    MID_RID_I2C2_MST_TX,   /*!< I2C2 DMARS ID Master TX*/
-    MID_RID_I2C3_MST_RX,   /*!< I2C3 DMARS ID Master RX */
-    MID_RID_I2C3_MST_TX,   /*!< I2C3 DMARS ID Master TX*/
-    MID_RID_I2C4_MST_RX,   /*!< I2C4 DMARS ID Master RX */
-    MID_RID_I2C4_MST_TX,   /*!< I2C4 DMARS ID Master TX*/
-    MID_RID_I2C5_MST_RX,   /*!< I2C5 DMARS ID Master RX */
-    MID_RID_I2C5_MST_TX,   /*!< I2C5 DMARS ID Master TX*/
-    MID_RID_I2C6_MST_RX,   /*!< I2C6 DMARS ID Master RX */
-    MID_RID_I2C6_MST_TX,   /*!< I2C6 DMARS ID Master TX*/
-    MID_RID_I2C7_MST_RX,   /*!< I2C7 DMARS ID Master RX */
-    MID_RID_I2C7_MST_TX,   /*!< I2C7 DMARS ID Master TX*/
-    MID_RID_I2C8_MST_RX,   /*!< I2C8 DMARS ID Master RX */
-    MID_RID_I2C8_MST_TX,   /*!< I2C8 DMARS ID Master TX*/
+    MID_RID_I2C1_MST_RX = 0x92,   /*!< I2C1 DMARS ID Master RX */
+    MID_RID_I2C1_MST_TX = 0x93,   /*!< I2C1 DMARS ID Master TX*/
+    MID_RID_I2C2_MST_RX = 0x94,   /*!< I2C2 DMARS ID Master RX */
+    MID_RID_I2C2_MST_TX = 0x95,   /*!< I2C2 DMARS ID Master TX*/
+    MID_RID_I2C3_MST_RX = 0x96,   /*!< I2C3 DMARS ID Master RX */
+    MID_RID_I2C3_MST_TX = 0x97,   /*!< I2C3 DMARS ID Master TX*/
+    MID_RID_I2C4_MST_RX = 0x98,   /*!< I2C4 DMARS ID Master RX */
+    MID_RID_I2C4_MST_TX = 0x99,   /*!< I2C4 DMARS ID Master TX*/
+    MID_RID_I2C5_MST_RX = 0x9A,   /*!< I2C5 DMARS ID Master RX */
+    MID_RID_I2C5_MST_TX = 0x9B,   /*!< I2C5 DMARS ID Master TX*/
+    MID_RID_I2C6_MST_RX = 0x9C,   /*!< I2C6 DMARS ID Master RX */
+    MID_RID_I2C6_MST_TX = 0x9D,   /*!< I2C6 DMARS ID Master TX*/
+    MID_RID_I2C7_MST_RX = 0x9E,   /*!< I2C7 DMARS ID Master RX */
+    MID_RID_I2C7_MST_TX = 0x9F,   /*!< I2C7 DMARS ID Master TX*/
+    MID_RID_I2C8_MST_RX = 0xB0,   /*!< I2C8 DMARS ID Master RX */
+    MID_RID_I2C8_MST_TX = 0xB1,   /*!< I2C8 DMARS ID Master TX*/
 } rDmacTransferRequest_t;
 
 /**
