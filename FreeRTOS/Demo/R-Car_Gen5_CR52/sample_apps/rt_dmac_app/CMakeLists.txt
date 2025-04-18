@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: MIT
 #
 
-set(app_name "dmac_app")
+set(app_name "rt_dmac_app")
 
 add_executable(${app_name}
     main.c
