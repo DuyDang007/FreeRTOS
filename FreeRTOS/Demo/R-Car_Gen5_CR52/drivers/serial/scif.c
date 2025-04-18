@@ -5,8 +5,8 @@
  *
  */
 
-#include "scif.h"
 #include "CMSIS_5/cmsis_rcar_gen5.h"
+#include "scif.h"
 
 static uint32_t scif_base;
 
