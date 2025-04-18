@@ -79,7 +79,8 @@ static void prvI2CTask( void *pvParameters )
 	/* Remove compiler warning about unused parameter. */
 	( void ) pvParameters;
 
-	uint8_t send_data[] = { 0x1, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07};
+	uint8_t send_data_pio[] = { 0x1, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07};
+	uint8_t send_data_dma[] = { 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10, 0x11, 0x12};
 	uint8_t result[24];
 	/* Remove compiler warning about unused parameter. */
 	( void ) pvParameters;
@@ -100,8 +101,8 @@ static void prvI2CTask( void *pvParameters )
 
 	    R_I2C_CallbackSet(&g_i2c_device_ctrl_1, (void *)i2cUserCallback, &g_i2c_device_ctrl_1, NULL);
 
-	    printf_delay("WRITE DATA \r\n");
-	    R_I2C_Write(&g_i2c_device_ctrl_1, send_data, sizeof(send_data), 0);
+	    printf_delay("WRITE DATA PIO\r\n");
+	    R_I2C_Write(&g_i2c_device_ctrl_1, send_data_pio, sizeof(send_data_pio), 0);
 	    printf_delay("WRITE DONE\r\n");
 
 	    R_I2C_Read(&g_i2c_device_ctrl_1, (uint8_t *)&result, sizeof(result), 0);
@@ -112,6 +113,27 @@ static void prvI2CTask( void *pvParameters )
 
 	    R_I2C_Close(&g_i2c_device_ctrl_1);
 	    printf_delay("PROGRAM END\r\n");
+
+
+	i2c_instance_ctrl_t g_i2c_device_ctrl_2;
+	i2c_master_cfg_t        g_i2c_device_cfg_2 =
+	{
+	    .channel       = 2,
+	    .rate          = I2C_MASTER_RATE_FAST,
+	    .slave         = 0x50,
+	    .addr_mode     = I2C_MASTER_ADDR_MODE_7BIT,
+	    .dma_single    = true,
+	    .p_context     = &g_i2c_device_ctrl_2,
+	};
+	    R_I2C_Open(&g_i2c_device_ctrl_2, &g_i2c_device_cfg_2);
+
+	    R_I2C_CallbackSet(&g_i2c_device_ctrl_2, (void *)i2cUserCallback, &g_i2c_device_ctrl_2, NULL);
+
+	    printf_delay("WRITE DATA DMA\r\n");
+	    R_I2C_Write(&g_i2c_device_ctrl_2, send_data_dma, sizeof(send_data_dma), 0);
+	    printf_delay("WRITE DONE\r\n");
+
+	    R_I2C_Close(&g_i2c_device_ctrl_2);
 
 	for( ;; )
 	{
