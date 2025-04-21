@@ -85,6 +85,28 @@ static void prvI2CTask( void *pvParameters )
 	/* Remove compiler warning about unused parameter. */
 	( void ) pvParameters;
 
+
+	i2c_instance_ctrl_t g_i2c_device_ctrl_2;
+	i2c_master_cfg_t        g_i2c_device_cfg_2 =
+	{
+	    .channel       = 2,
+	    .rate          = I2C_MASTER_RATE_FAST,
+	    .slave         = 0x50,
+	    .addr_mode     = I2C_MASTER_ADDR_MODE_7BIT,
+	    .dma_single    = false,
+	    .p_context     = &g_i2c_device_ctrl_2,
+	};
+	    R_I2C_Open(&g_i2c_device_ctrl_2, &g_i2c_device_cfg_2);
+
+	    R_I2C_CallbackSet(&g_i2c_device_ctrl_2, (void *)i2cUserCallback, &g_i2c_device_ctrl_2, NULL);
+
+	    printf_delay("WRITE DATA DMA\r\n");
+	    R_I2C_Write(&g_i2c_device_ctrl_2, send_data_dma, sizeof(send_data_dma), 0);
+	    printf_delay("WRITE DONE\r\n");
+
+	    R_I2C_Close(&g_i2c_device_ctrl_2);
+	for (uint32_t i=0; i< 100000000;i++);
+
 	/* Device driver part */
 	i2c_instance_ctrl_t g_i2c_device_ctrl_1;
 	i2c_master_cfg_t        g_i2c_device_cfg_1 =
@@ -93,7 +115,7 @@ static void prvI2CTask( void *pvParameters )
 	    .rate          = I2C_MASTER_RATE_FAST,
 	    .slave         = 0x6d,
 	    .addr_mode     = I2C_MASTER_ADDR_MODE_7BIT,
-	    .dma_single    = false,
+	    .dma_single    = true,
 	    .p_context     = &g_i2c_device_ctrl_1,
 	};
 	    printf_delay("PROGRAM START\r\n");
@@ -113,28 +135,6 @@ static void prvI2CTask( void *pvParameters )
 
 	    R_I2C_Close(&g_i2c_device_ctrl_1);
 	    printf_delay("PROGRAM END\r\n");
-
-
-	i2c_instance_ctrl_t g_i2c_device_ctrl_2;
-	i2c_master_cfg_t        g_i2c_device_cfg_2 =
-	{
-	    .channel       = 2,
-	    .rate          = I2C_MASTER_RATE_FAST,
-	    .slave         = 0x50,
-	    .addr_mode     = I2C_MASTER_ADDR_MODE_7BIT,
-	    .dma_single    = true,
-	    .p_context     = &g_i2c_device_ctrl_2,
-	};
-	    R_I2C_Open(&g_i2c_device_ctrl_2, &g_i2c_device_cfg_2);
-
-	    R_I2C_CallbackSet(&g_i2c_device_ctrl_2, (void *)i2cUserCallback, &g_i2c_device_ctrl_2, NULL);
-
-	    printf_delay("WRITE DATA DMA\r\n");
-	    R_I2C_Write(&g_i2c_device_ctrl_2, send_data_dma, sizeof(send_data_dma), 0);
-	    printf_delay("WRITE DONE\r\n");
-
-	    R_I2C_Close(&g_i2c_device_ctrl_2);
-
 	for( ;; )
 	{
 	}
