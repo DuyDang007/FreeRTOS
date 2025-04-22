@@ -16,8 +16,8 @@ extern const unsigned int __bss_start__;
 extern const unsigned int __bss_end__;
 extern const unsigned int _STACK_SIZE;
 
-extern uint32_t _RAM_START;
-extern uint32_t _RAM_SIZE;
+extern char _RAM_START;
+extern const uint32_t _RAM_SIZE;
 
 extern uint32_t _Reset;
 uint32_t resource_table;
@@ -35,6 +35,7 @@ extern void __libc_init_array(void) ;
 
 static void Init_MPU(void)
 {
+//    uint32_t entry_address = (uint32_t) &_RAM_START;
     /* Disable MPU */
     MPU_Disable();
 
@@ -45,6 +46,11 @@ static void Init_MPU(void)
     for (int i = 0; i < sizeof(RCAR_MEMMORY_ARR)/sizeof(st_memory_region_t); i++) {
        
         uint8_t ret = 0;
+
+        // Avoid duplicating execution and IO memory.
+        if (RCAR_MEMMORY_ARR[i].mem_addr.base_address == (unsigned int)(uintptr_t)&_RAM_START) {
+            continue;
+        }
 
         switch (RCAR_MEMMORY_ARR[i].attr) {
             case DEVICE_ATTR:
