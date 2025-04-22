@@ -43,6 +43,7 @@
 static void prvSetupHardware( void );
 
 static void prvHelloWorldTask( void *pvParameters );
+extern char _RAM_START;
 
 /*-----------------------------------------------------------*/
 

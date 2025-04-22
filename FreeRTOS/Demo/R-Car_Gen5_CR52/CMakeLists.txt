@@ -26,7 +26,7 @@ if(NOT DEFINED BOARD)
     set(BOARD "x5h_vdk")
 endif()
 
-set(ALLOWED_RAM_REGION "1;2;3")
+set(ALLOWED_RAM_REGION "1;2;3;4")
 if(NOT DEFINED RAM_REGION)
     set(RAM_REGION 1)
 endif()
@@ -36,7 +36,11 @@ if(BOARD STREQUAL "x5h_vdk")
     list(FIND ALLOWED_RAM_REGION "${RAM_REGION}" INDEX)
     if(INDEX GREATER -1)
         message(STATUS "RAM REGION ${RAM_REGION} is using now.")
-        set(LDFILE ${BSP_DIR}/common/linker/lscript_vram${RAM_REGION}.ld)
+        if(RAM_REGION EQUAL 4)
+            set(LDFILE ${BSP_DIR}/common/linker/lscript_dram.ld)
+        else()
+            set(LDFILE ${BSP_DIR}/common/linker/lscript_vram${RAM_REGION}.ld)
+        endif()
     else()
         message(FATAL_ERROR "Insert RAM REGION ${RAM_REGION} is not allowed.")
     endif()
@@ -60,7 +64,7 @@ set(CMAKE_ASM_FLAGS "--specs=nosys.specs -mfloat-abi=hard")
 set(CMAKE_C_FLAGS "-std=c99")
 add_compile_options(
     -ffreestanding -mfpu=neon-fp-armv8 -mcpu=cortex-r52 -mtune=cortex-r52 -mfloat-abi=softfp
-    -Wno-unknown-pragmas -DSCMI_DEBUG -DBOARD=${BOARD_ID}
+    -Wno-unknown-pragmas -DSCMI_DEBUG -DBOARD=${BOARD_ID} -DRAM_REGION=${RAM_REGION}
     ${global_definition}
 )
 
