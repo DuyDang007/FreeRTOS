@@ -13,7 +13,7 @@
 #include "CMSIS_5/irq_ctrl.h"
 #include "drivers/timer/arm_generic_timer.h"
 
-#include "cmsis_cp15.h"
+#include "cmsis_rcar_gen5.h"
 
 #define COUNT_PER_TICK  (GENERIC_TIMER_CLK / configTICK_RATE_HZ)
 void TickInterruptHandler(void) {

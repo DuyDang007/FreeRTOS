@@ -54,7 +54,10 @@
 #define CR52_CPU_ID             0
 #define CR52_GIC_BASE_ADDR      ((uint32_t)CR52_GICD_ADDR)
 
+#ifndef __ASSEMBLER__
+
 #define BIT(nr)                   (1UL << (nr))
+
 /* Not going to list all the interrupts */
 typedef	unsigned int IRQn_Type;
 
@@ -126,6 +129,6 @@ __STATIC_FORCEINLINE uint64_t sys_read64(mem_addr_t addr)
 	barrier_dmem_fence_full();
 	return val;
 }
-
+#endif /* __ASSEMBLER__ */
 #endif /* __CMSIS_RCAR_GEN5_H */
 
