@@ -242,12 +242,7 @@ SECTIONS
    . += _UNDEF_STACK_SIZE;
    . = ALIGN(16);
    __undef_stack = .;
-   _os_stack_end = .;
-   remain_mem = _RAM_SIZE - _os_stack_end;
-   . += _RAM_SIZE - remain_mem;
-   . += ALIGN(16);
-   _stack = .;
-   __stack = _stack;
+   __stack = ORIGIN(dram_base_addr) + LENGTH(dram_base_addr) - 16;
 } > dram_base_addr
 
 #if defined(ENABLE_OPENAMP_)
