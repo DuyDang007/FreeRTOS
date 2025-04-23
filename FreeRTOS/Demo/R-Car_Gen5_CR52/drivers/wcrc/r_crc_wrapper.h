@@ -3,10 +3,13 @@
 
 #include "wcrc/r_wcrc_common.h"
 
-int wcrcSetMode(wcrc_instance_ctrl_t * const p_ctrl);
+int wcrcSetMode(wcrc_instance_ctrl_t * const p_instance_ctrl);
 
-void wcrcRemoveBuffer(void * p_buf);
+int wcrcClose(wcrc_instance_ctrl_t * const p_instance_ctrl);
 
-int wcrcStart(wcrc_instance_ctrl_t * const p_ctrl);
+int wcrcStart(wcrc_instance_ctrl_t * const p_instance_ctrl);
+
+int wcrc_set_callback(wcrc_sub_module_t module, wcrc_instance_ctrl_t * const p_instance_ctrl,
+                     void (* p_callback)(void *), void * const p_context);
 
 #endif /* _RENESAS_CRC_WRAPPER_H_ */

@@ -60,7 +60,7 @@ typedef enum e_wcrc_mode
     DATA_THROUGH_MODE,                          ///< Data through mode.
     E2E_DATA_THROUGH_MODE,                      ///< E2E and data through mode.
     REGISTER_ACCESS_BY_CMD_MODE,                ///< Register access by command function.
-    COMPARING_CRC_RESULT_MODE                   ///< Comparing CRC result.
+    COMPARING_CRC_RESULT_MODE,                  ///< Comparing CRC result.
 } wcrc_mode_t;
 
 /* Polynomial modes */
@@ -189,7 +189,9 @@ typedef struct st_wcrc_cfg
 {
     wcrc_unit_t         unit;                   ///< WCRC unit.
     wcrc_mode_t         mode;                   ///< WCRC mode.
-    uint32_t            conv_size;              ///< Conversion size for E2E_* mode.
+    uint32_t            conv_size[2];           ///< Conversion size for E2E_* mode
+                                                ///< conv_size[0] is used for CRC module.
+                                                ///< conv_size[1] is used for KCRC module.
     wcrc_sub_module_t   sub_module;             ///< WCRC chooses sub-module.
     crc_module_cfg_t    crc_cfg;                ///< CRC sub-module configuration.
     kcrc_module_cfg_t   kcrc_cfg;               ///< KCRC sub-module configuration.
@@ -206,7 +208,7 @@ typedef struct st_wcrc_instance_ctrl
                                                 ///< crc_data[1] is used for KCRC module.
     void            (*  p_callback[2])(void *); ///< Pointer to the CRC/KCRC callback functions.
     void             *  p_context[2];           ///< Pointer to context to be passed into callback.
-    void             *  p_extend;               ///< Pointer to extend hardware configurations.
+    void             *  p_extend[2];            ///< Pointer to extend hardware configurations.
 } wcrc_instance_ctrl_t;
 
 /** @} */ // end of CRC_Module

@@ -23,9 +23,33 @@ typedef struct st_wcrc_cfg_dma {
     rDmacIrqCfg_t   irq;
 } wcrc_cfg_dma_t; 
 
-/* TODO: Use dynamic allocate for each instance */
-static wcrc_cfg_dma_t g_wcrc_cfg_dma[4];
-static Context_t usr_context[4];
+typedef enum e_num_dma_chan
+{
+    INDEPENDENT_CRC_NO_USE_DMA          = 0,
+    E2E_CRC_USE_2_DMA_CHAN              = 2,
+    DATA_THROUGH_USE_2_DMA_CHAN         = 2,
+    E2E_DATA_THROUGH_USE_3_DMA_CHAN     = 3,
+    REGISTER_ACCESS_USE_1_DMA_CHAN      = 1,
+    COMPARING_CRC_USE_3_DMA_CHAN        = 2,
+} num_dma_chan_t;
+
+typedef enum e_wcrc_mode_fifo_port
+{
+    E2E_PORT_DATA                       = 0,
+    E2E_PORT_RESULT                     = 1,
+    DATA_THROUGH_PORT_DATA_INPUT        = 0,
+    DATA_THROUGH_PORT_DATA_OUTPUT       = 1,
+    E2E_DATA_THROUGH_PORT_DATA_INPUT    = 0,
+    E2E_DATA_THROUGH_PORT_DATA_OUTPUT   = 1,
+    E2E_DATA_THROUGH_PORT_RESULT        = 2,
+    REGISTER_ACCESS_PORT_COMMAND        = 0,
+    COMPARING_CRC_PORT_DATA             = 0,
+    COMPARING_CRC_PORT_EXPECTED_DATA    = 1,
+} wcrc_mode_fifo_port_t;
+
+#define MEM_TO_DEV 1
+#define DEV_TO_MEM 2
+#define NUM_DATA_ALIGN_AXI_BUS  4
 
 /************************************ WCRC registers ************************************/
 /* Register base */
@@ -69,6 +93,8 @@ static Context_t usr_context[4];
     ((_mod) == (KCRC_M)) ? (MID_RID_WCRC_KCRC_RES_MULTI(unit)) :    \
     (MID_RID_WCRC_CRC_RES_MULTI(unit));                             \
 })
+
+#define INDEPENDENT_CRC_DATA_SIZE   4
 
 /* Register offset */
 #define CRC_M        (CRC_SUB_MODULE)
@@ -422,18 +448,20 @@ static void clearbit_l(uint32_t addr, uint32_t pos)
 }
 
 /************************************ WCRC functions ************************************/
-static int wcrcPrepareCrcBuffer(void ** const p_buf, uint32_t size);
+static int wcrcPrepareIndependentCrcMode(wcrc_instance_ctrl_t * const p_instance_ctrl);
 
-static int wcrcSetIndependentCrcMode(wcrc_instance_ctrl_t * const p_ctrl);
+static int wcrcStartIndependentCrcMode(wcrc_instance_ctrl_t * const p_instance_ctrl);
 
-static int wcrcStartIndependentCrcMode(wcrc_instance_ctrl_t * const p_ctrl);
+static int wcrcPrepareE2eCrcMode(wcrc_instance_ctrl_t * const p_instance_ctrl);
 
-static int wcrcPrepareE2eCrcMode(wcrc_instance_ctrl_t * const p_ctrl);
+static int wcrcPrepareDataThrough(wcrc_instance_ctrl_t * const p_instance_ctrl);
 
-static int wcrcStartE2eCrcMode(wcrc_instance_ctrl_t * const p_ctrl);
+static int wcrcStartE2eCrcMode(wcrc_instance_ctrl_t * const p_instance_ctrl);
 
-static int wcrc_set_rtdma(uint8_t module, wcrc_instance_ctrl_t * const p_ctrl,
-                         void * p_cfg_dma, uint32_t port, uint32_t dma_tx_size);
+static int wcrcStartDataThrough(wcrc_instance_ctrl_t * const p_instance_ctrl);
+
+static int wcrc_set_rtdma(uint8_t module, wcrc_instance_ctrl_t * const p_instance_ctrl,
+                         void * p_cfg_dma, uint32_t port, uint8_t dma_direction);
 
 static int crc_setting(wcrc_unit_t unit, crc_module_cfg_t const * const p_cfg);
 
@@ -447,21 +475,20 @@ static int kcrc_start(wcrc_unit_t unit,
                       crc_input_t const * const p_crc_input,
                       crc_output_t * p_crc_result);
 
-int wcrcSetMode(wcrc_instance_ctrl_t * const p_ctrl)
+int wcrcSetMode(wcrc_instance_ctrl_t * const p_instance_ctrl)
 {
     int ret = 0;
-    wcrc_cfg_t const * p_cfg = p_ctrl->p_cfg;
-    crc_output_t * const p_crc_data  = &p_ctrl->crc_data[CRC_SUB_MODULE];
-    crc_output_t * const p_kcrc_data = &p_ctrl->crc_data[KCRC_SUB_MODULE];
+    wcrc_cfg_t const * p_cfg = p_instance_ctrl->p_cfg;
 
     switch (p_cfg->mode) {
         case INDEPENDENT_CRC_MODE:
-            ret  = wcrcSetIndependentCrcMode(p_ctrl);
+            ret = wcrcPrepareIndependentCrcMode(p_instance_ctrl);
             break;
         case E2E_CRC_MODE:
-            ret = wcrcPrepareE2eCrcMode(p_ctrl);
+            ret = wcrcPrepareE2eCrcMode(p_instance_ctrl);
             break;
         case DATA_THROUGH_MODE:
+            ret = wcrcPrepareDataThrough(p_instance_ctrl);
             break;
         case E2E_DATA_THROUGH_MODE:
             break;
@@ -478,36 +505,28 @@ int wcrcSetMode(wcrc_instance_ctrl_t * const p_ctrl)
     return ret;
 }
 
-static int wcrcSetIndependentCrcMode(wcrc_instance_ctrl_t * const p_ctrl)
+static int wcrcPrepareIndependentCrcMode(wcrc_instance_ctrl_t * const p_instance_ctrl)
 {
     int ret = 0;
-    wcrc_cfg_t const * const p_cfg = p_ctrl->p_cfg;
-    uint8_t crc_size, unit;
-    void ** p_crc_buf  = &p_ctrl->crc_data[CRC_SUB_MODULE].p_output_buffer;
-    void ** p_kcrc_buf = &p_ctrl->crc_data[KCRC_SUB_MODULE].p_output_buffer;
+    wcrc_cfg_t const * const p_cfg = p_instance_ctrl->p_cfg;
+    uint8_t unit;
     crc_module_cfg_t  const * const p_crc_cfg  = &p_cfg->crc_cfg;
     kcrc_module_cfg_t const * const p_kcrc_cfg = &p_cfg->kcrc_cfg;
 
     /* Independent CRC mode only returns 1 CRC data size 32 bits(4 bytes):
      *  Allocate memory to store CRC data.
      */
-    crc_size = 4;
     unit = p_cfg->unit;
     switch (p_cfg->sub_module) {
         case CRC_SUB_MODULE:
             ret  = crc_setting(unit, p_crc_cfg);
-            ret |= wcrcPrepareCrcBuffer(p_crc_buf, crc_size);
             break;
         case KCRC_SUB_MODULE:
             ret  = kcrc_setting(unit, p_kcrc_cfg);
-            ret |= wcrcPrepareCrcBuffer(p_kcrc_buf, crc_size);
             break;
         case CRC_KCRC_SUB_MODULE:
             ret  = crc_setting(unit, p_crc_cfg);
-            ret |= wcrcPrepareCrcBuffer(p_crc_buf, crc_size);
-
             ret |= kcrc_setting(unit, p_kcrc_cfg);
-            ret |= wcrcPrepareCrcBuffer(p_kcrc_buf, crc_size);
             break;
         default:
             printf("%s: Invalid module\n", __func__);
@@ -518,55 +537,26 @@ static int wcrcSetIndependentCrcMode(wcrc_instance_ctrl_t * const p_ctrl)
     return ret;
 }
 
-static int wcrcPrepareCrcBuffer(void ** p_buf, uint32_t size)
-{
-    int ret = 0;
-
-    if (*p_buf != NULL) {
-        printf("%s: Invalid - Buffer is located at 0x%llx!\n", __func__, (uint64_t *)p_buf);
-        ret = -1;
-        goto prepare_buf_err;
-    }
-
-    if (size == 0) {
-        printf("%s: Invalid - size = %d!\n", __func__, size);
-        ret = -1;
-        goto prepare_buf_err;
-    }
-
-    *p_buf = pvPortMalloc(size);
-
-    if (*p_buf == NULL) {
-        printf("%s: Allocate FAILED!\n", __func__);
-        ret = -1;
-        goto prepare_buf_err;
-    }
-
-prepare_buf_err:
-    return ret;
-}
-
 void wcrcRemoveBuffer(void * p_buf)
 {
     if (p_buf != NULL)
         vPortFree(p_buf);
 }
 
-int wcrcStart(wcrc_instance_ctrl_t * const p_ctrl)
+int wcrcStart(wcrc_instance_ctrl_t * const p_instance_ctrl)
 {
     int ret;
-    wcrc_cfg_t const * const p_cfg = p_ctrl->p_cfg;
-    crc_output_t * const p_crc_data  = &p_ctrl->crc_data[CRC_SUB_MODULE];
-    crc_output_t * const p_kcrc_data = &p_ctrl->crc_data[KCRC_SUB_MODULE];
+    wcrc_cfg_t const * const p_cfg = p_instance_ctrl->p_cfg;
 
     switch (p_cfg->mode) {
         case INDEPENDENT_CRC_MODE:
-            ret = wcrcStartIndependentCrcMode(p_ctrl);
+            ret = wcrcStartIndependentCrcMode(p_instance_ctrl);
             break;
         case E2E_CRC_MODE:
-            ret = wcrcStartE2eCrcMode(p_ctrl);
+            ret = wcrcStartE2eCrcMode(p_instance_ctrl);
             break;
         case DATA_THROUGH_MODE:
+            ret = wcrcStartDataThrough(p_instance_ctrl);
             break;
         case E2E_DATA_THROUGH_MODE:
             break;
@@ -583,15 +573,15 @@ int wcrcStart(wcrc_instance_ctrl_t * const p_ctrl)
     return ret;
 }
 
-static int wcrcStartIndependentCrcMode(wcrc_instance_ctrl_t * const p_ctrl)
+static int wcrcStartIndependentCrcMode(wcrc_instance_ctrl_t * const p_instance_ctrl)
 {
     int ret;
-    wcrc_cfg_t const * const p_cfg = p_ctrl->p_cfg;
+    wcrc_cfg_t const * const p_cfg = p_instance_ctrl->p_cfg;
     uint8_t unit = p_cfg->unit;
     crc_input_t const * const p_crc_input = &p_cfg->crc_cfg.input_cfg;
     crc_input_t const * const p_kcrc_input = &p_cfg->kcrc_cfg.input_cfg;
-    crc_output_t * const p_crc_data  = &p_ctrl->crc_data[CRC_SUB_MODULE];
-    crc_output_t * const p_kcrc_data = &p_ctrl->crc_data[KCRC_SUB_MODULE];
+    crc_output_t * p_crc_data  = &p_instance_ctrl->crc_data[CRC_SUB_MODULE];
+    crc_output_t * p_kcrc_data = &p_instance_ctrl->crc_data[KCRC_SUB_MODULE];
 
     switch (p_cfg->sub_module) {   
         case CRC_SUB_MODULE:
@@ -613,94 +603,237 @@ static int wcrcStartIndependentCrcMode(wcrc_instance_ctrl_t * const p_ctrl)
     return ret;
 }
 
-static int wcrc_start_e2e(wcrc_sub_module_t module,
+int wcrc_set_callback(wcrc_sub_module_t module, wcrc_instance_ctrl_t * const p_instance_ctrl,
+                     void (* p_callback)(void *), void * const p_context)
+{
+    int ret = 0;
+
+    if (module != CRC_SUB_MODULE &&
+        module != KCRC_SUB_MODULE) {
+        ret = -1;
+        printf("%s: Invalid module\n", __func__);
+    }
+
+    p_instance_ctrl->p_callback[module] = p_callback;
+    p_instance_ctrl->p_context[module]  = p_context;
+
+    return ret;
+}
+
+static int wcrc_start_e2e(wcrc_instance_ctrl_t * const p_instance_ctrl,
+                         uint8_t module,
                          void (* p_callback)(void *),
                          void * p_context)
 {
     int ret = 0;
-    wcrc_cfg_dma_t * p_cfg_dma[2];
-    uint8_t rtdma_unit[2], rtdma_ch[2];
-    rDmacIrqCfg_t * irq_cfg[2];
-    rDmacCfg_t * rtdma_cfg[2];
-    Context_t * p_usr_context[2];
+    wcrc_cfg_dma_t * p_cfg_dma[E2E_CRC_USE_2_DMA_CHAN];
+    uint8_t rtdma_unit[E2E_CRC_USE_2_DMA_CHAN], rtdma_ch[E2E_CRC_USE_2_DMA_CHAN];
+    rDmacIrqCfg_t * irq_cfg[E2E_CRC_USE_2_DMA_CHAN];
+    rDmacCfg_t * rtdma_cfg[E2E_CRC_USE_2_DMA_CHAN];
+    Context_t * p_usr_context[E2E_CRC_USE_2_DMA_CHAN];
+    void * p_usr_temp;
 
-    if (module == CRC_SUB_MODULE) {
-        p_cfg_dma[0] = &g_wcrc_cfg_dma[0];
-        p_cfg_dma[1] = &g_wcrc_cfg_dma[1];
-        p_usr_context[0] = &usr_context[0];
-        p_usr_context[1] = &usr_context[1];
-    } else if (module == KCRC_SUB_MODULE) {
-        p_cfg_dma[0] = &g_wcrc_cfg_dma[2];
-        p_cfg_dma[1]  = &g_wcrc_cfg_dma[3];
-        p_usr_context[0] = &usr_context[2];
-        p_usr_context[1] = &usr_context[3];
-    } else {
-        printf("%s: Invalid module\n", __func__);
-        ret = -1;
-        goto start_err;
+    p_usr_temp                          = p_context;
+    p_instance_ctrl->p_context[module]  = pvPortMalloc(sizeof(Context_t) * E2E_CRC_USE_2_DMA_CHAN);
+
+    if (p_instance_ctrl->p_context[module] == NULL) {
+        printf("%s: Allocate p_context FAILED!", __func__);
+        return -1;
     }
 
-    /* DMA TX direction */
-    rtdma_unit[0] = p_cfg_dma[0]->irq.Unit;
-    rtdma_ch[0]   = p_cfg_dma[0]->irq.SubCh;
-    irq_cfg[0]    = &p_cfg_dma[0]->irq;
-    rtdma_cfg[0]  = &p_cfg_dma[0]->cfg;
-    // Store user context in pointer irq_cfg[0].
-    irq_cfg[0]->p_context = p_context;
-    // Store pointer irq_cfg[0] to context of IRQ.
-    p_usr_context[0]->ctx = irq_cfg[0];
+    p_usr_context[E2E_PORT_DATA]    = p_instance_ctrl->p_context[module];
+    p_usr_context[E2E_PORT_RESULT]  = p_usr_context[E2E_PORT_DATA] + 1;
 
+    //printf_delay("%d: >> 0x%x\n", module, p_usr_context[module]);
+
+    p_cfg_dma[E2E_PORT_DATA]    = p_instance_ctrl->p_extend[module];
+    p_cfg_dma[E2E_PORT_RESULT]  = p_cfg_dma[E2E_PORT_DATA] + 1;
+
+    /* DMA TX direction */
+    rtdma_unit[E2E_PORT_DATA]   =  p_cfg_dma[E2E_PORT_DATA]->irq.Unit;
+    rtdma_ch[E2E_PORT_DATA]     =  p_cfg_dma[E2E_PORT_DATA]->irq.SubCh;
+    irq_cfg[E2E_PORT_DATA]      = &p_cfg_dma[E2E_PORT_DATA]->irq;
+    rtdma_cfg[E2E_PORT_DATA]    = &p_cfg_dma[E2E_PORT_DATA]->cfg;
+    // Store user context in pointer irq_cfg[E2E_PORT_DATA].
+    irq_cfg[E2E_PORT_DATA]->p_context = NULL;
+    // Store pointer irq_cfg[E2E_PORT_DATA] to context of IRQ.
+    p_usr_context[E2E_PORT_DATA]->ctx = irq_cfg[E2E_PORT_DATA];
 
     /* DMA RX direction */
-    rtdma_unit[1] = p_cfg_dma[1]->irq.Unit;
-    rtdma_ch[1]   = p_cfg_dma[1]->irq.SubCh;
-    irq_cfg[1]    = &p_cfg_dma[1]->irq;
-    rtdma_cfg[1]  = &p_cfg_dma[1]->cfg;
-
-    // Store user context in pointer irq_cfg[1].
-    irq_cfg[1]->p_context = p_context;
-    // Store pointer irq_cfg[1] to context of IRQ.
-    p_usr_context[1]->ctx = irq_cfg[1];
+    rtdma_unit[E2E_PORT_RESULT] =  p_cfg_dma[E2E_PORT_RESULT]->irq.Unit;
+    rtdma_ch[E2E_PORT_RESULT]   =  p_cfg_dma[E2E_PORT_RESULT]->irq.SubCh;
+    irq_cfg[E2E_PORT_RESULT]    = &p_cfg_dma[E2E_PORT_RESULT]->irq;
+    rtdma_cfg[E2E_PORT_RESULT]  = &p_cfg_dma[E2E_PORT_RESULT]->cfg;
+    // Store user context in pointer irq_cfg[E2E_PORT_RESULT].
+    irq_cfg[E2E_PORT_RESULT]->p_context = p_usr_temp;
+    // Store pointer irq_cfg[E2E_PORT_RESULT] to context of IRQ.
+    p_usr_context[E2E_PORT_RESULT]->ctx = irq_cfg[E2E_PORT_RESULT];
 
     /* CRC: DMA TX */
-    ret  = R_DMAC_RcarDmacCtrlInit(rtdma_unit[0], DRV_RTDMAC_PRIO_FIX);
-    ret |= R_DMAC_RcarCallBackSet(irq_cfg[0], NULL, p_usr_context[0]);
-    ret |= R_DMAC_RcarDmacExec(rtdma_unit[0], rtdma_ch[0], rtdma_cfg[0], NULL);
+    ret  = R_DMAC_RcarCallBackSet(irq_cfg[E2E_PORT_DATA],
+                                 NULL,
+                                 p_usr_context[E2E_PORT_DATA]);
+
+    ret |= R_DMAC_RcarDmacExec(rtdma_unit[E2E_PORT_DATA],
+                              rtdma_ch[E2E_PORT_DATA],
+                              rtdma_cfg[E2E_PORT_DATA], NULL);
 
     /* CRC: DMA RX */
-    ret |= R_DMAC_RcarCallBackSet(irq_cfg[1], p_callback, p_usr_context[1]);
-    ret |= R_DMAC_RcarDmacExec(rtdma_unit[1], rtdma_ch[1], rtdma_cfg[1], NULL);
+    ret |= R_DMAC_RcarCallBackSet(irq_cfg[E2E_PORT_RESULT],
+                                 p_callback,
+                                 p_usr_context[E2E_PORT_RESULT]);
 
+    ret |= R_DMAC_RcarDmacExec(rtdma_unit[E2E_PORT_RESULT],
+                              rtdma_ch[E2E_PORT_RESULT],
+                              rtdma_cfg[E2E_PORT_RESULT], NULL);
 start_err:
     return ret;
 }
 
-static int wcrcStartE2eCrcMode(wcrc_instance_ctrl_t * const p_ctrl)
+static int wcrcStartE2eCrcMode(wcrc_instance_ctrl_t * const p_instance_ctrl)
 {
     int ret = 0;
-    wcrc_cfg_t const * const p_cfg = p_ctrl->p_cfg;
+    wcrc_cfg_t const * const p_cfg = p_instance_ctrl->p_cfg;
     void (* p_callback)(void *);
     void  * p_context;
 
     switch (p_cfg->sub_module) {   
         case CRC_SUB_MODULE:
-            p_callback  = p_ctrl->p_callback[CRC_SUB_MODULE];
-            p_context   = p_ctrl->p_context[CRC_SUB_MODULE];
-            ret = wcrc_start_e2e(CRC_SUB_MODULE, p_callback, p_context);
+            p_callback  = p_instance_ctrl->p_callback[CRC_SUB_MODULE];
+            p_context   = p_instance_ctrl->p_context[CRC_SUB_MODULE];
+            ret = wcrc_start_e2e(p_instance_ctrl, CRC_SUB_MODULE,
+                                p_callback, p_context);
             break;
         case KCRC_SUB_MODULE:
-            p_callback  = p_ctrl->p_callback[KCRC_SUB_MODULE];
-            p_context   = p_ctrl->p_context[KCRC_SUB_MODULE];
-            ret = wcrc_start_e2e(KCRC_SUB_MODULE, p_callback, p_context);
+            p_callback  = p_instance_ctrl->p_callback[KCRC_SUB_MODULE];
+            p_context   = p_instance_ctrl->p_context[KCRC_SUB_MODULE];
+            ret = wcrc_start_e2e(p_instance_ctrl, KCRC_SUB_MODULE,
+                                p_callback, p_context);
             break;
         case CRC_KCRC_SUB_MODULE:
-            p_callback  = p_ctrl->p_callback[CRC_SUB_MODULE];
-            p_context   = p_ctrl->p_context[CRC_SUB_MODULE];
-            ret  = wcrc_start_e2e(CRC_SUB_MODULE, p_callback, p_context);
+            p_callback  = p_instance_ctrl->p_callback[CRC_SUB_MODULE];
+            p_context   = p_instance_ctrl->p_context[CRC_SUB_MODULE];
+            ret = wcrc_start_e2e(p_instance_ctrl, CRC_SUB_MODULE,
+                                p_callback, p_context);
 
-            p_callback  = p_ctrl->p_callback[KCRC_SUB_MODULE];
-            p_context   = p_ctrl->p_context[KCRC_SUB_MODULE];
-            ret |= wcrc_start_e2e(KCRC_SUB_MODULE, p_callback, p_context);
+            p_callback  = p_instance_ctrl->p_callback[KCRC_SUB_MODULE];
+            p_context   = p_instance_ctrl->p_context[KCRC_SUB_MODULE];
+            ret |= wcrc_start_e2e(p_instance_ctrl, KCRC_SUB_MODULE,
+                                 p_callback, p_context);
+            break;
+        default:
+            printf("%s: Invalid module\n", __func__);
+            ret = -1;
+            break;
+    }
+
+    return ret;
+}
+
+static int wcrc_start_data_through(wcrc_instance_ctrl_t * const p_instance_ctrl,
+                                  uint8_t module,
+                                  void (* p_callback)(void *),
+                                  void * p_context)
+{
+    int ret = 0;
+    uint8_t num_chan            = DATA_THROUGH_USE_2_DMA_CHAN;
+    uint8_t port_data_input     = DATA_THROUGH_PORT_DATA_INPUT;
+    uint8_t port_data_output    = DATA_THROUGH_PORT_DATA_OUTPUT;
+    wcrc_cfg_dma_t * p_cfg_dma[num_chan];
+    uint8_t rtdma_unit[num_chan], rtdma_ch[num_chan];
+    rDmacIrqCfg_t * irq_cfg[num_chan];
+    rDmacCfg_t * rtdma_cfg[num_chan];
+    Context_t * p_usr_context[num_chan];
+    void * p_usr_temp;
+
+    p_usr_temp                          = p_context;
+    p_instance_ctrl->p_context[module]  = pvPortMalloc(sizeof(Context_t) * num_chan);
+
+    if (p_instance_ctrl->p_context[module] == NULL) {
+        printf("%s: Allocate p_context FAILED!", __func__);
+        return -1;
+    }
+
+    p_usr_context[port_data_input]     = (Context_t *)p_instance_ctrl->p_context[module] + 1;
+    p_usr_context[port_data_output]    = (Context_t *)p_instance_ctrl->p_context[module];
+
+    //printf_delay("%d: >> 0x%x\n", module, p_usr_context[module]);
+
+    p_cfg_dma[port_data_input]     = p_instance_ctrl->p_extend[module];
+    p_cfg_dma[port_data_output]    = p_cfg_dma[port_data_input] + 1;
+
+    /* DMA TX direction */
+    rtdma_unit[port_data_input]   =  p_cfg_dma[port_data_input]->irq.Unit;
+    rtdma_ch[port_data_input]     =  p_cfg_dma[port_data_input]->irq.SubCh;
+    irq_cfg[port_data_input]      = &p_cfg_dma[port_data_input]->irq;
+    rtdma_cfg[port_data_input]    = &p_cfg_dma[port_data_input]->cfg;
+    // Store user context in pointer irq_cfg[port_data_input].
+    irq_cfg[port_data_input]->p_context = p_usr_temp;
+    // Store pointer irq_cfg[port_data_input] to context of IRQ.
+    p_usr_context[port_data_input]->ctx = irq_cfg[port_data_input];
+
+    /* DMA RX direction */
+    rtdma_unit[port_data_output] =  p_cfg_dma[port_data_output]->irq.Unit;
+    rtdma_ch[port_data_output]   =  p_cfg_dma[port_data_output]->irq.SubCh;
+    irq_cfg[port_data_output]    = &p_cfg_dma[port_data_output]->irq;
+    rtdma_cfg[port_data_output]  = &p_cfg_dma[port_data_output]->cfg;
+    // Store user context in pointer irq_cfg[port_data_output].
+    irq_cfg[port_data_output]->p_context = p_usr_temp;
+    // Store pointer irq_cfg[port_data_output] to context of IRQ.
+    p_usr_context[port_data_output]->ctx = irq_cfg[port_data_output];
+
+    /* CRC: DMA TX */
+    ret  = R_DMAC_RcarCallBackSet(irq_cfg[port_data_input],
+                                 NULL,
+                                 p_usr_context[port_data_input]);
+
+    ret |= R_DMAC_RcarDmacExec(rtdma_unit[port_data_input],
+                              rtdma_ch[port_data_input],
+                              rtdma_cfg[port_data_input], NULL);
+
+    /* CRC: DMA RX */
+    ret |= R_DMAC_RcarCallBackSet(irq_cfg[port_data_output],
+                                 p_callback,
+                                 p_usr_context[port_data_output]);
+
+    ret |= R_DMAC_RcarDmacExec(rtdma_unit[port_data_output],
+                              rtdma_ch[port_data_output],
+                              rtdma_cfg[port_data_output], NULL);
+
+start_err:
+    return ret;
+}
+
+static int wcrcStartDataThrough(wcrc_instance_ctrl_t * const p_instance_ctrl)
+{
+    int ret = 0;
+    wcrc_cfg_t const * const p_cfg = p_instance_ctrl->p_cfg;
+    void (* p_callback)(void *);
+    void  * p_context;
+
+    switch (p_cfg->sub_module) {   
+        case CRC_SUB_MODULE:
+            p_callback  = p_instance_ctrl->p_callback[CRC_SUB_MODULE];
+            p_context   = p_instance_ctrl->p_context[CRC_SUB_MODULE];
+            ret = wcrc_start_data_through(p_instance_ctrl, CRC_SUB_MODULE,
+                                p_callback, p_context);
+            break;
+        case KCRC_SUB_MODULE:
+            p_callback  = p_instance_ctrl->p_callback[KCRC_SUB_MODULE];
+            p_context   = p_instance_ctrl->p_context[KCRC_SUB_MODULE];
+            ret = wcrc_start_data_through(p_instance_ctrl, KCRC_SUB_MODULE,
+                                p_callback, p_context);
+            break;
+        case CRC_KCRC_SUB_MODULE:
+            p_callback  = p_instance_ctrl->p_callback[CRC_SUB_MODULE];
+            p_context   = p_instance_ctrl->p_context[CRC_SUB_MODULE];
+            ret = wcrc_start_data_through(p_instance_ctrl, CRC_SUB_MODULE,
+                                p_callback, p_context);
+
+            p_callback  = p_instance_ctrl->p_callback[KCRC_SUB_MODULE];
+            p_context   = p_instance_ctrl->p_context[KCRC_SUB_MODULE];
+            ret |= wcrc_start_data_through(p_instance_ctrl, KCRC_SUB_MODULE,
+                                 p_callback, p_context);
             break;
         default:
             printf("%s: Invalid module\n", __func__);
@@ -734,8 +867,9 @@ static int wcrc_set_e2e_mode(uint8_t module, wcrc_cfg_t const * const p_cfg)
 
     //1. Set CRC conversion size to once in WCRC_XXXX_CONV register.
     reg_addr = getRegister(reg_type, unit, WCRC_XXXX_CONV(module));
-    reg_val = 4;
+    reg_val = p_cfg->conv_size[module];
     writel(reg_val, reg_addr);
+    //printf_delay("%d: conv=0x%x\n", module, readl(reg_addr));
 
     //2. Set initial CRC code value in WCRC_XXXX_INIT_CRC register.
     reg_addr = getRegister(reg_type, unit, WCRC_XXXX_INIT_CRC(module));
@@ -829,7 +963,7 @@ static int wcrc_get_crc_data_size(wcrc_sub_module_t module, wcrc_cfg_t const * c
         goto get_size_err;
     }
 
-    crc_conv_size   = p_cfg->conv_size;
+    crc_conv_size   = p_cfg->conv_size[module];
     data_input_size = each_data_size * num_data_input;
     num_crc_data    = data_input_size / crc_conv_size;
     crc_data_size   = num_crc_data * each_data_size;
@@ -839,76 +973,203 @@ get_size_err:
     return ret;
 }
 
-static int wcrc_prepare_e2e(wcrc_sub_module_t module, wcrc_instance_ctrl_t * const p_ctrl,
-                            uint32_t dma_tx_size, uint32_t dma_rx_size)
+static int wcrc_prepare_e2e(uint8_t module, wcrc_instance_ctrl_t * const p_instance_ctrl)
 {
     int ret = 0;
-    uint32_t crc_size = 0;
-    wcrc_cfg_t const * p_cfg   = p_ctrl->p_cfg;
-    crc_output_t * p_crc_data  = &p_ctrl->crc_data[CRC_SUB_MODULE];
-    crc_output_t * p_kcrc_data = &p_ctrl->crc_data[KCRC_SUB_MODULE];
-    crc_output_t * p_data;
-    void ** p_crc_buf          = &p_crc_data->p_output_buffer;
-    void ** p_kcrc_buf         = &p_kcrc_data->p_output_buffer;
-    void ** pp_buf;
-    void * p_buf;
-    wcrc_cfg_dma_t * p_cfg_dma[2];
+    uint32_t crc_data_size = 0;
+    wcrc_cfg_t const * p_cfg   = p_instance_ctrl->p_cfg;
+    crc_output_t * p_crc_data;
+    wcrc_cfg_dma_t * p_cfg_dma[E2E_CRC_USE_2_DMA_CHAN];
+    Context_t * p_usr_context[E2E_CRC_USE_2_DMA_CHAN];
 
-    if (module == CRC_SUB_MODULE) {
-        p_data = p_crc_data;
-        pp_buf = p_crc_buf;
-        /* DMA TX */
-        p_cfg_dma[0] = &g_wcrc_cfg_dma[0];
-        /* DMA RX */
-        p_cfg_dma[1] = &g_wcrc_cfg_dma[1];
-
-    } else if (module == KCRC_SUB_MODULE) {
-        p_data = p_kcrc_data;
-        pp_buf = p_kcrc_buf;
-        /* DMA TX */
-        p_cfg_dma[0] = &g_wcrc_cfg_dma[2];
-        /* DMA RX */
-        p_cfg_dma[1] = &g_wcrc_cfg_dma[3];
-
-    } else {
-        ret = -1;
+    if (module != CRC_SUB_MODULE &&
+        module != KCRC_SUB_MODULE) {
         printf("%s: Invalid module\n", __func__);
+        return -1;
     }
 
-    /* WCRC set E2E mode */
-    ret  = wcrc_set_e2e_mode(module, p_cfg);
-    /* WCRC setup for DMA */
-    ret  = wcrc_get_crc_data_size(module, p_cfg, &crc_size);
-    p_data->num_data  = crc_size / get_width_input(module, p_cfg);
+    /* 1. WCRC setups E2E mode */
+    ret = wcrc_set_e2e_mode(module, p_cfg);
 
-    ret |= wcrcPrepareCrcBuffer(pp_buf, crc_size);
+    /* 2. WCRC allocates buffer for CRC data */
+    p_crc_data                  = &p_instance_ctrl->crc_data[module];
+    ret                         = wcrc_get_crc_data_size(module, p_cfg, &crc_data_size);
+    p_crc_data->num_data        = crc_data_size / get_width_input(module, p_cfg);
 
-    /* DMA TX */
-    p_buf = * pp_buf;
-    ret |= wcrc_set_rtdma(module, p_ctrl, p_cfg_dma[0],
-                         PORT_DATA(module), dma_tx_size);
-    /* DMA RX */
-    ret |= wcrc_set_rtdma(module, p_ctrl, p_cfg_dma[1],
-                         PORT_RES(module), dma_rx_size);
+    if ((p_crc_data->num_data % NUM_DATA_ALIGN_AXI_BUS) != 0) {
+        printf("%s: Data not align on AXI BUS!", __func__);
+        return -1;
+    }
+        
+    p_crc_data->p_output_buffer = pvPortMalloc(crc_data_size);
+
+    if (p_crc_data->p_output_buffer == NULL) {
+        printf("%s: Allocate p_output_buffer FAILED!", __func__);
+        return -1;
+    }
+
+    //printf_delay("%d: A> 0x%x\n", module, p_crc_data->p_output_buffer);
+
+    /* 3. WCRC allocates buffer for user callback context */
+    //p_instance_ctrl->p_context[module] = pvPortMalloc(sizeof(Context_t) * E2E_CRC_USE_2_DMA_CHAN);
+
+    //if (p_instance_ctrl->p_context[module] == NULL) {
+    //    printf("%s: Allocate p_context FAILED!", __func__);
+    //    return -1;
+    //}
+    //printf_delay("%d: A> 0x%x\n", module, p_instance_ctrl->p_context[module]);
+    //printf_delay("%d: size %d\n", module, sizeof(Context_t));
+
+    /* 4. WCRC setups DMA */
+    p_instance_ctrl->p_extend[module]    = pvPortMalloc(sizeof(wcrc_cfg_dma_t) * E2E_CRC_USE_2_DMA_CHAN);
+
+    if (p_instance_ctrl->p_extend[module] == NULL) {
+        printf("%s: Allocate p_extend FAILED!", __func__);
+        return -1;
+    }
+
+    p_cfg_dma[E2E_PORT_DATA]    = p_instance_ctrl->p_extend[module];
+    p_cfg_dma[E2E_PORT_RESULT]  = p_cfg_dma[E2E_PORT_DATA] + 1;
+
+    /* DMA TX: E2E_PORT_DATA */
+    ret |= wcrc_set_rtdma(module, p_instance_ctrl, p_cfg_dma[E2E_PORT_DATA],
+                         PORT_DATA(module), MEM_TO_DEV);
+    /* DMA RX: E2E_PORT_RESULT */
+    ret |= wcrc_set_rtdma(module, p_instance_ctrl, p_cfg_dma[E2E_PORT_RESULT],
+                         PORT_RES(module), DEV_TO_MEM);
 
     return ret;
 }
 
-static int wcrcPrepareE2eCrcMode(wcrc_instance_ctrl_t * const p_ctrl)
+static int wcrcPrepareE2eCrcMode(wcrc_instance_ctrl_t * const p_instance_ctrl)
 {
     int ret = 0;
-    wcrc_cfg_t const * p_cfg = p_ctrl->p_cfg;
+    wcrc_cfg_t const * p_cfg = p_instance_ctrl->p_cfg;
 
     switch(p_cfg->sub_module) {
         case CRC_SUB_MODULE:
-            ret  = wcrc_prepare_e2e(CRC_SUB_MODULE, p_ctrl, 4, 4);
+            ret  = wcrc_prepare_e2e(CRC_SUB_MODULE, p_instance_ctrl);
             break;
         case KCRC_SUB_MODULE:
-            ret  = wcrc_prepare_e2e(KCRC_SUB_MODULE, p_ctrl, 4, 4);
+            ret  = wcrc_prepare_e2e(KCRC_SUB_MODULE, p_instance_ctrl);
             break;
         case CRC_KCRC_SUB_MODULE:
-            ret  = wcrc_prepare_e2e(CRC_SUB_MODULE, p_ctrl, 4, 4);
-            ret |= wcrc_prepare_e2e(KCRC_SUB_MODULE, p_ctrl, 4, 4);
+            ret  = wcrc_prepare_e2e(CRC_SUB_MODULE, p_instance_ctrl);
+            ret |= wcrc_prepare_e2e(KCRC_SUB_MODULE, p_instance_ctrl);
+            break;
+        default:
+            printf("%s: Invalid module\n", __func__);
+            ret = -1;
+            goto end_mode;
+    }
+
+end_mode:
+    return ret;
+}
+
+static int wcrc_set_data_through_mode(uint8_t module, wcrc_cfg_t const * const p_cfg)
+{
+    int ret = 0;
+    uint8_t reg_type = WCRC_MODULE;
+    unsigned int reg_val, reg_addr;
+    uint8_t unit = p_cfg->unit;
+    crc_module_cfg_t const * const crc_cfg   = &p_cfg->crc_cfg;
+    kcrc_module_cfg_t const * const kcrc_cfg = &p_cfg->kcrc_cfg;
+
+    if (module != CRC_SUB_MODULE &&
+        module != KCRC_SUB_MODULE) {
+        printf("%s: Invalid module\n", __func__);
+        ret = -1;
+        goto end_mode;
+    }
+
+    //Enable WCRC Stop Interrupt.
+    reg_addr = getRegister(reg_type, unit, WCRC_XXXX_INTEN(module));
+    reg_val = STOP_DONE_IE;
+    writel(reg_val, reg_addr);
+
+    //1. Set in_en=1, out_en=1 in WCRCm_XXXX_EN register.
+    reg_addr = getRegister(reg_type, unit, WCRC_XXXX_EN(module));
+    reg_val = IN_EN | OUT_EN;
+    writel(reg_val, reg_addr);
+
+end_mode:
+    return ret;
+}
+
+static int wcrc_prepare_data_through(uint8_t module, wcrc_instance_ctrl_t * const p_instance_ctrl)
+{
+    int ret = 0;
+    uint32_t data_input_readback_size = 0;
+    wcrc_cfg_t const  * p_cfg   = p_instance_ctrl->p_cfg;
+    crc_input_t const * p_input_cfg;
+    crc_output_t * p_crc_data;
+    wcrc_cfg_dma_t * p_cfg_dma[DATA_THROUGH_USE_2_DMA_CHAN];
+    Context_t * p_usr_context[DATA_THROUGH_USE_2_DMA_CHAN];
+
+    if (module != CRC_SUB_MODULE &&
+        module != KCRC_SUB_MODULE) {
+        printf("%s: Invalid module\n", __func__);
+        return -1;
+    }
+
+    /* 1. WCRC setups Data Through mode */
+    ret = wcrc_set_data_through_mode(module, p_cfg);
+
+    /* 2. WCRC allocates buffer for data input readback */
+    if (module == CRC_SUB_MODULE) {
+        p_input_cfg = &p_cfg->crc_cfg.input_cfg;
+    } else if (module == KCRC_SUB_MODULE) {
+        p_input_cfg = &p_cfg->kcrc_cfg.input_cfg;
+    }
+
+    p_crc_data                  = &p_instance_ctrl->crc_data[module];
+    p_crc_data->num_data        = p_input_cfg->num_data;
+    data_input_readback_size    = p_crc_data->num_data * get_width_input(module, p_cfg);
+    p_crc_data->p_output_buffer = pvPortMalloc(data_input_readback_size);
+
+    if (p_crc_data->p_output_buffer == NULL) {
+        printf("%s: Allocate p_output_buffer FAILED!", __func__);
+        return -1;
+    }
+
+    //printf_delay("%d: B> 0x%x\n", module, p_crc_data->p_output_buffer);
+
+    /* 3. WCRC setups DMA */
+    p_instance_ctrl->p_extend[module]    = pvPortMalloc(sizeof(wcrc_cfg_dma_t) * DATA_THROUGH_USE_2_DMA_CHAN);
+
+    if (p_instance_ctrl->p_extend[module] == NULL) {
+        printf("%s: Allocate p_extend FAILED!", __func__);
+        return -1;
+    }
+
+    p_cfg_dma[DATA_THROUGH_PORT_DATA_INPUT]     = p_instance_ctrl->p_extend[module];
+    p_cfg_dma[DATA_THROUGH_PORT_DATA_OUTPUT]    = p_cfg_dma[DATA_THROUGH_PORT_DATA_INPUT] + 1;
+
+    /* DMA TX: PORT_DATA */
+    ret |= wcrc_set_rtdma(module, p_instance_ctrl, p_cfg_dma[DATA_THROUGH_PORT_DATA_INPUT],
+                         PORT_DATA(module), MEM_TO_DEV);
+    /* DMA RX: PORT_DATA */
+    ret |= wcrc_set_rtdma(module, p_instance_ctrl, p_cfg_dma[DATA_THROUGH_PORT_DATA_OUTPUT],
+                         PORT_DATA(module), DEV_TO_MEM);
+    return ret;
+}
+
+static int wcrcPrepareDataThrough(wcrc_instance_ctrl_t * const p_instance_ctrl)
+{
+    int ret = 0;
+    wcrc_cfg_t const * const p_cfg = p_instance_ctrl->p_cfg;
+
+    switch(p_cfg->sub_module) {
+        case CRC_SUB_MODULE:
+            ret  = wcrc_prepare_data_through(CRC_SUB_MODULE, p_instance_ctrl);
+            break;
+        case KCRC_SUB_MODULE:
+            ret  = wcrc_prepare_data_through(KCRC_SUB_MODULE, p_instance_ctrl);
+            break;
+        case CRC_KCRC_SUB_MODULE:
+            ret  = wcrc_prepare_data_through(CRC_SUB_MODULE, p_instance_ctrl);
+            ret |= wcrc_prepare_data_through(KCRC_SUB_MODULE, p_instance_ctrl);
             break;
         default:
             printf("%s: Invalid module\n", __func__);
@@ -959,87 +1220,375 @@ static int wcrc_get_dma_request_id(wcrc_sub_module_t module,
     return dma_req_id;
 }
 
-static int wcrc_set_rtdma(uint8_t module, wcrc_instance_ctrl_t * const p_ctrl,
-                         void * p_cfg_dma, uint32_t port, uint32_t dma_tx_size)
+static uint32_t dma_ide_chan[64] =
+{
+    0x00,
+    0x01,
+    0x02,
+    0x03,
+    0x04,
+    0x05,
+    0x06,
+    0x07,
+    0x08,
+    0x09,
+    0x0A,
+    0x0B,
+    0x0C,
+    0x0D,
+    0x0F,
+    0x10,
+    0x11,
+    0x12,
+    0x13,
+    0x14,
+    0x15,
+    0x16,
+    0x17,
+    0x18,
+    0x19,
+    0x1A,
+    0x1B,
+    0x1C,
+    0x1D,
+    0x1F,
+    0x20,
+    0x21,
+    0x22,
+    0x23,
+    0x24,
+    0x25,
+    0x26,
+    0x27,
+    0x28,
+    0x29,
+    0x2A,
+    0x2B,
+    0x2C,
+    0x2D,
+    0x2F,
+    0x30,
+    0x31,
+    0x32,
+    0x33,
+    0x34,
+    0x35,
+    0x36,
+    0x37,
+    0x38,
+    0x39,
+    0x3A,
+    0x3B,
+    0x3C,
+    0x3D,
+    0x3F
+};
+
+static int index = -1;
+
+static uint32_t dma_return_ide_chan()
+{
+    if (index > (sizeof(dma_ide_chan)/sizeof(dma_ide_chan[0]) - 1))
+        index = 0;
+    else
+        index = index + 2;
+
+    return dma_ide_chan[index];
+}
+
+static uint32_t get_dma_int_id(uint32_t dma_unit_chan)
+{
+    uint32_t int_id;
+
+    switch(dma_unit_chan) {
+        case 0x00:
+        case 0x01:
+            int_id = INTID_RTDMA0_CH0;
+            break;
+        case 0x02:
+        case 0x03:
+            int_id = INTID_RTDMA0_CH2; 
+            break;
+        case 0x04:
+        case 0x05:
+            int_id = INTID_RTDMA0_CH4; 
+            break;
+        case 0x06:
+        case 0x07:
+            int_id = INTID_RTDMA0_CH6;
+            break;
+        case 0x08:
+        case 0x09:
+            int_id = INTID_RTDMA0_CH8; 
+            break;
+        case 0x0A:
+        case 0x0B:
+            int_id = INTID_RTDMA0_CH10; 
+            break;
+        case 0x0C:
+        case 0x0D:
+            int_id = INTID_RTDMA0_CH12; 
+            break;
+        case 0x0E:
+        case 0x0F:
+            int_id = INTID_RTDMA0_CH14; 
+            break;
+        case 0x10:
+        case 0x11:
+            int_id = INTID_RTDMA1_CH0;
+            break;
+        case 0x12:
+        case 0x13:
+            int_id = INTID_RTDMA1_CH2; 
+            break;
+        case 0x14:
+        case 0x15:
+            int_id = INTID_RTDMA1_CH4; 
+            break;
+        case 0x16:
+        case 0x17:
+            int_id = INTID_RTDMA1_CH6;
+            break;
+        case 0x18:
+        case 0x19:
+            int_id = INTID_RTDMA1_CH8; 
+            break;
+        case 0x1A:
+        case 0x1B:
+            int_id = INTID_RTDMA1_CH10; 
+            break;
+        case 0x1C:
+        case 0x1D:
+            int_id = INTID_RTDMA1_CH12; 
+            break;
+        case 0x1E:
+        case 0x1F:
+            int_id = INTID_RTDMA1_CH14; 
+            break;
+        case 0x20:
+        case 0x21:
+            int_id = INTID_RTDMA2_CH0;
+            break;
+        case 0x22:
+        case 0x23:
+            int_id = INTID_RTDMA2_CH2; 
+            break;
+        case 0x24:
+        case 0x25:
+            int_id = INTID_RTDMA2_CH4; 
+            break;
+        case 0x26:
+        case 0x27:
+            int_id = INTID_RTDMA2_CH6;
+            break;
+        case 0x28:
+        case 0x29:
+            int_id = INTID_RTDMA2_CH8; 
+            break;
+        case 0x2A:
+        case 0x2B:
+            int_id = INTID_RTDMA2_CH10; 
+            break;
+        case 0x2C:
+        case 0x2D:
+            int_id = INTID_RTDMA2_CH12; 
+            break;
+        case 0x2E:
+        case 0x2F:
+            int_id = INTID_RTDMA2_CH14; 
+            break;
+        case 0x30:
+        case 0x31:
+            int_id = INTID_RTDMA3_CH0;
+            break;
+        case 0x32:
+        case 0x33:
+            int_id = INTID_RTDMA3_CH2; 
+            break;
+        case 0x34:
+        case 0x35:
+            int_id = INTID_RTDMA3_CH4; 
+            break;
+        case 0x36:
+        case 0x37:
+            int_id = INTID_RTDMA3_CH6;
+            break;
+        case 0x38:
+        case 0x39:
+            int_id = INTID_RTDMA3_CH8; 
+            break;
+        case 0x3A:
+        case 0x3B:
+            int_id = INTID_RTDMA3_CH10; 
+            break;
+        case 0x3C:
+        case 0x3D:
+            int_id = INTID_RTDMA3_CH12; 
+            break;
+        case 0x3E:
+        case 0x3F:
+            int_id = INTID_RTDMA3_CH14; 
+            break;
+        default:
+            printf_delay("%s: Invalid interrupt id\n", __func__);
+            int_id = 0;
+            break;
+    }
+
+    return int_id;
+}
+
+static int wcrc_get_dma_transf_unit_size_config(uint8_t transfer_size)
+{
+    int config = -1;
+
+    switch (transfer_size) {
+    case 4:
+        config = DRV_RTDMAC_TRANS_UNIT_4BYTE;
+        break;
+    case 8:
+        config = DRV_RTDMAC_TRANS_UNIT_8BYTE;
+        break;
+    case 16:
+        config = DRV_RTDMAC_TRANS_UNIT_16BYTE;
+        break;
+    case 32:
+        config = DRV_RTDMAC_TRANS_UNIT_32BYTE;
+        break;
+    case 64:
+        config = DRV_RTDMAC_TRANS_UNIT_64BYTE;
+        break;
+    default:
+        printf_delay("%s: Invalid transfer size %d\n", __func__, transfer_size);
+        config = -1;
+        break;
+    }
+
+    return config;
+}
+
+static int wcrc_set_rtdma(uint8_t module, wcrc_instance_ctrl_t * const p_instance_ctrl,
+                         void * p_cfg_dma, uint32_t port, uint8_t dma_direction)
 {
     int ret = 0;
-    wcrc_cfg_t const * p_cfg = p_ctrl->p_cfg;
+    wcrc_cfg_t const * p_cfg = p_instance_ctrl->p_cfg;
     wcrc_unit_t unit = p_cfg->unit;
     uint32_t each_data_size = 0;
     uint32_t port_addr   = wcrc_get_dma_fifo(module, unit, port);
     uint32_t port_req_id = wcrc_get_dma_request_id(module, unit, port);
+
     wcrc_cfg_dma_t * p_wcrc_cfg_dma = (wcrc_cfg_dma_t *)p_cfg_dma;
 
     crc_module_cfg_t  const * const p_crc_cfg  = &p_cfg->crc_cfg;
     kcrc_module_cfg_t const * const p_kcrc_cfg = &p_cfg->kcrc_cfg;
     crc_input_t const * p_input_cfg;
     crc_output_t * p_data;
+    uint8_t dma_tx_unit = 16, dma_rx_unit = 16;
+    uint32_t dma_unit_chan;
+
+    if (module != CRC_SUB_MODULE &&
+        module != KCRC_SUB_MODULE) {
+        printf("%s: Invalid module\n", __func__);
+        ret = -1;
+        goto set_rtdma_err;
+    }
+
+    /* Get ide dma channels */
+    dma_unit_chan = dma_return_ide_chan();
 
     /* Get each data size in byte */
     each_data_size = get_width_input(module, p_cfg);
 
-    if (port_req_id == MID_RID_WCRC_IN(module, unit)) {
+    if (dma_direction == MEM_TO_DEV) {
 
         if (module == CRC_SUB_MODULE) {
-            p_input_cfg = &p_crc_cfg->input_cfg;
-            p_wcrc_cfg_dma->irq.Unit            = RT_DMAC0;
-            p_wcrc_cfg_dma->irq.SubCh           = DMAC_CH0;
-            p_wcrc_cfg_dma->irq.irq_channel     = INTID_RTDMA0_CH0;
+            p_input_cfg                     = &p_crc_cfg->input_cfg;
         } else if (module == KCRC_SUB_MODULE) {
-            p_input_cfg = &p_kcrc_cfg->input_cfg;
-            p_wcrc_cfg_dma->irq.Unit            = RT_DMAC1;
-            p_wcrc_cfg_dma->irq.SubCh           = DMAC_CH0;
-            p_wcrc_cfg_dma->irq.irq_channel     = INTID_RTDMA1_CH0;
-        } else {
-            printf("%s: Invalid module\n", __func__);
-            ret = -1;
-            goto set_rtdma_err;
+            p_input_cfg                     = &p_kcrc_cfg->input_cfg;
         }
+
+        p_wcrc_cfg_dma->irq.Unit            = (0xF0 & dma_unit_chan) >> 4;
+        p_wcrc_cfg_dma->irq.SubCh           = (0x0F & dma_unit_chan);
+        p_wcrc_cfg_dma->irq.irq_channel     = get_dma_int_id(dma_unit_chan);
 
         p_wcrc_cfg_dma->cfg.mSrcAddr        = (uintptr_t)p_input_cfg->p_input_buffer;
         p_wcrc_cfg_dma->cfg.mDestAddr       = port_addr;
-        p_wcrc_cfg_dma->cfg.mTransferCount  = (p_input_cfg->num_data) * each_data_size / dma_tx_size;
+        p_wcrc_cfg_dma->cfg.mTransferCount  = (p_input_cfg->num_data) * each_data_size / dma_tx_unit;
         p_wcrc_cfg_dma->cfg.mDMAMode        = DRV_DMAC_DMA_NO_DESCRIPTOR;
         p_wcrc_cfg_dma->cfg.mSrcAddrMode    = DRV_RTDMAC_ADDR_INCREMENTED;
         p_wcrc_cfg_dma->cfg.mDestAddrMode   = DRV_RTDMAC_ADDR_FIXED;
-        p_wcrc_cfg_dma->cfg.mTransferUnit   = DRV_RTDMAC_TRANS_UNIT_4BYTE;
+        p_wcrc_cfg_dma->cfg.mTransferUnit   = wcrc_get_dma_transf_unit_size_config(dma_tx_unit);
         p_wcrc_cfg_dma->cfg.mResource       = DRV_RTDMAC_RESOUCE_MAX;
         p_wcrc_cfg_dma->cfg.mSourceRequest  = port_req_id;
         p_wcrc_cfg_dma->cfg.mLowSpeed       = DRV_RTDMAC_SPEED_NORMAL;
         p_wcrc_cfg_dma->cfg.mPrioLevel      = 0;
 
-    } else if (port_req_id == MID_RID_WCRC_RES(module, unit)) {
+    } else if (dma_direction == DEV_TO_MEM) {
 
-        if (module == CRC_SUB_MODULE) {
-            p_wcrc_cfg_dma->irq.Unit            = RT_DMAC0;
-            p_wcrc_cfg_dma->irq.SubCh           = DMAC_CH1;
-            p_wcrc_cfg_dma->irq.irq_channel     = INTID_RTDMA0_CH1;
-        } else if (module == KCRC_SUB_MODULE) {
-            p_wcrc_cfg_dma->irq.Unit            = RT_DMAC1;
-            p_wcrc_cfg_dma->irq.SubCh           = DMAC_CH1;
-            p_wcrc_cfg_dma->irq.irq_channel     = INTID_RTDMA1_CH1;
-        } else {
-            printf("%s: Invalid module\n", __func__);
-            ret = -1;
-            goto set_rtdma_err;
-        }
+        p_wcrc_cfg_dma->irq.Unit            = (0xF0 & dma_unit_chan) >> 4;
+        p_wcrc_cfg_dma->irq.SubCh           = (0x0F & dma_unit_chan);
+        p_wcrc_cfg_dma->irq.irq_channel     = get_dma_int_id(dma_unit_chan);
 
-        p_data = &p_ctrl->crc_data[module];
+        p_data = &p_instance_ctrl->crc_data[module];
         p_wcrc_cfg_dma->cfg.mSrcAddr        = port_addr;
         p_wcrc_cfg_dma->cfg.mDestAddr       = (uintptr_t)p_data->p_output_buffer;
-        p_wcrc_cfg_dma->cfg.mTransferCount  = p_data->num_data * each_data_size / dma_tx_size;
+        p_wcrc_cfg_dma->cfg.mTransferCount  = p_data->num_data * each_data_size / dma_rx_unit;
         p_wcrc_cfg_dma->cfg.mDMAMode        = DRV_DMAC_DMA_NO_DESCRIPTOR;
         p_wcrc_cfg_dma->cfg.mSrcAddrMode    = DRV_RTDMAC_ADDR_FIXED;
         p_wcrc_cfg_dma->cfg.mDestAddrMode   = DRV_RTDMAC_ADDR_INCREMENTED;
-        p_wcrc_cfg_dma->cfg.mTransferUnit   = DRV_RTDMAC_TRANS_UNIT_4BYTE;
+        p_wcrc_cfg_dma->cfg.mTransferUnit   = wcrc_get_dma_transf_unit_size_config(dma_rx_unit);
         p_wcrc_cfg_dma->cfg.mSourceRequest  = port_req_id;
         p_wcrc_cfg_dma->cfg.mLowSpeed       = DRV_RTDMAC_SPEED_NORMAL;
         p_wcrc_cfg_dma->cfg.mPrioLevel      = 0;
 
     }
 
+    //printf_delay("%d: Unit  %d\n", module, p_wcrc_cfg_dma->irq.Unit);
+    //printf_delay("%d: Chan  %d\n", module, p_wcrc_cfg_dma->irq.SubCh);
+    //printf_delay("%d: INTID %d\n", module, p_wcrc_cfg_dma->irq.irq_channel);
+
+    //printf_delay("%d: Src 0x%x\n", module, p_wcrc_cfg_dma->cfg.mSrcAddr);
+    //printf_delay("%d: Dst 0x%x\n", module, p_wcrc_cfg_dma->cfg.mDestAddr);
+    //printf_delay("%d: TCR %d\n", module, p_wcrc_cfg_dma->cfg.mTransferCount);
+
 set_rtdma_err:
     return ret;
+}
+
+int wcrcClose(wcrc_instance_ctrl_t * const p_instance_ctrl)
+{
+    void * p_buf;
+
+    /* Clear CRC data */
+    p_buf = p_instance_ctrl->crc_data[CRC_SUB_MODULE].p_output_buffer;
+    //printf_delay("%d: 0x%x\n", CRC_SUB_MODULE, p_buf);
+    wcrcRemoveBuffer(p_buf);
+    //printf_delay("CP0\n");
+
+    p_buf = p_instance_ctrl->crc_data[KCRC_SUB_MODULE].p_output_buffer;
+    //printf_delay("%d: 0x%x\n", KCRC_SUB_MODULE, p_buf);
+    wcrcRemoveBuffer(p_buf);
+    //printf_delay("CP1\n");
+    p_instance_ctrl->crc_data[CRC_SUB_MODULE].p_output_buffer  = NULL;
+    p_instance_ctrl->crc_data[KCRC_SUB_MODULE].p_output_buffer = NULL;
+
+    /* Release RT-DMA */
+    p_buf = p_instance_ctrl->p_extend[CRC_SUB_MODULE];
+    wcrcRemoveBuffer(p_buf);
+    p_buf = p_instance_ctrl->p_extend[KCRC_SUB_MODULE];
+    wcrcRemoveBuffer(p_buf);
+    p_instance_ctrl->p_extend[CRC_SUB_MODULE]  = NULL;
+    p_instance_ctrl->p_extend[KCRC_SUB_MODULE] = NULL;
+
+    /* Release RT-DMA */
+    p_buf = p_instance_ctrl->p_context[CRC_SUB_MODULE];
+    wcrcRemoveBuffer(p_buf);
+    p_buf = p_instance_ctrl->p_context[KCRC_SUB_MODULE];
+    wcrcRemoveBuffer(p_buf);
+    p_instance_ctrl->p_context[CRC_SUB_MODULE]  = NULL;
+    p_instance_ctrl->p_context[KCRC_SUB_MODULE] = NULL;
+
+    return 0;
 }
 
 /************************************ CRC functions ************************************/
@@ -1160,16 +1709,16 @@ static int crc_setting(wcrc_unit_t unit, crc_module_cfg_t const * const p_cfg)
     writel(crc_features, getRegister(reg_type, unit, DCRA_CTL2));
 
     /* Set polynomial initial value to DCRA_COUT register. */
-    writel(initial_set, getRegister(reg_type, unit, DCRA_COUT));
+    writel(p_cfg->input_cfg.crc_seed, getRegister(reg_type, unit, DCRA_COUT));
 
     return 0;
 }
 
 static int crc_start(wcrc_unit_t unit,
                      crc_input_t const * const p_crc_input,
-                     crc_output_t * const p_crc_data)
+                     crc_output_t * p_crc_data)
 {
-    int index;
+    int ret, index;
     uint8_t reg_type;
     uint32_t * p_output_buffer;
 
@@ -1179,6 +1728,15 @@ static int crc_start(wcrc_unit_t unit,
 
     /* Mark CRC operation is in-progress */
     p_crc_data->is_done = false;
+
+    /* Independent mode return CRC data size 4-byte.
+     * So, allocate buffer 4-byte.
+     */
+    p_crc_data->p_output_buffer = pvPortMalloc(INDEPENDENT_CRC_DATA_SIZE);
+    if (p_crc_data->p_output_buffer == NULL) {
+        printf("%s: Allocate FAILED!", __func__);
+        return -1;
+    }
 
     reg_type = CRC_MODULE;
 
@@ -1219,7 +1777,7 @@ static int crc_start(wcrc_unit_t unit,
 
     /* Store generate CRC data */
     p_crc_data->num_data = 1;
-    p_output_buffer  = (uint32_t *)p_crc_data->p_output_buffer;
+    p_output_buffer = (uint32_t *)p_crc_data->p_output_buffer;
     *p_output_buffer = readl(getRegister(reg_type, unit, DCRA_COUT));
 
     /* Mark CRC operation is done */
@@ -1304,19 +1862,19 @@ static int kcrc_setting(wcrc_unit_t unit, kcrc_module_cfg_t const * const p_cfg)
     writel(poly_set, getRegister(reg_type, unit, KCRC_POLY));
 
     /* Set KCRC_XOR register. */
-    writel(DEF_XOR, getRegister(reg_type, unit, KCRC_XOR));
+    writel(p_cfg->xor_mask_out, getRegister(reg_type, unit, KCRC_XOR));
 
     /* Set initial value to KCRC_DOUT register. */
-    writel(DOUT_DEF, getRegister(reg_type, unit, KCRC_DOUT));
+    writel(p_cfg->input_cfg.crc_seed, getRegister(reg_type, unit, KCRC_DOUT));
 
     return 0;
 }
 
 static int kcrc_start(wcrc_unit_t unit,
                      crc_input_t const * const p_crc_input,
-                     crc_output_t * const p_kcrc_data)
+                     crc_output_t * p_kcrc_data)
 {
-    int index;
+    int ret, index;
     uint8_t reg_type;
     uint32_t * p_output_buffer;
 
@@ -1326,6 +1884,15 @@ static int kcrc_start(wcrc_unit_t unit,
 
     /* Mark CRC operation is in-progress */
     p_kcrc_data->is_done = false;
+
+    /* Independent mode return CRC data size 4-byte.
+     * So, allocate buffer 4-byte.
+     */
+    p_kcrc_data->p_output_buffer = pvPortMalloc(INDEPENDENT_CRC_DATA_SIZE);
+    if (p_kcrc_data->p_output_buffer == NULL) {
+        printf("%s: Allocate FAILED!", __func__);
+        return -1;
+    }
 
     reg_type = KCRC_MODULE;
 
