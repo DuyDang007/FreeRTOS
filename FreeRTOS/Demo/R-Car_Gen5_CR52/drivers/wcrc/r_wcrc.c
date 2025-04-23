@@ -54,8 +54,8 @@ int R_CRC_Set_Callback(wcrc_sub_module_t module, wcrc_ctrl_t * const p_ctrl,
         printf("%s: Invalid module\n", __func__);
     }
 
-    p_instance_ctrl->p_callback[module] = p_callback;
-    p_instance_ctrl->p_context[module]  = p_context;
+    ret = wcrc_set_callback(module, p_instance_ctrl,
+                           p_callback, p_context);
 
     return ret;
 }
@@ -64,6 +64,9 @@ int R_CRC_Calculate(wcrc_ctrl_t * const p_ctrl)
 {
     int ret;
     wcrc_instance_ctrl_t * p_instance_ctrl = (wcrc_instance_ctrl_t *) p_ctrl;
+
+    p_instance_ctrl->crc_data[CRC_SUB_MODULE].is_done  = false;
+    p_instance_ctrl->crc_data[KCRC_SUB_MODULE].is_done = false;
 
     /* Start WCRC */
     ret = wcrcStart(p_instance_ctrl);
@@ -76,26 +79,19 @@ calculate_err:
     return ret;
 }
 
-int R_CRC_Close(wcrc_ctrl_t * const p_ctrl)
+int R_CRC_Close(wcrc_ctrl_t * p_ctrl)
 {
-    void * p_buf;
-
     wcrc_instance_ctrl_t * p_instance_ctrl = (wcrc_instance_ctrl_t *) p_ctrl;
+    int ret = 0;
 
-    wcrc_cfg_t * p_cfg = (wcrc_cfg_t *) p_instance_ctrl->p_cfg;
+    ret = wcrcClose(p_instance_ctrl);
 
     /* Mark driver as closed */
     p_instance_ctrl->open = CRC_CLOSE;
+    p_instance_ctrl->crc_data[CRC_SUB_MODULE].is_done  = false;
+    p_instance_ctrl->crc_data[KCRC_SUB_MODULE].is_done = false;
 
-    /* Remove CRC data buffer */
-    p_buf = p_instance_ctrl->crc_data[CRC_SUB_MODULE].p_output_buffer;
-    wcrcRemoveBuffer(p_buf);
-
-    /* Remove KCRC data buffer */
-    p_buf = p_instance_ctrl->crc_data[KCRC_SUB_MODULE].p_output_buffer;
-    wcrcRemoveBuffer(p_buf);
-
-    return 0;
+    return ret;
 }
 
 static int get_crc_data(crc_output_t const * const p_crc_data)
@@ -103,6 +99,11 @@ static int get_crc_data(crc_output_t const * const p_crc_data)
     int index;
     uint32_t num_data;
     uint32_t * p_data;
+
+    if (p_crc_data->is_done == false) {
+        printf_delay("%s: crc is running\n", __func__);
+        return -1;
+    }
 
     num_data = p_crc_data->num_data;
     p_data = (uint32_t *)p_crc_data->p_output_buffer;
@@ -120,6 +121,11 @@ static int get_kcrc_data(crc_output_t const * const p_kcrc_data)
     int index;
     uint32_t num_data;
     uint32_t * p_data;
+
+    if (p_kcrc_data->is_done == false) {
+        printf_delay("%s: kcrc is running\n", __func__);
+        return -1;
+    }
 
     num_data = p_kcrc_data->num_data;
     p_data = (uint32_t *)p_kcrc_data->p_output_buffer;

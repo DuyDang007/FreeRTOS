@@ -35,6 +35,8 @@
 #include "interrupts.h"
 #include "wcrc/r_wcrc_common.h"
 #include "wcrc/r_wcrc.h"
+#include "dmac/dmac_common.h"
+#include "dmac/rtdmac_ctrl.h"
 #include <stdio.h>
 
 #define main_CRC_TASK_PRIORITY        ( tskIDLE_PRIORITY + 1 )
@@ -57,7 +59,10 @@ void kcrcUserCallback(void *data);
 /*
  * Declare some structs used for CRC API.
  */
-static uint32_t crc_input[4] = {0x12345678, 0x12345678, 0x12345678, 0x12345678};
+static uint32_t crc_input[4]    = {0x12345678, 0x12345678, 0x12345678, 0x12345678};
+static uint32_t kcrc_input[4]   = {0x12345678, 0x12345678, 0x12345678, 0x12345678};
+static uint32_t crc_input2[16];
+static uint32_t kcrc_input2[16];
 
 /**** Config CRC Independent mode ****/
 wcrc_cfg_t  g_wcrc_cfg0 =
@@ -70,8 +75,8 @@ wcrc_cfg_t  g_wcrc_cfg0 =
     {
         .input_cfg      =
         {
-            .p_input_buffer = &crc_input,
-            .num_data       = sizeof(crc_input)/sizeof(crc_input[0]),
+            .p_input_buffer = &crc_input[0],
+            .num_data       = sizeof(crc_input[0])/sizeof(crc_input[0]),
             .crc_seed       = 0xFFFFFFFF,
             .bit_width      = WIDTH_32_BIT
         },
@@ -89,8 +94,8 @@ wcrc_cfg_t  g_wcrc_cfg0 =
     {
         .input_cfg      =
         {
-            .p_input_buffer = &crc_input,
-            .num_data       = sizeof(crc_input)/sizeof(crc_input[0]),
+            .p_input_buffer = &kcrc_input[0],
+            .num_data       = sizeof(kcrc_input[0])/sizeof(kcrc_input[0]),
             .crc_seed       = 0xFFFFFFFF,
             .bit_width      = WIDTH_32_BIT
         },
@@ -109,10 +114,11 @@ wcrc_instance_ctrl_t g_wcrc_inst_ctrl_indepe;
 /**** Config E2E CRC mode ****/
 wcrc_cfg_t  g_wcrc_cfg1 =
 {
-    .unit       = WCRC_01,
-    .mode       = E2E_CRC_MODE,
-    .conv_size  = 4,
-    .sub_module = CRC_KCRC_SUB_MODULE,
+    .unit       		= WCRC_09,
+    .mode       		= E2E_CRC_MODE,
+    .conv_size[CRC_SUB_MODULE]  = 4,
+    .conv_size[KCRC_SUB_MODULE] = 4,
+    .sub_module 		= CRC_KCRC_SUB_MODULE,
 
     .crc_cfg    =
     {
@@ -137,8 +143,8 @@ wcrc_cfg_t  g_wcrc_cfg1 =
     {
         .input_cfg      =
         {
-            .p_input_buffer = &crc_input,
-            .num_data       = sizeof(crc_input)/sizeof(crc_input[0]),
+            .p_input_buffer = &kcrc_input,
+            .num_data       = sizeof(kcrc_input)/sizeof(kcrc_input[0]),
             .crc_seed       = 0xFFFFFFFF,
             .bit_width      = WIDTH_32_BIT
         },
@@ -154,7 +160,65 @@ wcrc_cfg_t  g_wcrc_cfg1 =
 
 wcrc_instance_ctrl_t g_wcrc_inst_ctrl_e2e;
 
+/**** Config E2E CRC mode ****/
+wcrc_cfg_t  g_wcrc_cfg3 =
+{
+    .unit       		= WCRC_04,
+    .mode       		= E2E_CRC_MODE,
+    .conv_size[CRC_SUB_MODULE]  = 16,
+    .conv_size[KCRC_SUB_MODULE] = 16,
+    .sub_module 		= CRC_KCRC_SUB_MODULE,
+
+    .crc_cfg    =
+    {
+        .input_cfg      =
+        {
+            .p_input_buffer = &crc_input2,
+            .num_data       = sizeof(crc_input2)/sizeof(crc_input2[0]),
+            .crc_seed       = 0xFFFFFFFF,
+            .bit_width      = WIDTH_32_BIT
+        },
+
+        .poly           = POLY_32_ETHERNET,
+        .is_out_exor    = false,
+        .is_out_bitswap = false,
+        .out_byteswap   = BYTE_SWAP_00,
+        .is_in_exor     = false,
+        .is_in_bitswap  = false,
+        .in_byteswap    = BYTE_SWAP_00
+    },
+
+    .kcrc_cfg   =
+    {
+        .input_cfg      =
+        {
+            .p_input_buffer = &kcrc_input2,
+            .num_data       = sizeof(kcrc_input2)/sizeof(kcrc_input2[0]),
+            .crc_seed       = 0xFFFFFFFF,
+            .bit_width      = WIDTH_32_BIT
+        },
+
+        .poly           = POLY_32_ETHERNET,
+        .poly_size      = POLY_SIZE_32_BIT,
+        .is_out_reflect = false,
+        .is_in_reflect  = false,
+        .shift_mode     = MSB_SHIFT, 
+        .xor_mask_out   = 0xFFFFFFFF
+    }
+};
+
+wcrc_instance_ctrl_t g_wcrc_inst_ctrl_e2e_3;
 /*-----------------------------------------------------------*/
+static void init_data_input()
+{
+    int i = 0;
+    for(i = 0; i < sizeof(crc_input2)/sizeof(crc_input2[0]); i++)
+    {
+        crc_input2[i]   = 0x12345678 + i;
+        kcrc_input2[i]  = 0x12345678 + i;
+    }
+}
+
 int main( void )
 {
     /* Configure the hardware ready to run the demo. */
@@ -185,10 +249,21 @@ static void prvCRCTask( void *pvParameters )
 {
     uint8_t ret;
     uint32_t num_data;
-    uint32_t crc_code = 0x27, kcrc_code = 0x15;
+    bool * is_done[2];
 
     /* Remove compiler warning about unused parameter. */
     ( void ) pvParameters;
+
+    ret = R_RTDMAC_RcarDmacCtrlInit(RT_DMAC0,
+                                    DRV_RTDMAC_PRIO_FIX);
+    ret = R_RTDMAC_RcarDmacCtrlInit(RT_DMAC1,
+                                    DRV_RTDMAC_PRIO_FIX);
+    ret = R_RTDMAC_RcarDmacCtrlInit(RT_DMAC2,
+                                    DRV_RTDMAC_PRIO_FIX);
+    ret = R_RTDMAC_RcarDmacCtrlInit(RT_DMAC3,
+                                    DRV_RTDMAC_PRIO_FIX);
+
+    init_data_input();
 
     printf_delay("\n********** TC1: CRC Independent Mode **********\n");
     ret = R_CRC_Open(&g_wcrc_inst_ctrl_indepe, &g_wcrc_cfg0);
@@ -216,10 +291,13 @@ static void prvCRCTask( void *pvParameters )
     printf_delay("R_CRC_Open: ret = %d\n", ret);
     vTaskDelay(10);
 
+    is_done[CRC_SUB_MODULE] = &g_wcrc_inst_ctrl_e2e.crc_data[CRC_SUB_MODULE].is_done;
     ret  = R_CRC_Set_Callback(CRC_SUB_MODULE, &g_wcrc_inst_ctrl_e2e,
-                             crcUserCallback, &crc_code);
+                             crcUserCallback, is_done[CRC_SUB_MODULE]);
+
+    is_done[KCRC_SUB_MODULE] = &g_wcrc_inst_ctrl_e2e.crc_data[KCRC_SUB_MODULE].is_done;
     ret |= R_CRC_Set_Callback(KCRC_SUB_MODULE, &g_wcrc_inst_ctrl_e2e,
-                             kcrcUserCallback, &kcrc_code);
+                             kcrcUserCallback, is_done[KCRC_SUB_MODULE]);
     printf_delay("R_CRC_Set_Callback: ret = %d\n", ret);
     vTaskDelay(10);
 
@@ -239,6 +317,37 @@ static void prvCRCTask( void *pvParameters )
     printf_delay("\nR_CRC_Close: ret = %d\n", ret);
     vTaskDelay(10);
 
+    printf_delay("\n********** TC3: E2E CRC Mode **********\n");
+    ret = R_CRC_Open(&g_wcrc_inst_ctrl_e2e_3, &g_wcrc_cfg3);
+    printf_delay("R_CRC_Open: ret = %d\n", ret);
+    vTaskDelay(10);
+
+    is_done[CRC_SUB_MODULE] = &g_wcrc_inst_ctrl_e2e_3.crc_data[CRC_SUB_MODULE].is_done;
+    ret  = R_CRC_Set_Callback(CRC_SUB_MODULE, &g_wcrc_inst_ctrl_e2e_3,
+                             crcUserCallback, is_done[CRC_SUB_MODULE]);
+
+    is_done[KCRC_SUB_MODULE] = &g_wcrc_inst_ctrl_e2e_3.crc_data[KCRC_SUB_MODULE].is_done;
+    ret |= R_CRC_Set_Callback(KCRC_SUB_MODULE, &g_wcrc_inst_ctrl_e2e_3,
+                             kcrcUserCallback, is_done[KCRC_SUB_MODULE]);
+    printf_delay("R_CRC_Set_Callback: ret = %d\n", ret);
+    vTaskDelay(10);
+
+    ret = R_CRC_Calculate(&g_wcrc_inst_ctrl_e2e_3);
+    printf_delay("\nR_CRC_Calculate: ret = %d\n\n", ret);
+    vTaskDelay(10);
+
+    ret = R_CRC_Get_Input_Data(&g_wcrc_inst_ctrl_e2e_3);
+    printf_delay("\nR_CRC_Get_Input_Data: ret = %d\n\n", ret);
+    vTaskDelay(10);
+
+    ret = R_CRC_Get_Generated_Value(&g_wcrc_inst_ctrl_e2e_3);
+    printf_delay("\nR_CRC_Get_Generated_Value: ret = %d\n", ret);
+    vTaskDelay(10);
+
+    ret = R_CRC_Close(&g_wcrc_inst_ctrl_e2e_3);
+    printf_delay("\nR_CRC_Close: ret = %d\n", ret);
+    vTaskDelay(10);
+
     for( ;; )
     {
     }
@@ -247,11 +356,13 @@ static void prvCRCTask( void *pvParameters )
 /*-----------------------------------------------------------*/
 
 void crcUserCallback(void *data) {
-    uint32_t * crc_code = (uint32_t *)data;
+    bool * is_done = (bool *)data;
+    * is_done = true;
 }
 
 void kcrcUserCallback(void *data) {
-    uint32_t * kcrc_code = (uint32_t *)data;
+    bool * is_done = (bool *)data;
+    * is_done = true;
 }
 /*-----------------------------------------------------------*/
 
