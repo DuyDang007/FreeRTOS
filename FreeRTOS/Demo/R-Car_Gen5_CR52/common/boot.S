@@ -227,11 +227,19 @@ EL1_Reset_Handler:
 
 	mov 	r14, #0
 
+	# Enable data and instruction cache in SVC mode
+	mrc     p15, 0, r2, c1, c0, 0   ;# Read System Control Register (SCTLR)
+	orr     r2, r2, #0x1 <<12       ;# instruction cache enable (SCTLR.I)
+	orr     r2, r2, #0x1 <<2        ;# data cache enable (SCTLR.C)
+	mcr     p15, 0, r0, c7, c5, 0   ;# Invalidate all Instruction Caches to PoU (ICIALLU)
+	mcr     p15, 0, r0, c7, c5, 6   ;# Invalidate all entries from branch predictors (BPIALL)
+	mcr     p15, 0, r2, c1, c0, 0   ;# enabled instruction and data cache (SCTLR)
+	isb
+
 	ldr r0, =(_vector_table)
 	mcr p15, 0, r0, c12, c0, 0 /* Set vector table address */
 
-
-    bl 	SystemInit          /* Initialize caches, MPU, etc */
+	bl 	SystemInit          /* Initialize caches, MPU, etc */
 
 	bl	main
 
