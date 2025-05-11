@@ -15,13 +15,9 @@
  * @brief SCMI power domain protocol helpers
  */
 
+#include "util.h"
 #include <stdint.h>
 
-#undef BIT
-/**
- * @brief BIT
- */
-#define BIT(nr)                   (1UL << (nr))
 /**
  * @brief Power State Set Flag Mask.
  */
@@ -74,6 +70,17 @@ enum scmi_power_domain_message {
  * @retval negative errno if failure
  */
 int scmi_power_version_get(uint32_t *version);
+
+/**
+ * @brief Send the PROTOCOL_ATTRIBUTES command and get its reply
+ *
+ * @param attributes pointer to attributes to be set via
+ * this command
+ *
+ * @retval 0 if successful
+ * @retval negative errno if failure
+ */
+int scmi_power_protocol_attributes(uint32_t *attributes);
 
 /**
  * @brief Send the POWER_STATE_SET command and get its reply

@@ -10,6 +10,7 @@
 
 #include <stdint.h>
 
+#define SCMI_MAX_STR_SIZE			64
 #define SCMI_SHORT_NAME_MAX_SIZE    16
 
 struct scmi_message;

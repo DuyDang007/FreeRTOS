@@ -14,6 +14,7 @@
 #include "interrupts.h"
 #include "state-manager/r_state_manager.h"
 #include "state-manager/r_power_domain_id.h"
+#include "state-manager/r_clock_domain_id.h"
 #include "pfc/r_pfc_api.h"
 
 #define pmApp_TASK_PRIORITY ( tskIDLE_PRIORITY + 1 )
@@ -124,11 +125,80 @@ static int pmPowerdomainTest(int domain_id)
 	return 0;
 }
 
+static int pmClockTest(int clock_id, uint32_t *rate_set)
+{
+	int ret;
+	uint32_t rate[2] = {0};
+    int tc_number = 2;
+
+    /* Set clock on */
+    PM_LOG("**********TC%d %d-1: set clock id %d ON.**********\r\n",
+            tc_number, clock_id, clock_id);
+	ret = R_StateManager_ClockOn(clock_id);
+    if (ret)
+    {
+        PM_LOG("Error: Failed to set clock id %d ON.\r\n",
+                clock_id);
+    }
+    else
+    {
+        PM_LOG("Set clock id %d ON OK!\r\n", clock_id);
+    }
+
+	/* Get clock rate */
+    PM_LOG("**********TC%d %d-2: Get clock rate.**********\r\n",
+            tc_number, clock_id);
+	ret = R_StateManager_GetClock(clock_id, &rate[0]);
+    if (ret)
+    {
+        PM_LOG("Error: Failed to get clock id %d rate.\r\n",
+               clock_id);
+    }
+    else
+    {
+        PM_LOG("Current clock id %d rate: %d Hz\r\n", clock_id, rate[0]);
+    }
+
+#if 0
+	/* Try setting clock rate to 26MHz */
+    PM_LOG("**********TC%d %d-3: Set clock rate.**********\r\n",
+            tc_number, clock_id);
+	rate[0] = 26000000;
+	ret = R_StateManager_SetClock(clock_id, rate);
+    if (ret)
+    {
+        PM_LOG("Error: Failed to set clock id %d rate.\r\n",
+               clock_id);
+    }
+    else
+    {
+        PM_LOG("Set clock id %d to %d Hz OK\r\n", clock_id, rate[0]);
+    }
+#endif
+
+	/* Set clock off  */
+    PM_LOG("**********TC%d %d-4: set clock id %d OFF.**********\r\n",
+            tc_number, clock_id, clock_id);
+	ret = R_StateManager_ClockOff(clock_id);
+    if (ret)
+    {
+        PM_LOG("Error: Failed to set clock id %d OFF.\r\n",
+               clock_id);
+    }
+    else
+    {
+        PM_LOG("Set clock id %d OFF OK!\r\n", clock_id);
+    }
+
+	return 0;
+}
+
 static void pmAppExample(void)
 {
 	int ret;
 	int domain_id;
     int tc_number = 0;
+    uint32_t rates[2] = {0};
 
     PM_LOG("*******TC%d: SCMI protocols information starting*******\r\n",
             ++tc_number);
@@ -175,6 +245,23 @@ static void pmAppExample(void)
 	}
 #endif
 
+    PM_LOG("*******TC%d: SCMI Clock control starting!*******\r\n",
+            ++tc_number);
+	for (domain_id = X5H_CLOCK_ID_MDLC_VIPN_FCPCS0;
+		 domain_id < X5H_CLOCK_ID_COUNT;
+		 ++domain_id)
+	{
+		if ((X5H_CLOCK_ID_MDLC_HSCIF0 == domain_id) ||
+            (X5H_CLOCK_ID_MDLC_SCIF0 == domain_id)) {
+			PM_LOG("Skip clock id %d\n", domain_id);
+			continue;
+		}
+		pmClockTest(domain_id, rates);
+	}
+    PM_LOG("*******TC%d: SCMI Clock control end!*******\r\n\r\n",
+            tc_number);
+
+#if 0
     PM_LOG("*******TC%d: SCMI System Reset starting!*******\r\n",
             ++tc_number);
     ret = R_StateManager_SysReboot();
@@ -184,6 +271,7 @@ static void pmAppExample(void)
 	}
     PM_LOG("*******TC%d: SCMI System Reset end!*******\r\n",
             tc_number);
+#endif
 
 	//PM_LOG("Wait 30s before requesting DeepStop...");
 	//vTaskDelay(1000*30);
