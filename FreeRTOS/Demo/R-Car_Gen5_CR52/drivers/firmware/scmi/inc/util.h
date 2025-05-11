@@ -21,6 +21,12 @@
 
 struct scmi_protocol;
 
+#undef BIT
+/**
+ * @brief BIT
+ */
+#define BIT(nr)                   (1UL << (nr))
+
 /** @brief Cast @p x, a pointer, to an unsigned integer. */
 #define POINTER_TO_UINT(x) ((uintptr_t) (x))
 

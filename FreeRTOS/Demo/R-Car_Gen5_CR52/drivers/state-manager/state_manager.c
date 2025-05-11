@@ -12,9 +12,11 @@
 #include "scmi/inc/common.h"
 #include "scmi/inc/base.h"
 #include "scmi/inc/power.h"
+#include "scmi/inc/clock.h"
 #include "scmi/inc/system.h"
 #include "state-manager/r_state_manager.h"
 #include "state-manager/r_power_domain_id.h"
+#include "state-manager/r_clock_domain_id.h"
 
 enum s2r_transition {
 	MYSELF = 0,
@@ -24,8 +26,18 @@ enum s2r_transition {
 	NONE
 };
 
+#define VALIDATE_ID(id, max) \
+    do { \
+        if ((id) >= max) { \
+            SCMI_LOG_ERR("Invalid ID\n\r"); \
+            return -1; \
+        } \
+    } while(0)
+
 enum s2r_transition cur_s2r_transition  = NONE;
 bool s2r_others_completed = false;
+uint32_t max_clock_num;
+uint32_t max_powerdomain_num;
 
 static const char* agentid2str(int agent_id)
 {
@@ -136,6 +148,7 @@ int R_StateManager_Init(void)
 	int ret;
 	struct scmi_protocol *proto;
 	uint32_t version = 0U;
+	uint32_t attributes;
 
 	ret = scmi_driver_init();
 	if (ret) {
@@ -149,6 +162,22 @@ int R_StateManager_Init(void)
 		return ret;
 	}
 	SCMI_LOG_INFO("SCMI protocol version=0x%x", version);
+
+	ret = scmi_power_protocol_attributes(&attributes);
+	if (ret) {
+		SCMI_LOG_ERR("Error: Failed to get scmi power protocol attr.\r\n");
+		return ret;
+	}
+	max_powerdomain_num = attributes;
+	SCMI_LOG_INFO("Number of supported power domains: %d", max_powerdomain_num);
+
+	ret = scmi_clock_protocol_attributes(&attributes);
+	if (ret) {
+		SCMI_LOG_ERR("Error: Failed to get scmi clock protocol attr.\r\n");
+		return ret;
+	}
+	max_clock_num = attributes;
+	SCMI_LOG_INFO("Number of supported clock domains: %d", max_clock_num);
 
 	ret = scmi_system_request_notify(true);
 	if (ret) {
@@ -165,6 +194,7 @@ int R_StateManager_Init(void)
 int R_StateManager_SCMI_Info_Show(void)
 {
 	int ret;
+	uint32_t version = 0U;
 
 	{
 		uint8_t num_protocols = 0, num_agents = 0;
@@ -226,7 +256,6 @@ int R_StateManager_SCMI_Info_Show(void)
 		SCMI_LOG_INFO("SCMI base protocol agent_id: %d, name: %s\r\n", agent_id, name);
 	}
 	{
-		uint32_t version = 0U;
 		ret = scmi_system_version_get(&version);
 		if (ret) {
 			SCMI_LOG_INFO("Error: Failed to get scmi system protocol version.\r\n");
@@ -235,13 +264,20 @@ int R_StateManager_SCMI_Info_Show(void)
 		SCMI_LOG_INFO("SCMI system protocol version=0x%x", version);
 	}
 	{
-		uint32_t version = 0U;
 		ret = scmi_power_version_get(&version);
 		if (ret) {
 			SCMI_LOG_INFO("Error: Failed to get scmi power domain protocol version.\r\n");
 			return ret;
 		}
 		SCMI_LOG_INFO("SCMI PD protocol version=0x%x", version);
+	}
+	{
+		ret = scmi_clock_version_get(&version);
+		if (ret) {
+			SCMI_LOG_INFO("Error: Failed to get scmi clock protocol version.\r\n");
+			return ret;
+		}
+		SCMI_LOG_INFO("SCMI clock protocol version=0x%x", version);
 	}
 
 	return 0;
@@ -321,6 +357,7 @@ int R_StateManager_Power_Get(int domain_id, e_power_state_t *state)
 	struct scmi_power_state_config pwr_cfg;
 	int ret;
 
+	VALIDATE_ID(domain_id, max_powerdomain_num);
 	pwr_cfg.domain_id = domain_id;
 	ret = scmi_power_state_get(&pwr_cfg);
 	if (ret) {
@@ -341,6 +378,7 @@ int R_StateManager_PowerOff(int domain_id)
 	struct scmi_power_state_config pwr_cfg;
 	int ret;
 
+	VALIDATE_ID(domain_id, max_powerdomain_num);
 	pwr_cfg.domain_id = domain_id;
 	if ((X5H_POWER_DOMAIN_ID_VIPN <= domain_id) &&
 			(X5H_POWER_DOMAIN_ID_P_RPU_CORE00 > domain_id)) {
@@ -368,6 +406,7 @@ int R_StateManager_PowerOn(int domain_id)
 	struct scmi_power_state_config pwr_cfg;
 	int ret;
 
+	VALIDATE_ID(domain_id, max_powerdomain_num);
 	pwr_cfg.domain_id = domain_id;
 	if ((X5H_POWER_DOMAIN_ID_VIPN <= domain_id) &&
 			(X5H_POWER_DOMAIN_ID_P_RPU_CORE00 > domain_id)) {
@@ -392,21 +431,70 @@ int R_StateManager_PowerOn(int domain_id)
 
 int R_StateManager_SetClock(int clock_id, uint32_t *rates)
 {
+	struct scmi_clock_rate_config clk_cfg = {0};
+	int ret;
+
+	VALIDATE_ID(clock_id, max_clock_num);
+	clk_cfg.clk_id = clock_id;
+	clk_cfg.flags = SCMI_CLK_RATE_SET_FLAGS_ROUNDS_AUTO;
+	clk_cfg.rate[0] = rates[0];
+
+	ret = scmi_clock_rate_set(&clk_cfg);
+	if (ret) {
+		SCMI_LOG_ERR("Failed to set clock ID %d rate (%d)\r\n", clock_id, ret);
+		return ret;
+	}
+
 	return 0;
 }
 
 int R_StateManager_GetClock(int clock_id, uint32_t *rates)
 {
+	int ret;
+
+	VALIDATE_ID(clock_id, max_clock_num);
+	ret = scmi_clock_rate_get(clock_id, rates);
+	if (ret) {
+		SCMI_LOG_ERR("Failed to get clock ID %d rate (%d)\r\n", clock_id, ret);
+		return ret;
+	}
+
 	return 0;
 }
 
 int R_StateManager_ClockOff(int clock_id)
 {
+	struct scmi_clock_config clk_cfg = {0};
+	int ret;
+
+	VALIDATE_ID(clock_id, max_clock_num);
+	clk_cfg.clk_id = clock_id;
+	clk_cfg.attributes = SCMI_CLK_CONFIG_ENABLE_DISABLE(0);
+
+	ret = scmi_clock_config_set(&clk_cfg);
+	if (ret) {
+		SCMI_LOG_ERR("Failed to set clock ID %d OFF (%d)\r\n", clock_id, ret);
+		return ret;
+	}
+
 	return 0;
 }
 
 int R_StateManager_ClockOn(int clock_id)
 {
+	struct scmi_clock_config clk_cfg = {0};
+	int ret;
+
+	VALIDATE_ID(clock_id, max_clock_num);
+	clk_cfg.clk_id = clock_id;
+	clk_cfg.attributes = SCMI_CLK_CONFIG_ENABLE_DISABLE(1);
+
+	ret = scmi_clock_config_set(&clk_cfg);
+	if (ret) {
+		SCMI_LOG_ERR("Failed to set clock ID %d ON (%d)\r\n", clock_id, ret);
+		return ret;
+	}
+
 	return 0;
 }
 
