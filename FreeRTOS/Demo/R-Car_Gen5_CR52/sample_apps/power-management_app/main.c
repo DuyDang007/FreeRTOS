@@ -15,6 +15,7 @@
 #include "state-manager/r_state_manager.h"
 #include "state-manager/r_power_domain_id.h"
 #include "state-manager/r_clock_domain_id.h"
+#include "state-manager/r_reset_domain_id.h"
 #include "pfc/r_pfc_api.h"
 
 #define pmApp_TASK_PRIORITY ( tskIDLE_PRIORITY + 1 )
@@ -193,6 +194,47 @@ static int pmClockTest(int clock_id, uint32_t *rate_set)
 	return 0;
 }
 
+static int pmResetTest(int domain_id)
+{
+	int ret;
+    int tc_number = 4;
+
+	/* Assert domain */
+    PM_LOG("**********TC%d %d-1: Assert domain id %d.**********\r\n",
+            tc_number, domain_id, domain_id);
+	ret = R_StateManager_ResetAssert(domain_id);
+	if (ret) {
+		PM_LOG("Error: Failed to assert domain id %d.\r\n",
+				domain_id);
+		return ret;
+	}
+	PM_LOG("Assert domain id %d OK!", domain_id);
+
+	/* Deassert domain */
+    PM_LOG("**********TC%d %d-2: Deassert domain id %d.**********\r\n",
+            tc_number, domain_id, domain_id);
+	ret = R_StateManager_ResetDeassert(domain_id);
+	if (ret) {
+		PM_LOG("Error: Failed to deassert domain id %d.\r\n",
+				domain_id);
+		return ret;
+	}
+	PM_LOG("Deassert domain id %d OK!", domain_id);
+
+	/* Reset domain */
+    PM_LOG("**********TC%d %d-3: Reset domain id %d.**********\r\n",
+            tc_number, domain_id, domain_id);
+	ret = R_StateManager_Reset(domain_id);
+	if (ret) {
+		PM_LOG("Error: Failed to reset domain id %d.\r\n",
+				domain_id);
+		return ret;
+	}
+	PM_LOG("Reset domain id %d OK!", domain_id);
+
+	return 0;
+}
+
 static void pmAppExample(void)
 {
 	int ret;
@@ -259,6 +301,18 @@ static void pmAppExample(void)
 		pmClockTest(domain_id, rates);
 	}
     PM_LOG("*******TC%d: SCMI Clock control end!*******\r\n\r\n",
+            tc_number);
+
+    PM_LOG("*******TC%d: SCMI Reset control starting!*******\r\n",
+            ++tc_number);
+	{
+#if 1
+        PM_LOG("Currenty SCP FW doesn't support reset protocol\r\n");
+#else
+		pmResetTest(X5H_RESET_DOMAIN_ID_HSCIF0);
+#endif
+	}
+    PM_LOG("*******TC%d: SCMI Reset control end!*******\r\n\r\n",
             tc_number);
 
 #if 0
