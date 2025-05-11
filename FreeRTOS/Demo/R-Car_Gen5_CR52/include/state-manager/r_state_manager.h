@@ -123,5 +123,32 @@ int R_StateManager_ClockOff(int clock_id);
  */
 int R_StateManager_ClockOn(int clock_id);
 
+/**
+ * @brief This function asserts domain id
+ *
+ * @param[in]  domain_id Domain ID
+ *
+ * @return 0 if all went fine, else return appropriate error.
+ */
+int R_StateManager_ResetAssert(int domain_id);
+
+/**
+ * @brief This function deasserts domain id
+ *
+ * @param[in]  domain_id Domain ID
+ *
+ * @return 0 if all went fine, else return appropriate error.
+ */
+int R_StateManager_ResetDeassert(int domain_id);
+
+/**
+ * @brief This function resets domain id
+ *
+ * @param[in]  domain_id Domain ID
+ *
+ * @return 0 if all went fine, else return appropriate error.
+ */
+int R_StateManager_Reset(int domain_id);
+
 #endif /* _R_STATE_MANAGER_H_ */
 

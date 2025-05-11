@@ -13,10 +13,12 @@
 #include "scmi/inc/base.h"
 #include "scmi/inc/power.h"
 #include "scmi/inc/clock.h"
+#include "scmi/inc/reset.h"
 #include "scmi/inc/system.h"
 #include "state-manager/r_state_manager.h"
 #include "state-manager/r_power_domain_id.h"
 #include "state-manager/r_clock_domain_id.h"
+#include "state-manager/r_reset_domain_id.h"
 
 enum s2r_transition {
 	MYSELF = 0,
@@ -36,8 +38,9 @@ enum s2r_transition {
 
 enum s2r_transition cur_s2r_transition  = NONE;
 bool s2r_others_completed = false;
-uint32_t max_clock_num;
+uint32_t max_clockdomain_num;
 uint32_t max_powerdomain_num;
+uint32_t max_resetdomain_num;
 
 static const char* agentid2str(int agent_id)
 {
@@ -176,8 +179,16 @@ int R_StateManager_Init(void)
 		SCMI_LOG_ERR("Error: Failed to get scmi clock protocol attr.\r\n");
 		return ret;
 	}
-	max_clock_num = attributes;
-	SCMI_LOG_INFO("Number of supported clock domains: %d", max_clock_num);
+	max_clockdomain_num = attributes;
+	SCMI_LOG_INFO("Number of supported clock domains: %d", max_clockdomain_num);
+
+	ret = scmi_reset_protocol_attributes(&attributes);
+	if (ret) {
+		SCMI_LOG_ERR("Error: Failed to get scmi reset protocol attr.\r\n");
+		return ret;
+	}
+	max_resetdomain_num = attributes;
+	SCMI_LOG_INFO("Number of supported reset domains: %d", max_resetdomain_num);
 
 	ret = scmi_system_request_notify(true);
 	if (ret) {
@@ -434,7 +445,7 @@ int R_StateManager_SetClock(int clock_id, uint32_t *rates)
 	struct scmi_clock_rate_config clk_cfg = {0};
 	int ret;
 
-	VALIDATE_ID(clock_id, max_clock_num);
+	VALIDATE_ID(clock_id, max_clockdomain_num);
 	clk_cfg.clk_id = clock_id;
 	clk_cfg.flags = SCMI_CLK_RATE_SET_FLAGS_ROUNDS_AUTO;
 	clk_cfg.rate[0] = rates[0];
@@ -452,7 +463,7 @@ int R_StateManager_GetClock(int clock_id, uint32_t *rates)
 {
 	int ret;
 
-	VALIDATE_ID(clock_id, max_clock_num);
+	VALIDATE_ID(clock_id, max_clockdomain_num);
 	ret = scmi_clock_rate_get(clock_id, rates);
 	if (ret) {
 		SCMI_LOG_ERR("Failed to get clock ID %d rate (%d)\r\n", clock_id, ret);
@@ -467,7 +478,7 @@ int R_StateManager_ClockOff(int clock_id)
 	struct scmi_clock_config clk_cfg = {0};
 	int ret;
 
-	VALIDATE_ID(clock_id, max_clock_num);
+	VALIDATE_ID(clock_id, max_clockdomain_num);
 	clk_cfg.clk_id = clock_id;
 	clk_cfg.attributes = SCMI_CLK_CONFIG_ENABLE_DISABLE(0);
 
@@ -485,13 +496,67 @@ int R_StateManager_ClockOn(int clock_id)
 	struct scmi_clock_config clk_cfg = {0};
 	int ret;
 
-	VALIDATE_ID(clock_id, max_clock_num);
+	VALIDATE_ID(clock_id, max_clockdomain_num);
 	clk_cfg.clk_id = clock_id;
 	clk_cfg.attributes = SCMI_CLK_CONFIG_ENABLE_DISABLE(1);
 
 	ret = scmi_clock_config_set(&clk_cfg);
 	if (ret) {
 		SCMI_LOG_ERR("Failed to set clock ID %d ON (%d)\r\n", clock_id, ret);
+		return ret;
+	}
+
+	return 0;
+}
+
+int R_StateManager_ResetAssert(int domain_id)
+{
+	struct scmi_reset_domain_request_config rst_cfg = {0};
+	int ret;
+
+	VALIDATE_ID(domain_id, max_resetdomain_num);
+	rst_cfg.domain_id = domain_id;
+	rst_cfg.flags = RESET_DOMAIN_FLAGS_EXPLICIT;
+
+	ret = scmi_reset_domain_request(rst_cfg);
+	if (ret) {
+		SCMI_LOG_ERR("Failed to assert domain ID %d (%d)\r\n", domain_id, ret);
+		return ret;
+	}
+
+	return 0;
+}
+
+int R_StateManager_ResetDeassert(int domain_id)
+{
+	struct scmi_reset_domain_request_config rst_cfg = {0};
+	int ret;
+
+	VALIDATE_ID(domain_id, max_resetdomain_num);
+	rst_cfg.domain_id = domain_id;
+	rst_cfg.flags = 0;
+
+	ret = scmi_reset_domain_request(rst_cfg);
+	if (ret) {
+		SCMI_LOG_ERR("Failed to deassert domain ID %d (%d)\r\n", domain_id, ret);
+		return ret;
+	}
+
+	return 0;
+}
+
+int R_StateManager_Reset(int domain_id)
+{
+	struct scmi_reset_domain_request_config rst_cfg = {0};
+	int ret;
+
+	VALIDATE_ID(domain_id, max_resetdomain_num);
+	rst_cfg.domain_id = domain_id;
+	rst_cfg.flags = RESET_DOMAIN_FLAGS_AUTO;
+
+	ret = scmi_reset_domain_request(rst_cfg);
+	if (ret) {
+		SCMI_LOG_ERR("Failed to reset domain ID %d (%d)\r\n", domain_id, ret);
 		return ret;
 	}
 
