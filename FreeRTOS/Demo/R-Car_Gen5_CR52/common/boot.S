@@ -227,10 +227,11 @@ EL1_Reset_Handler:
 
 	mov 	r14, #0
 
-	bl 	SystemInit		/* Initialize caches, MPU, etc */
-
 	ldr r0, =(_vector_table)
 	mcr p15, 0, r0, c12, c0, 0 /* Set vector table address */
+
+
+    bl 	SystemInit          /* Initialize caches, MPU, etc */
 
 	bl	main
 

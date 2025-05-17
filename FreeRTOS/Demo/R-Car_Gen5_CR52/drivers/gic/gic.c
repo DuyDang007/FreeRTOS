@@ -484,7 +484,7 @@ uint32_t R_GIC_GetRedistID(uint32_t affinity) {
 
     do
     {
-      if (gic_rdist[index].target_ctrl.GICR_TYPER[1] == affinity)
+      if ((gic_rdist[index].target_ctrl.GICR_TYPER[1] & 0x0F) == (affinity & 0xFF))
          return index;
 
       index++;

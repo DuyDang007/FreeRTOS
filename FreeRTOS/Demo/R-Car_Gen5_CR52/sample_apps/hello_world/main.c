@@ -82,7 +82,7 @@ static void prvHelloWorldTask( void *pvParameters )
 
     for( ;; )
     {
-        printf("prvHelloWorldTask ...\n");
+//        printf("prvHelloWorldTask ...\n");
         vTaskDelay(3000);
     }
 }
