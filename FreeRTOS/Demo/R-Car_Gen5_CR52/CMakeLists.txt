@@ -64,7 +64,7 @@ set(CMAKE_ASM_FLAGS "--specs=nosys.specs -mfloat-abi=hard")
 set(CMAKE_C_FLAGS "-std=c99")
 add_compile_options(
     -ffreestanding -mfpu=neon-fp-armv8 -mcpu=cortex-r52 -mtune=cortex-r52 -mfloat-abi=softfp
-    -Wno-unknown-pragmas -DSCMI_DEBUG -DBOARD=${BOARD_ID} -DRAM_REGION=${RAM_REGION}
+    -Wno-unknown-pragmas -DSCMI_DEBUG -DBOARD=${BOARD_ID} -DRAM_REGION=${RAM_REGION} -g
     ${global_definition}
 )
 

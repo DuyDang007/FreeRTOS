@@ -37,7 +37,7 @@ static void Init_MPU(void)
 {
 //    uint32_t entry_address = (uint32_t) &_RAM_START;
     /* Disable MPU */
-    MPU_Disable();
+//    MPU_Disable();
 
     MPU_Init();
 
@@ -96,7 +96,7 @@ static void Init_MPU(void)
     } 
 
     /* Enable MPU */
-    MPU_Enable();
+//    MPU_Enable();
 }
 
 __STATIC_INLINE void bss_init(unsigned int* section_begin, unsigned int* section_end)
@@ -131,6 +131,7 @@ static void FPU_Enable(void)
 
 void SystemInit(void)
 {
+    bss_init((unsigned int *)&__bss_start__, (unsigned int *)&__bss_end__);
 #if (defined(__FPU_USED) && (__FPU_USED == 1U))
     FPU_Enable();
 #endif
