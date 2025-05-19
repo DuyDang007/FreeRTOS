@@ -351,25 +351,27 @@ uint32_t console_init(uint32_t port) {
 	return 1;
 }
 
+static void uart_rcar_poll_out(unsigned char out_char)
+{
+	uint16_t reg_val;
+
+	/* TODO: Add spinlock here */
+
+	/* Wait for empty space in transmit FIFO */
+	while (0u == (uart_rcar_read_16(SCFSR) & SCFSR_TDFE)) {
+	}
+
+	uart_rcar_write_8(SCFTDR, out_char);
+
+	reg_val = uart_rcar_read_16(SCFSR);
+	reg_val &= (~(SCFSR_TDFE | SCFSR_TEND));
+	uart_rcar_write_16(SCFSR, reg_val);
+
+	/* TODO: Remove spinlock here */
+}
+
 void console_putc(char c) {
-    /* Check that transfer of SCIF0 is completed */
-    static uint8_t remain=0;
-    while (remain==0)
-    {
-        remain = 128-(uart_rcar_read_16(SCFDR)>>8) ;
-        if(remain<64)
-        {
-            remain=0;
-        }
-        else
-        {
-            remain-=64; 
-        }
-    }
-
-    uart_rcar_write_8(SCFTDR, c);  /* Transfer one character */
-    remain--;
-
+	uart_rcar_poll_out(c);
 }
 
 int console_getc(unsigned char *p_char) {
