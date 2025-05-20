@@ -16,6 +16,8 @@
 #include "scif.h"
 #include "serial/r_serial.h"
 
+#include "pfc/r_pfc_api.h"
+
 #if (BOARD == X5H_VDK)
 /* PFC (Pin Function Controller) */
 #define RCAR_PFC_GPSR1  0xC0800840u       /* R/W 32 GPIO/Peripheral_Function Select register PortGroup 1 */
@@ -71,7 +73,8 @@ void R_SERIAL_PortInit(e_serial_devices_t device)
 	if (portInitialized)
 		return;
 
-	uart_rcar_pfc_init();
+	//uart_rcar_pfc_init();
+
 	console_init(device);
 	portInitialized = 1;
 }

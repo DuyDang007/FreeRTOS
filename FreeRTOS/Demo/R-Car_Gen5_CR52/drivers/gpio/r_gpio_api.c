@@ -6,7 +6,7 @@
  */
 
 #include "stdio.h"
-#include "r_pfc_api.h"
+#include "pfc/r_pfc_api.h"
 #include "r_gpio_api.h"
 
 #define PINS_EACH_GROUP 32

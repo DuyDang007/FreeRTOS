@@ -35,6 +35,8 @@
 #include "stdio.h"
 #define main_HelloWorld_TASK_PRIORITY        ( tskIDLE_PRIORITY + 1 )
 
+#include "pfc/r_pfc_api.h"
+#include "device_tree_x5h.h"
 /*-----------------------------------------------------------*/
 
 /*
@@ -72,6 +74,8 @@ static void prvSetupHardware( void )
 	portDISABLE_INTERRUPTS();
 
 	Irq_Setup();
+
+    (void)pfcInitModules(getModuleConfigs());
 }
 
 static void prvHelloWorldTask( void *pvParameters )
@@ -82,7 +86,7 @@ static void prvHelloWorldTask( void *pvParameters )
 
     for( ;; )
     {
-//        printf("prvHelloWorldTask ...\n");
+        printf("prvHelloWorldTask ...\n");
         vTaskDelay(3000);
     }
 }

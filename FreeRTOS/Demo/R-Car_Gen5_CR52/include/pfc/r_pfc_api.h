@@ -13,6 +13,7 @@ extern "C" {
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "device_tree_x5h.h"
 
 #define BIT(nr)             (1UL << (nr))
 
@@ -78,15 +79,24 @@ typedef enum e_rcar_pfc_functions
 } rcar_pfc_functions_t;
 
 /**
- * Sets a pin's function to peripheral mode.
+ * Sets pin function for HW IP.
  *
- * @param[in] grp               - GPIO group, see @ref rcar_pfc_group_t
- * @param[in] pin               - GPIO pin, see @ref rcar_pfc_pin_t
+ * @param[in] module		- HW IP's module config.
  *
  * @retval 0 if successful
  *
  */
-int pfcSetPeripheral(rcar_pfc_group_t grp, rcar_pfc_pin_t pin);
+int pfcInitModule(st_module_config_t module);
+
+/**
+ * Sets pin function for all defined HW IP's modules config.
+ *
+ * @param[in] module_list	- Pointer to HW IP's module config.
+ *
+ * @retval 0 if successful
+ *
+ */
+int pfcInitModules(st_module_config_t* module_list);
 
 /**
  * Sets a pin's function to gpio mode.
