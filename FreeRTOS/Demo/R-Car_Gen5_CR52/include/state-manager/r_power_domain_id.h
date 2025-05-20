@@ -10,7 +10,14 @@
 #define _R_POWER_DOMAIN_ID_H_
 
 /**
- * @brief X5H Power domain ID.
+ * @defgroup Power_Domain_ID enum
+ * @{
+ * @brief This module provides typedef of Power Domain ID.
+ *
+ */
+
+/**
+ * @brief X5H Power domain IDs.
  */
 typedef enum {
     X5H_POWER_DOMAIN_ID_VIPN,
@@ -273,5 +280,5 @@ typedef enum {
 
 /** @} */ // end of Power_Domain_ID
 
-#endif /* _R_POWER_DOMAIN_ID_H_ */
+#endif /* R_POWER_DOMAIN_ID_H */
 

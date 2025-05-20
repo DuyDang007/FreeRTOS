@@ -3,10 +3,23 @@
  * Copyright (c) 2025 Renesas Electronics Corporation
  *
  * SPDX-License-Identifier: MIT
+ *
  */
 
 #ifndef _R_STATE_MANAGER_H_
 #define _R_STATE_MANAGER_H_
+
+/**
+ * @defgroup State_Manager Module
+ * @{
+ * @brief This module provides typedef to configure State Manager.
+ *
+ * The State Manager module contains functions which do the following tasks:
+ *      ON/OFF System Power
+ *      ON/OFF Power Domains
+ *      ON/OFF Clock Domains and SET/GET clock rates
+ *      ASSERT/DEASSERT Reset Domains
+ */
 
 /**
  * @brief Power States.
@@ -150,5 +163,6 @@ int R_StateManager_ResetDeassert(int domain_id);
  */
 int R_StateManager_Reset(int domain_id);
 
-#endif /* _R_STATE_MANAGER_H_ */
+/** @} */ // end of State_Manager
 
+#endif /* _R_STATE_MANAGER_H_ */
