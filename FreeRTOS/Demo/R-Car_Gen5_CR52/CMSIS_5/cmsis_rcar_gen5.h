@@ -30,6 +30,8 @@
 #ifndef __CMSIS_RCAR_GEN5_H
 #define __CMSIS_RCAR_GEN5_H
 
+#include "board.h"
+
 /* FPU */
 #define __FPU_PRESENT           1
 
@@ -38,9 +40,6 @@
 
 /* GIC */
 #define __GIC_PRESENT           1
-
-#define X5H_VDK     1
-#define AI_ACC      2
 
 //#define GIC_DISTRIBUTOR_BASE	0xF0000000U
 #if (BOARD == X5H_VDK)
