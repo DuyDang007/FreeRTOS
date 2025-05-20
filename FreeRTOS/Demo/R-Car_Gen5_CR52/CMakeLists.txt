@@ -181,6 +181,8 @@ target_include_directories(freertos_bsp
         $<BUILD_INTERFACE:${POSIX_DIR}/include/private>
         $<BUILD_INTERFACE:${POSIX_DIR}/FreeRTOS-Plus-POSIX/include>
         $<BUILD_INTERFACE:${POSIX_DIR}/FreeRTOS-Plus-POSIX/include/portable>
+        # LOGGING
+        $<BUILD_INTERFACE:${LOGGING_DIR}>
         
         $<INSTALL_INTERFACE:include/kernel/include>
         $<INSTALL_INTERFACE:include>
