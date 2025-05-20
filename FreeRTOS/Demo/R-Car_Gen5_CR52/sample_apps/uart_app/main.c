@@ -36,6 +36,8 @@
 #include "interrupts.h"
 #include "stdio.h"
 #include "serial/r_serial.h"
+#include "pfc/r_pfc_api.h"
+#include "device_tree_x5h.h"
 #define main_LOG_TASK_PRIORITY        ( tskIDLE_PRIORITY + 1 )
 
 /*-----------------------------------------------------------*/
@@ -140,6 +142,8 @@ static void prvSetupHardware( void )
     R_SERIAL_PortInit(UART_ID);
 
 	Irq_Setup();
+
+    (void)pfcInitModules(getModuleConfigs());
 }
 
 static void prvLogTask( void *pvParameters )
