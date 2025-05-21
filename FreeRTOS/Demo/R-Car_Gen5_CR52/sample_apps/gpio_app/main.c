@@ -37,8 +37,8 @@
 #include "gpio/r_gpio.h"
 #define main_GPIO_TASK_PRIORITY        ( tskIDLE_PRIORITY + 1 )
 
-extern int printf_delay(const char *format, ...);
-
+#include "pfc/r_pfc_api.h"
+#include "device_tree_x5h.h"
 /*-----------------------------------------------------------*/
 
 /*
@@ -54,17 +54,34 @@ static void gpioUserCallback(void *data);
 /*
  * Declare some structs used for GPIO API.
  */
+/**** Config GPIO to test Pullup/down/no-pull ****/
+gpio_pin_cfg_t g_gpio_pin_cfg_pull[] =
+{
+    {
+        .pin_cfg = GPIO_DIRECTION_INPUT,
+        .pin = GPIO_PORT_07_PIN_18
+    },
+};
+
+gpio_cfg_t g_gpio_cfg_pull =
+{
+    .number_of_pins = sizeof(g_gpio_pin_cfg_pull)/sizeof(g_gpio_pin_cfg_pull[0]),
+    .p_pin_cfg_data = &g_gpio_pin_cfg_pull[0],
+    .p_extend = NULL
+};
+
+gpio_instance_ctrl_t g_gpio_instance_ctrl_pull;
+
 /**** Config GPIO output/input general mode ****/
 gpio_pin_cfg_t g_gpio_pin_cfg[] =
 {
     {
         .pin_cfg = GPIO_DIRECTION_INPUT,
-        .pin = GPIO_PORT_00_PIN_0
+        .pin = GPIO_PORT_00_PIN_14
     },
-
     {
         .pin_cfg = GPIO_DIRECTION_OUTPUT,
-        .pin = GPIO_PORT_00_PIN_1
+        .pin = GPIO_PORT_00_PIN_15
     },
 };
 
@@ -82,7 +99,7 @@ gpio_pin_cfg_t g_gpio_pin_cfg_irq =
 {
 
     .pin_cfg = GPIO_INTERRUPT_INPUT_BOTH_EDGE,
-    .pin = GPIO_PORT_00_PIN_9
+    .pin = GPIO_PORT_00_PIN_14
 };
 
 gpio_cfg_t g_gpio_cfg_irq =
@@ -119,6 +136,8 @@ static void prvSetupHardware( void )
     portDISABLE_INTERRUPTS();
 
     Irq_Setup();
+
+    (void)pfcInitModules(getModuleConfigs());
 }
 
 static void prvGPIOTask( void *pvParameters )
@@ -126,48 +145,51 @@ static void prvGPIOTask( void *pvParameters )
     uint8_t ret;
     int i;
     gpio_level_t lv = GPIO_LEVEL_LOW;
-
     gpio_level_t readLevel;
 
     /* Remove compiler warning about unused parameter. */
     ( void ) pvParameters;
 
-    printf_delay("\n********** TC1: GPIO Pull test port0-pin0 **********\n");
+    printf("\n********** TC1: GPIO Pull up/down/disable **********\n");
+    ret = R_GPIO_Open(&g_gpio_instance_ctrl_pull, &g_gpio_cfg_pull);
+    printf("Open : ret = %d\n", ret);
+
+    ret = R_GPIO_PinSetPull(&g_gpio_instance_ctrl_pull, g_gpio_cfg_pull.p_pin_cfg_data[0].pin,
+                            GPIO_REQ_PULL_UP);
+    printf("R_GPIO_PinSetPull: Up ret = %d\n", ret);
+    ret = R_GPIO_PinRead(&g_gpio_instance_ctrl_pull, g_gpio_cfg_pull.p_pin_cfg_data[0].pin,
+                        &readLevel);
+    printf("PinRead: %d\n", readLevel);
+
+    ret = R_GPIO_PinSetPull(&g_gpio_instance_ctrl_pull, g_gpio_cfg_pull.p_pin_cfg_data[0].pin,
+                            GPIO_REQ_PULL_DOWN);
+    printf("R_GPIO_PinSetPull: Down ret = %d\n", ret);
+    ret = R_GPIO_PinRead(&g_gpio_instance_ctrl_pull, g_gpio_cfg_pull.p_pin_cfg_data[0].pin,
+                        &readLevel);
+    printf("PinRead: %d\n", readLevel);
+
+    ret = R_GPIO_PinSetPull(&g_gpio_instance_ctrl_pull, g_gpio_cfg_pull.p_pin_cfg_data[0].pin,
+                            GPIO_REQ_NO_PULL);
+    printf("R_GPIO_PinSetPull: No-pull ret = %d\n", ret);
+    ret = R_GPIO_PinRead(&g_gpio_instance_ctrl_pull, g_gpio_cfg_pull.p_pin_cfg_data[0].pin,
+                        &readLevel);
+    printf("PinRead: %d\n", readLevel);
+
+    ret = R_GPIO_Close(&g_gpio_instance_ctrl_pull);
+    printf("Close: ret = %d\n", ret);
+
+    printf("\n********** TC2: Output/Input General Mode **********\n");
+
     ret = R_GPIO_Open(&g_gpio_instance_ctrl, &g_gpio_cfg);
-    printf_delay("Open : ret = %d\n", ret);
-
-    ret = R_GPIO_PinSetPull(&g_gpio_instance_ctrl, g_gpio_cfg.p_pin_cfg_data[0].pin, GPIO_REQ_NO_PULL);
-    printf_delay("R_GPIO_PinSetPull: No-pull ret = %d\n", ret);
-    ret = R_GPIO_PinRead(&g_gpio_instance_ctrl, GPIO_PORT_00_PIN_0, &readLevel);
-    printf_delay("PinRead: %d\n", readLevel);
-
-    ret = R_GPIO_PinSetPull(&g_gpio_instance_ctrl, g_gpio_cfg.p_pin_cfg_data[0].pin, GPIO_REQ_PULL_UP);
-    printf_delay("R_GPIO_PinSetPull: Up ret = %d\n", ret);
-    ret = R_GPIO_PinRead(&g_gpio_instance_ctrl, GPIO_PORT_00_PIN_0, &readLevel);
-    printf_delay("PinRead: %d\n", readLevel);
+    printf("Open : ret = %d\n", ret);
 
     ret = R_GPIO_PinSetPull(&g_gpio_instance_ctrl, g_gpio_cfg.p_pin_cfg_data[0].pin, GPIO_REQ_PULL_DOWN);
-    printf_delay("R_GPIO_PinSetPull: Down ret = %d\n", ret);
-    ret = R_GPIO_PinRead(&g_gpio_instance_ctrl, GPIO_PORT_00_PIN_0, &readLevel);
-    printf_delay("PinRead: %d\n", readLevel);
+    printf("R_GPIO_PinSetPull: Down ret = %d\n", ret);
 
-    ret = R_GPIO_Close(&g_gpio_instance_ctrl);
-    printf_delay("Close: ret = %d\n", ret);
-    vTaskDelay(100);
-
-    printf_delay("\n********** TC2: Output/Input General Mode **********\n");
-
-    ret = R_GPIO_Open(&g_gpio_instance_ctrl, &g_gpio_cfg);
-    printf_delay("Open : ret = %d\n", ret);
-
-    ret = R_GPIO_PinSetPull(&g_gpio_instance_ctrl, g_gpio_cfg.p_pin_cfg_data[0].pin, GPIO_REQ_PULL_DOWN);
-    printf_delay("R_GPIO_PinSetPull: Down Port0-Pin0 ret = %d\n", ret);
-
-    ret = R_GPIO_PinRead(&g_gpio_instance_ctrl, GPIO_PORT_00_PIN_1, &readLevel);
-    printf_delay("PinRead: Before PIN_1=%d\n", readLevel);
-    ret |= R_GPIO_PinRead(&g_gpio_instance_ctrl, GPIO_PORT_00_PIN_0, &readLevel);
-    printf_delay("PinRead: Before PIN_0=%d\n", readLevel);
-    printf_delay("--- PAUSE VDK ---\n");
+    ret  = R_GPIO_PinRead(&g_gpio_instance_ctrl, g_gpio_cfg.p_pin_cfg_data[1].pin, &readLevel);
+    printf("PinRead: Before OUT =%d\n", readLevel);
+    ret |= R_GPIO_PinRead(&g_gpio_instance_ctrl, g_gpio_cfg.p_pin_cfg_data[0].pin, &readLevel);
+    printf("PinRead: Before IN  =%d\n", readLevel);
     vTaskDelay(1000);
 
     for (i = 0; i < 2; i++)
@@ -177,31 +199,33 @@ static void prvGPIOTask( void *pvParameters )
             printf("PinWrite: LOW\n");
         else
             printf("PinWrite: HIGH\n");
-        ret = R_GPIO_PinWrite(&g_gpio_instance_ctrl, GPIO_PORT_00_PIN_1, lv);
+        ret = R_GPIO_PinWrite(&g_gpio_instance_ctrl, g_gpio_cfg.p_pin_cfg_data[1].pin, lv);
 
-        ret = R_GPIO_PinRead(&g_gpio_instance_ctrl, GPIO_PORT_00_PIN_1, &readLevel);
-        printf_delay("PinRead: After PIN_1=%d\n", readLevel);
-        ret |= R_GPIO_PinRead(&g_gpio_instance_ctrl, GPIO_PORT_00_PIN_0, &readLevel);
-        printf_delay("PinRead: After PIN_0=%d\n", readLevel);
-        printf_delay("--- PAUSE VDK ---\n");
+        ret = R_GPIO_PinRead(&g_gpio_instance_ctrl, g_gpio_cfg.p_pin_cfg_data[1].pin, &readLevel);
+        printf("PinRead: After OUT =%d\n", readLevel);
+        ret |= R_GPIO_PinRead(&g_gpio_instance_ctrl, g_gpio_cfg.p_pin_cfg_data[0].pin, &readLevel);
+        printf("PinRead: After IN  =%d\n", readLevel);
         vTaskDelay(1000);
     }
 
     ret = R_GPIO_Close(&g_gpio_instance_ctrl);
-    printf_delay("Close: ret = %d\n", ret);
+    printf("Close: ret = %d\n", ret);
 
-    printf_delay("\n********** TC3: Interrupt Input Mode **********\n");
+    printf("\n********** TC3: Interrupt Input Mode **********\n");
+    /* Config GPIO as General interrupt input mode */
     ret = R_GPIO_Open(&g_gpio_instance_ctrl_irq, &g_gpio_cfg_irq);
-    printf_delay("Open : ret = %d\n", ret);
+    printf("Open : ret = %d\n", ret);
 
     ret = R_GPIO_PinSetPull(&g_gpio_instance_ctrl_irq, g_gpio_cfg_irq.p_pin_cfg_data->pin, GPIO_REQ_PULL_DOWN);
-    printf_delay("R_GPIO_PinSetPull: Down Port0-Pin9 ret = %d\n", ret);
+    printf("R_GPIO_PinSetPull: Down ret = %d\n", ret);
 
     ret = R_GPIO_CallbackSet(&g_gpio_instance_ctrl_irq, gpioUserCallback, &g_gpio_instance_ctrl_irq);
-    printf_delay("CallbackSet: ret = %d\n", ret);
+    printf("CallbackSet: ret = %d\n", ret);
 
-    ret = R_GPIO_PinCfg(&g_gpio_instance_ctrl_irq, GPIO_PORT_00_PIN_17, GPIO_DIRECTION_OUTPUT);
-    printf_delay("PinCfg: ret = %d\n", ret);
+    /* Config GPIO_0_17 as General output mode */
+    ret = R_GPIO_PinCfg(&g_gpio_instance_ctrl_irq, g_gpio_cfg.p_pin_cfg_data[1].pin,
+                        g_gpio_cfg.p_pin_cfg_data[1].pin_cfg);
+    printf("PinCfg: ret = %d\n", ret);
 
     /* Create signal to test interrupt */
     for(i = 0; i < 4; i++)
@@ -211,12 +235,12 @@ static void prvGPIOTask( void *pvParameters )
             printf("Out: 0\n");
         else
             printf("Out: 1\n");
-        ret = R_GPIO_PinWrite(&g_gpio_instance_ctrl_irq, GPIO_PORT_00_PIN_17, lv);
+        ret = R_GPIO_PinWrite(&g_gpio_instance_ctrl_irq, g_gpio_cfg.p_pin_cfg_data[1].pin, lv);
         vTaskDelay(500);
     }
 
     ret = R_GPIO_Close(&g_gpio_instance_ctrl_irq);
-    printf_delay("Close: ret = %d\n", ret);
+    printf("Close: ret = %d\n", ret);
 
     for( ;; )
     {
