@@ -211,6 +211,8 @@ typedef struct {
 
 static const st_driver_group_t all_drv_groups[] = {
     {.module_id = MODULE_SCIF0, .group = ADD_GROUP(scif0_grp)},
+    {.module_id = MODULE_I2C0,  .group = ADD_GROUP(i2c0_grp)},
+    {.module_id = MODULE_I2C1,  .group = ADD_GROUP(i2c1_grp)},
     // Add driver groups.
     {.module_id = MODULE_INVALID, .group = 0},
 };
