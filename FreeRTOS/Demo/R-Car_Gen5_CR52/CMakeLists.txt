@@ -106,6 +106,7 @@ set(bsp_source
     ${BSP_DIR}/drivers/mpu/mpu.c
     ${BSP_DIR}/drivers/gpio/r_gpio_api.c
     ${BSP_DIR}/drivers/gpio/r_gpio.c
+    ${BSP_DIR}/drivers/audio/ak4619_module.c
     ${BSP_DIR}/drivers/pfc/r_pfc_api.c
     ${BSP_DIR}/drivers/mfis/mfis.c
     ${BSP_DIR}/drivers/dmac/dmac_ctrl.c
@@ -167,6 +168,7 @@ target_include_directories(freertos_bsp
         $<BUILD_INTERFACE:${BSP_DIR}/drivers/mfis>
         $<BUILD_INTERFACE:${BSP_DIR}/drivers/pfc>
         $<BUILD_INTERFACE:${BSP_DIR}/drivers/gpio>
+        $<BUILD_INTERFACE:${BSP_DIR}/drivers/audio>
         $<BUILD_INTERFACE:${BSP_DIR}/drivers/i2c>
         $<BUILD_INTERFACE:${BSP_DIR}/drivers/dmac>
         $<BUILD_INTERFACE:${BSP_DIR}/drivers/watchdog>
@@ -299,6 +301,7 @@ add_subdirectory(sample_apps/posix_app)
 add_subdirectory(sample_apps/logging_app)
 add_subdirectory(sample_apps/mpu_app)
 add_subdirectory(sample_apps/gpio_app)
+add_subdirectory(sample_apps/ak4619_app)
 add_subdirectory(sample_apps/cpp_app)
 add_subdirectory(sample_apps/i2c_app)
 add_subdirectory(sample_apps/sys_dmac_app)
