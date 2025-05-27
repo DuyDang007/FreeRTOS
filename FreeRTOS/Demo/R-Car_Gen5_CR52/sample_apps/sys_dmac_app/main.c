@@ -34,12 +34,13 @@
 #include "dmac/dmac_common.h"
 #include "dmac/rtdmac_ctrl.h"
 #include "dmac/sysdmac_ctrl.h"
+#include "pfc/r_pfc_api.h"
+#include "device_tree_x5h.h"
 
 #include "stdio.h"
 #include "stdbool.h"
 #define main_DMAC_TASK_PRIORITY        ( tskIDLE_PRIORITY + 1 )
 
-extern int printf_delay(const char *format, ...);
 void dmacUserCallback(void *data);
 
 /*-----------------------------------------------------------*/
@@ -56,8 +57,8 @@ static void prvDMACTask( void *pvParameters );
 rDmacCfg_t cfg0 =
 {
 	//Fill in the configuration details
-	.mSrcAddr = 0x189E7000,
-	.mDestAddr = 0x189E7100,
+	.mSrcAddr = 0x80000000,
+	.mDestAddr = 0x81000000,
 	.mTransferCount = 1,
 	.mDMAMode = DRV_DMAC_DMA_NO_DESCRIPTOR, // Assuming DRV_DMAC_DMA_NO_DESCRIPTOR is defined
 	.mSrcAddrMode = DRV_RTDMAC_ADDR_FIXED, // Assuming ADDR_MODE_FIXED is defined
@@ -72,8 +73,8 @@ rDmacCfg_t cfg0 =
 rDmacCfg_t cfg1 =
 {
 	//Fill in the configuration details
-	.mSrcAddr = 0x189E7000,
-	.mDestAddr = 0x189E7100,
+	.mSrcAddr = 0x80000000,
+	.mDestAddr = 0x81000000,
 	.mTransferCount = 3,
 	.mDMAMode = DRV_DMAC_DMA_DESC_NORMAL, // Assuming DRV_DMAC_DMA_DESC_NORMAL is defined
 	.mSrcAddrMode = DRV_RTDMAC_ADDR_FIXED, // Assuming ADDR_MODE_FIXED is defined
@@ -100,8 +101,8 @@ rDmacDescCfg_t descCfg1 =
 /* Define configure DMA Controller */
 rDmacCfg_t cfg2 =
 {
-    .mSrcAddr = 0x189E7000,                     // Source address
-    .mDestAddr = 0x189E7100,                    // Destination address
+    .mSrcAddr = 0x80000000,                     // Source address
+    .mDestAddr = 0x81000000,                    // Destination address
     .mTransferCount = 4,                        // Transfer count
     .mDMAMode = DRV_DMAC_DMA_DESC_REPEAT,       // Reapeat descriptor mode
     .mSrcAddrMode = DRV_RTDMAC_ADDR_FIXED,      // Source address fixed
@@ -159,13 +160,14 @@ static void prvSetupHardware( void )
         portDISABLE_INTERRUPTS();
 
         Irq_Setup();
+	(void)pfcInitModules(getModuleConfigs());
 }
 
 static void prvDMACTask( void *pvParameters )
 {
 	/* Remove compiler warning about unused parameter. */
 	( void ) pvParameters;
-	int ret;
+	int ret,i;
 
 	Context_t usr_context =
 	{
@@ -176,21 +178,24 @@ static void prvDMACTask( void *pvParameters )
 	R_SYSDMAC_RcarDmacCtrlInit(SYS_DMAC3, DRV_RTDMAC_PRIO_FIX);
 
 	*(volatile uint32_t*)cfg1.mSrcAddr = 0x3;
-	printf_delay("Value at SrcAddr: 0x%x \n",*(volatile uint32_t*)cfg1.mSrcAddr);
+	printf("Value at SrcAddr: 0x%x \n",*(volatile uint32_t*)cfg1.mSrcAddr);
 
 	ret = R_SYSDMAC_RcarCallBackSet(&rDmacIrqHandler_t_irq, dmacUserCallback, &usr_context);
 	if (ret)
-		printf_delay("CallbackSet Failed: ret = %d\n", ret);
+		printf("CallbackSet Failed: ret = %d\n", ret);
 
 	int dmaStatus =R_SYSDMAC_RcarDmacExec(SYS_DMAC3, DMAC_CH1, &cfg1, &descCfg1);
 
+	for (i=0; i<10000; i++)
+	{}
+
 	// Check DMA execution status
 	if (dmaStatus != 0)
-		printf_delay("DMA execution failed with status: %d\n", dmaStatus);
+		printf("DMA execution failed with status: %d\n", dmaStatus);
 
 	// Verify destination data
 	uint32_t destData = *(volatile uint32_t*)cfg1.mDestAddr;
-	printf_delay("Value at DestAddr after DMA: 0x%x \n", destData);
+	printf("Value at DestAddr after DMA: 0x%x \n", destData);
 
 	for( ;; )
 	{
