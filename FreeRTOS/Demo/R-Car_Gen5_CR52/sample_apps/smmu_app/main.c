@@ -39,6 +39,8 @@
 #include "dmac/dmac_common.h"
 #include "dmac/rtdmac_ctrl.h"
 #include "dmac/sysdmac_ctrl.h"
+#include "pfc/r_pfc_api.h"
+#include "device_tree_x5h.h"
 
 #define main_SMMU_TASK_PRIORITY        ( tskIDLE_PRIORITY + 1 )
 
@@ -50,7 +52,6 @@
 static void prvSetupHardware( void );
 
 static void prvSMMUTask( void *pvParameters );
-extern int printf_delay(const char *format, ...);
 void dmacUserCallback(void *data);
 /* Define configure DMA Controller */
 rDmacCfg_t cfg =
@@ -58,8 +59,8 @@ rDmacCfg_t cfg =
 	//Fill in the configuration details
 	// .mSrcAddr = 0x189E7000,
 	// .mDestAddr = 0x189E7100,
-    .mSrcAddr = 0x60000000,
-	.mDestAddr = 0x65003678,
+    .mSrcAddr = 0x80000000,
+	.mDestAddr = 0x81000000,
 	.mTransferCount = 1,
 	.mDMAMode = DRV_DMAC_DMA_NO_DESCRIPTOR, // Assuming DRV_DMAC_DMA_NO_DESCRIPTOR is defined
 	.mSrcAddrMode = DRV_RTDMAC_ADDR_FIXED, // Assuming ADDR_MODE_FIXED is defined
@@ -103,16 +104,17 @@ static void prvSetupHardware( void )
 	portDISABLE_INTERRUPTS();
 
 	Irq_Setup();
+	(void)pfcInitModules(getModuleConfigs());
 }
 
 static void prvSMMUTask( void *pvParameters )
 {
     /* Remove compiler warning about unused parameter. */
     (void)pvParameters;
-    int ret;
+    int ret,i;
 
     st_smmu_streamid_instance_ctrl_t smmu_crtl = {
-        .stream_id = 0x40000,
+        .stream_id = 0x50001,
         .smmu_domain = SMMU_PERW,
     };
 
@@ -136,7 +138,7 @@ static void prvSMMUTask( void *pvParameters )
     }
     printf("**********************************************\r\n");
     
-    R_SMMU_Map(&smmu_crtl, 0x60000000, 0x60000000, 0x5006000);
+    R_SMMU_Map(&smmu_crtl, 0x80000000, 0x90000000, 0x5006000);
     
     printf("* Test case 3: Issue command *\r\n");
     int ret_cmd1, ret_cmd2 = -1;
@@ -160,7 +162,11 @@ static void prvSMMUTask( void *pvParameters )
     /* Device Driver Part */
     R_SYSDMAC_RcarDmacCtrlInit(SYS_DMAC3, DRV_RTDMAC_PRIO_FIX);
 
-    *(volatile uint32_t *)cfg.mSrcAddr = 0x479;
+    volatile uint32_t *pa_src_ptr = (volatile uint32_t *)0x90000000;
+    volatile uint32_t *pa_dst_ptr = (volatile uint32_t *)0x91000000;
+
+    *(volatile uint32_t *)pa_src_ptr = 0x7012;
+    *(volatile uint32_t *)cfg.mSrcAddr = 0x123;
 
     Context_t usr_context = 
     {
@@ -171,15 +177,24 @@ static void prvSMMUTask( void *pvParameters )
 
     int dmaStatus = R_SYSDMAC_RcarDmacExec(SYS_DMAC3, DMAC_CH1, &cfg, 0);
 
-    // Verify destination data
-    uint32_t destData = *(volatile uint32_t *)cfg.mDestAddr;
+    for (i=0; i<10000; i++)
+    {}
 
+    // Verify destination data
+    uint32_t destData = *(volatile uint32_t *)pa_dst_ptr;
     printf("* Test case 4: Test transaction data *\r\n");
-    printf("src: 0x%lx, dest: 0x%lx\n", *(volatile uint32_t *)cfg.mSrcAddr, destData);
-    if (destData == (*(volatile uint32_t *)cfg.mSrcAddr)) {
+    printf("pa src address: 0x%lx, src data: 0x%lx\n",pa_src_ptr, *(volatile uint32_t *)pa_src_ptr );
+    printf("pa dst address: 0x%lx, dst data: 0x%lx\n",pa_dst_ptr, destData );
+
+    if (destData == (*(volatile uint32_t *)pa_src_ptr)) {
         printf("Result: Passed\n");
     } else {
         printf("Result: Failed\n");
+        if ((*(volatile uint32_t *)cfg.mSrcAddr == *(volatile uint32_t *)cfg.mDestAddr) && *(volatile uint32_t *)cfg.mSrcAddr != 0) {
+            printf("va src address: 0x%lx, src data: 0x%lx\n", cfg.mSrcAddr, *(volatile uint32_t *)cfg.mSrcAddr );
+            printf("va dst address: 0x%lx, dst data: 0x%lx\n", cfg.mDestAddr, *(volatile uint32_t *)cfg.mDestAddr);
+            printf ("DMAC worked without SMMU.\n");
+        }
     }
     printf("**********************************************\r\n");
 
