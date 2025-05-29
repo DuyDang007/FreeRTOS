@@ -25,13 +25,13 @@
  **********************************************************************************************************************/
 typedef enum
 {
-    STEREO_I2S_COMPATIBLE = 0, // default
+    STEREO_I2S_COMPATIBLE = 0, // Default
     STEREO_MSB_JUSTIFIED,
 } e_ak4619_interface_format_t; // Have more, 11 mode, but now just use mode 0
 
 typedef enum
 {
-    CLOCK_256FS_8K_48K  = 0x00, // default
+    CLOCK_256FS_8K_48K  = 0x00, // Default
     CLOCK_256FS_96K     = 0x01,
     CLOCK_384FS_8K_48K  = 0x02,
     CLOCK_512FS_8K_48K  = 0x03,

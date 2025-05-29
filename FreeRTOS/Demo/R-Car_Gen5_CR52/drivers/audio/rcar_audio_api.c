@@ -256,7 +256,9 @@ int r_ak4619_init(st_audio_cfg_t const * const p_cfg)
 		instance_set.fs = FS_48K;
 		instance_set.mclk_multiplier = MCLK_256_FS;
 	}
+	else
 	{
+		printf("Unsupported this sample rate\n");
 		return -1;
 	}
 

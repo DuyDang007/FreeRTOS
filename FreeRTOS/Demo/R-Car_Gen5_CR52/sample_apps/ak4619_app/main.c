@@ -45,6 +45,8 @@ static void prvSetupHardware( void );
 static void prvAk4619Task( void *pvParameters );
 extern char _RAM_START;
 
+#include "pfc/r_pfc_api.h"
+#include "device_tree_x5h.h"
 /*-----------------------------------------------------------*/
 
 int main( void )
@@ -72,6 +74,8 @@ static void prvSetupHardware( void )
 	portDISABLE_INTERRUPTS();
 
 	Irq_Setup();
+
+    (void)pfcInitModules(getModuleConfigs());
 }
 
 static void prvAk4619Task( void *pvParameters )

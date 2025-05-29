@@ -36,6 +36,7 @@ typedef enum {
     MODULE_I2C6,            ///< Module ID: I2C6.
     MODULE_I2C7,	    ///< Module ID: I2C7.
     MODULE_I2C8,            ///< Module ID: I2C8.
+    MODULE_AUDIO_0,
     // Add device_id
     MODULE_MAX = 255        ///< Max module ID.
 } e_module_id_t;
@@ -50,10 +51,12 @@ typedef enum {
     MODULE_CONFIG(MODULE_I2C4,  1), \
     MODULE_CONFIG(MODULE_I2C5,  1), \
     MODULE_CONFIG(MODULE_I2C6,  1),  \
+    MODULE_CONFIG(MODULE_AUDIO_0, 1), \
     /* Add module configs here */   \
     /* Sentinel guard: Do not remove */ \
     MODULE_CONFIG(MODULE_INVALID, 0) \
 
+    // Add module configs
 #endif
 
 /**

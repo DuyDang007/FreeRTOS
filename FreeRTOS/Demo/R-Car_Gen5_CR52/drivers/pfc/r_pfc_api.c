@@ -253,6 +253,12 @@ CREATE_GROUP(i2c7_grp, SDA7, SCL7, MODSEL_SDA7, MODSEL_SCL7)
 #define MODSEL_SCL8         GEN_ID(REG_MODSEL, RCAR_PFC_GROUP_08, RCAR_PFC_PIN_14, MODSEL_I2C_MODE)
 CREATE_GROUP(i2c8_grp, SDA8, SCL8, MODSEL_SDA8, MODSEL_SCL8)
 
+#define AUDIO_CLKA          GEN_ID(REG_ALTSEL, RCAR_PFC_GROUP_07, RCAR_PFC_PIN_08, RCAR_PFC_FUNC_0)
+#define AUDIO0_CLKOUT0      GEN_ID(REG_ALTSEL, RCAR_PFC_GROUP_06, RCAR_PFC_PIN_19, RCAR_PFC_FUNC_0)
+#define SSI5_SCK            GEN_ID(REG_ALTSEL, RCAR_PFC_GROUP_07, RCAR_PFC_PIN_09, RCAR_PFC_FUNC_0)
+#define SSI5_WS             GEN_ID(REG_ALTSEL, RCAR_PFC_GROUP_07, RCAR_PFC_PIN_10, RCAR_PFC_FUNC_0)
+#define SSI5_SD             GEN_ID(REG_ALTSEL, RCAR_PFC_GROUP_07, RCAR_PFC_PIN_11, RCAR_PFC_FUNC_0)
+CREATE_GROUP(audio0_grp, AUDIO_CLKA, AUDIO0_CLKOUT0, SSI5_SCK, SSI5_WS, SSI5_SD)
 
 typedef struct {
     e_module_id_t module_id;
@@ -271,6 +277,7 @@ static const st_driver_group_t all_drv_groups[] = {
     {.module_id = MODULE_I2C6,  .group = ADD_GROUP(i2c6_grp)},
     {.module_id = MODULE_I2C7,  .group = ADD_GROUP(i2c7_grp)},
     {.module_id = MODULE_I2C8,  .group = ADD_GROUP(i2c8_grp)},
+    {.module_id = MODULE_AUDIO_0, .group = ADD_GROUP(audio0_grp)},
     // Add driver groups.
     {.module_id = MODULE_INVALID, .group = 0},
 };
