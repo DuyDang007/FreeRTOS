@@ -41,6 +41,7 @@ bool s2r_others_completed = false;
 uint32_t max_clockdomain_num;
 uint32_t max_powerdomain_num;
 uint32_t max_resetdomain_num;
+static bool initialized = false;
 
 static const char* agentid2str(int agent_id)
 {
@@ -153,6 +154,11 @@ int R_StateManager_Init(void)
 	uint32_t version = 0U;
 	uint32_t attributes;
 
+    if (initialized) {
+        SCMI_LOG_INFO("State Manager is initialized already!\r\n");
+        return 0;
+    }
+
 	ret = scmi_driver_init();
 	if (ret) {
 		SCMI_LOG_ERR("Error: Failed to init scmi driver.");
@@ -197,6 +203,8 @@ int R_StateManager_Init(void)
 	}
 	proto = scmi_system_proto_get();
 	scmi_notifier_callback_register(proto, system_notification);
+
+    initialized = true;
 
 	return ret;
 }
