@@ -35,7 +35,6 @@ typedef enum {
 
 #if (BOARD == X5H_VDK)
 #define MODULE_CONFIGS \
-    MODULE_CONFIG(MODULE_SCIF0, 1),     \
     MODULE_CONFIG(MODULE_I2C0,  1),     \
     MODULE_CONFIG(MODULE_I2C1,  1)
     // Add module configs

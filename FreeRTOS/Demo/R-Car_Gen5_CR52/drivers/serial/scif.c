@@ -118,10 +118,11 @@ static void uart_rcar_write_16(uint32_t offs, uint16_t value)
 	sys_write16(value, scif_base + offs);
 }
 
-static void uart_rcar_set_baudrate(uint32_t baud_rate)
+static void uart_rcar_set_baudrate(uint32_t port, uint32_t baud_rate)
 {
     uint16_t reg_val;
-    const uint32_t clock_rate = 66660000u; // S0D12 Clock rate
+    const uint32_t clock_rate_s0d12 = 66660000u; // S0D12 Clock rate
+    const uint32_t clock_rate_sga_syncd4 = 266666666u; // SGASYNCD4 Clock rate
 
     if (baud_rate >= 3000000) {
         /* 24MHz / (3000000 * 8) = 1 */
@@ -136,7 +137,11 @@ static void uart_rcar_set_baudrate(uint32_t baud_rate)
         uart_rcar_write_16(HSSRR, reg_val);
         wait(0x2000U);
     } else {
-	    reg_val = ((clock_rate + 16 * baud_rate) / (32 * baud_rate) - 1);
+        if (port <= 4) {
+            reg_val = ((clock_rate_s0d12 + 16 * baud_rate) / (32 * baud_rate) - 1);
+        } else {
+	        reg_val = (clock_rate_sga_syncd4 / baud_rate / 8 / 2 - 1);
+        }
 	    uart_rcar_write_8(SCBRR, reg_val);
     }
 }
@@ -315,7 +320,7 @@ uint32_t console_init(uint32_t port) {
 	reg_val &= ~(SCLSR_TO | SCLSR_ORER);
 	uart_rcar_write_16(SCLSR, reg_val);
 
-    if (port <= 4) { // SCIF
+    if (UART_BAUDRATE < 3000000) {
         /* Select internal clock */
 	    reg_val = uart_rcar_read_16(SCSCR);
 	    reg_val &= ~(SCSCR_CKE1 | SCSCR_CKE0);
@@ -332,7 +337,7 @@ uint32_t console_init(uint32_t port) {
     uart_rcar_write_16(SCSMR, reg_val);
 
 	/* Set baudrate */
-	uart_rcar_set_baudrate(UART_BAUDRATE);
+	uart_rcar_set_baudrate(port, UART_BAUDRATE);
 
 	/* reset-off tx-fifo, rx-fifo. */
 	reg_val = uart_rcar_read_16(SCFCR);
