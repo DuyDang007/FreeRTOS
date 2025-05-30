@@ -96,7 +96,7 @@ static void Init_MPU(void)
     } 
 
     /* Enable MPU */
-//    MPU_Enable();
+    MPU_Enable();
 }
 
 __STATIC_INLINE void bss_init(unsigned int* section_begin, unsigned int* section_end)
