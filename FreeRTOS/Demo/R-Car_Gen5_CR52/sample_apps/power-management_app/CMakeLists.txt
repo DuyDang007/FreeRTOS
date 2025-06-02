@@ -35,3 +35,4 @@ target_link_options(${app_name}
 
 
 convert_bin_to_srec(${app_name})
+
