@@ -23,7 +23,7 @@ void R_UCIE_RegWrite8(uint16_t channel, uint32_t Offset, uint8_t Value)
 {
     uint32_t regAddr;
 
-    regAddr = (channel == 0) ? (UCIE_CXL_CH0_BASE + Offset) : (UCIE_CXL_CH1_BASE + Offset);
+    regAddr = (channel == 0) ? (UCIE0_CXL_AXI_BASE + Offset) : (UCIE1_CXL_AXI_BASE + Offset);
     *(volatile uint8_t*)regAddr = Value;
 }
 
@@ -31,7 +31,7 @@ uint8_t R_UCIE_RegRead8(uint16_t channel, uint32_t Offset)
 {
     uint32_t regAddr;
 
-    regAddr = (channel == 0) ? (UCIE_CXL_CH0_BASE + Offset) : (UCIE_CXL_CH1_BASE + Offset);
+    regAddr = (channel == 0) ? (UCIE0_CXL_AXI_BASE + Offset) : (UCIE1_CXL_AXI_BASE + Offset);
     return *(volatile uint8_t*)regAddr;
 }
 
@@ -39,7 +39,7 @@ void R_UCIE_RegWrite16(uint16_t channel, uint32_t Offset, uint16_t Value)
 {
     uint32_t regAddr;
 
-    regAddr = (channel == 0) ? (UCIE_CXL_CH0_BASE + Offset) : (UCIE_CXL_CH1_BASE + Offset);
+    regAddr = (channel == 0) ? (UCIE0_CXL_AXI_BASE + Offset) : (UCIE1_CXL_AXI_BASE + Offset);
     *(volatile uint16_t*)regAddr = Value;
 }
 
@@ -47,7 +47,7 @@ uint16_t R_UCIE_RegRead16(uint16_t channel, uint32_t Offset)
 {
     uint32_t regAddr;
 
-    regAddr = (channel == 0) ? (UCIE_CXL_CH0_BASE + Offset) : (UCIE_CXL_CH1_BASE + Offset);
+    regAddr = (channel == 0) ? (UCIE0_CXL_AXI_BASE + Offset) : (UCIE1_CXL_AXI_BASE + Offset);
     return *(volatile uint16_t*)regAddr;
 }
 
@@ -55,7 +55,7 @@ void R_UCIE_RegWrite32(uint16_t channel, uint32_t Offset, uint32_t Value)
 {
     uint32_t regAddr;
 
-    regAddr = (channel == 0) ? (UCIE_CXL_CH0_BASE + Offset) : (UCIE_CXL_CH1_BASE + Offset);
+    regAddr = (channel == 0) ? (UCIE0_CXL_AXI_BASE + Offset) : (UCIE1_CXL_AXI_BASE + Offset);
     *(volatile uint32_t*)regAddr = Value;
 }
 
@@ -63,8 +63,26 @@ uint32_t R_UCIE_RegRead32(uint16_t channel, uint32_t Offset)
 {
     uint32_t regAddr;
 
-    regAddr = (channel == 0) ? (UCIE_CXL_CH0_BASE + Offset) : (UCIE_CXL_CH1_BASE + Offset);
+    regAddr = (channel == 0) ? (UCIE0_CXL_AXI_BASE + Offset) : (UCIE1_CXL_AXI_BASE + Offset);
     return *(volatile uint32_t*)regAddr;
+}
+
+void R_UCIE_Write_1(uint32_t regAddr, uint32_t mask)
+{
+    uint32_t val;
+
+    val = *(volatile uint32_t*)regAddr;
+    val |= mask;
+    *(volatile uint32_t*)regAddr = val;
+}
+
+void R_UCIE_Write_0(uint32_t regAddr, uint32_t mask)
+{
+    uint32_t val;
+
+    val = *(volatile uint32_t*)regAddr;
+    val &= ~mask;
+    *(volatile uint32_t*)regAddr = val;
 }
 
 void rcar_ucie_dbi_ro_wr_en(uint16_t channel, bool enable)

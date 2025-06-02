@@ -40,9 +40,11 @@
 #include "pcie/r_pcie_ep.h"
 
 #define main_CXL_TASK_PRIORITY        ( tskIDLE_PRIORITY + 2 )
-#define CXL_DataTrans_TASK_PRIORITY   ( tskIDLE_PRIORITY + 1 )
 
-extern int printf_delay(const char *format, ...);
+/* Test Data */
+const uint32_t TESTDATA1[] = { 0x12345678, 0xFEDCBA98, 0xA5A5A5A5, 0x5A5A5A5A,
+				0x11223344, 0x55667788, 0xAABBCCDD, 0xEEFF0011 };
+#define TESTDATA1_SIZE		(8U)
 
 /*-----------------------------------------------------------*/
 
@@ -53,7 +55,15 @@ static void prvSetupHardware( void );
 
 static void prvCXLTask( void *pvParameters );
 
-static void prvDataTransTask( void *pvParameters );
+void mem_write32(volatile uintptr_t addr, uint32_t data)
+{
+    *((volatile uint32_t*)(addr)) = data;
+}
+
+uint32_t mem_read32(const volatile uintptr_t addr)
+{
+    return *((volatile uint32_t*)(addr));
+}
 
 /*-----------------------------------------------------------*/
 
@@ -63,7 +73,6 @@ int main( void )
 	prvSetupHardware();
 
     xTaskCreate( prvCXLTask, "CXL task", configMINIMAL_STACK_SIZE, NULL, main_CXL_TASK_PRIORITY, NULL );
-    //xTaskCreate( prvDataTransTask, "CXL Data tranmission task", configMINIMAL_STACK_SIZE, NULL, CXL_DataTrans_TASK_PRIORITY, NULL );
     /* Start the tasks and timer running. */
     vTaskStartScheduler();
     for( ;; )
@@ -84,66 +93,105 @@ static void prvSetupHardware( void )
 	Irq_Setup();
 }
 
-static void prvDataTransTask( void *pvParameters )
-{
-    enum pci_barno test_reg_bar = PCIE_BAR_0;
-
-    /* Remove compiler warning about unused parameter. */
-    ( void ) pvParameters;
-
-    printf_delay("****** Start Data Transmission ******\n");
-    //R_PCIE_EPF_Test_CmdHandler(test_reg_bar);
-
-    vTaskDelay(10);
-    for( ;; )
-    {
-    }
-}
-
 static void prvCXLTask( void *pvParameters )
 {
-
-    uint8_t ret;
-    struct st_pcie_ep ep;
-    struct st_pcie_host host;
-    uintptr_t *dma_local_addr;
-    enum pcie_ob_mem_type ob_mem_type = PCIE_OB_ANYMEM;
-    uint32_t UCIE_D2D_CH0_LOWER = 0x00000000;
-    uint64_t UCIE_D2D_CH0_UPPER = 0x00000200;
-    uint32_t SIZE_IN_BYTE = 1024;
-    uint32_t EP_CH = 1;
-    uint32_t HOST_CH = 0;
-
     /* Remove compiler warning about unused parameter. */
     ( void ) pvParameters;
 
-    printf_delay("****** TEST: UCIe/CXL driver ******\n");
+    uint8_t ret = 0;
+    struct st_pcie_ep ep;
+    struct st_pcie_host host;
+    uint32_t timeout = 10000;
+    uint32_t EP_CH = 1; // ch1 is set to EP
+    uint32_t HOST_CH = 0; // ch0 is set to Host
+    uint32_t dma_rd_dar, dma_wr_sar;
+    uint32_t offset;
+    int i;
 
-    printf_delay("Initialize for UCIe EP channel 1\n");
-    ep.msi_cap = true;
-    R_PCIE_EP_Init(&ep, EP_CH);
+    dma_wr_sar = 0x62000000;
+    dma_rd_dar = 0x62080000;
 
-    //printf_delay("Initialize for UCIe RC channel 0\n");
-    //R_PCIE_InitHost(&host, HOST_CH);
-    //printf_delay("Inbound ATU Setting\n");
-    //R_PCIE_EP_Inbound_ATU(EP_CH);
-/*  printf_delay("Outbound ATU Setting\n");
-    R_PCIE_Host_Outbound_ATU(HOST_CH);
+    printf("** Test verifying DMA transfer using UCIe/CXL **\r\n");
+    for (offset = 0; offset < TESTDATA1_SIZE; offset++) {
+	mem_write32((dma_wr_sar + (offset * 0x4)), TESTDATA1[offset]);
 
-    dma_local_addr = malloc(SIZE_IN_BYTE);
-    if (!dma_local_addr)
-        printf_delay("\n UCIe/CXL DMA alloc fail\n");
+	mem_write32((dma_rd_dar + (offset * 0x4)), 0x0);
+    }
 
-    printf_delay("\n Performing DMA Read\n");
-    R_PCIE_EP_TransferDataDMA(&ep, (UCIE_D2D_CH0_UPPER << 32) | UCIE_D2D_CH0_LOWER,
-					dma_local_addr, SIZE_IN_BYTE, ob_mem_type,
-					HOST_TO_DEVICE);
-    printf_delay("\n Performing DMA Write\n");
-    R_PCIE_EP_TransferDataDMA(&ep, (UCIE_D2D_CH0_UPPER << 32) | UCIE_D2D_CH0_LOWER,
-                                        dma_local_addr, SIZE_IN_BYTE, ob_mem_type,
-                                        DEVICE_TO_HOST);
-*/
-    vTaskDelay(10);
+    printf("[Test Data:SAR]\n");
+    printf("0x%x | 0x%08x 0x%08x 0x%08x 0x%08x\n", dma_wr_sar,
+		mem_read32(dma_wr_sar), mem_read32(dma_wr_sar + 0x4),
+		mem_read32(dma_wr_sar + 0x8), mem_read32(dma_wr_sar + 0xC));
+    printf("0x%x | 0x%08x 0x%08x 0x%08x 0x%08x\n", (dma_wr_sar + 0x10),
+		mem_read32(dma_wr_sar + 0x10), mem_read32(dma_wr_sar + 0x14),
+		mem_read32(dma_wr_sar + 0x18), mem_read32(dma_wr_sar + 0x1C));
+
+    printf("TC1: Initialize for UCIe RC ch0\n");
+    ret = R_PCIE_InitHost(&host, HOST_CH);
+    if (ret)
+        printf("Result: Failed\r\n");
+    else
+        printf("Result: Passed\r\n");
+    
+    printf("**************************************************\r\n");
+
+    printf("TC2: Initialize for UCIe EP ch1\n");
+    ret = R_PCIE_EP_Init(&ep, EP_CH);
+    if (ret)
+        printf("Result: Failed\r\n");
+    else
+        printf("Result: Passed\r\n");
+
+    printf("**************************************************\r\n");
+
+    printf("TC3: UCIe RC ch0 inbound configuration\n");
+    ret = R_PCIE_Host_Inbound_ATU(HOST_CH);
+    if (ret)
+        printf("Result: Failed\r\n");
+    else
+        printf("Result: Passed\r\n");
+
+    printf("**************************************************\r\n");
+
+    printf("TC4: UCIe EP ch1 outbound configuration\n");
+    ret = R_PCIE_EP_Outbound_ATU(&ep, EP_CH);
+    if (ret)
+        printf("Result: Failed\r\n");
+    else
+        printf("Result: Passed\r\n");
+
+    printf("**************************************************\r\n");
+
+    printf("TC5: Start DMA transfer\n....\n");
+    ret = R_PCIE_DMAtransfer(EP_CH, dma_wr_sar, dma_rd_dar);
+    if (ret) { 
+        printf("Result: Failed\r\n");
+    }
+    else {
+        printf("[Dump:DAR]\n");
+        printf("0x%x | 0x%08x 0x%08x 0x%08x 0x%08x\n", dma_rd_dar,
+            mem_read32(dma_rd_dar), mem_read32(dma_rd_dar + 0x4),
+            mem_read32(dma_rd_dar + 0x8), mem_read32(dma_rd_dar + 0xC));
+        printf("0x%x | 0x%08x 0x%08x 0x%08x 0x%08x\n", (dma_rd_dar + 0x10),
+            mem_read32(dma_rd_dar + 0x10), mem_read32(dma_rd_dar + 0x14),
+            mem_read32(dma_rd_dar + 0x18), mem_read32(dma_rd_dar + 0x1C));
+
+        /* Verify: DMA Write Channel SAR -> Read Channel DAR */
+        for (offset = 0; offset < 8; offset++) {
+            if ((mem_read32(dma_wr_sar + (offset * 0x4)))
+                != (mem_read32(dma_rd_dar + (offset * 0x4)))) {
+                ret = -1;
+                break;
+            }
+        }
+
+        if (ret)
+            printf("Result: Failed\r\n");
+        else
+            printf("Result: Passed\r\n");
+    }
+    printf("**************************************************\r\n");
+
     for( ;; )
     {
     }

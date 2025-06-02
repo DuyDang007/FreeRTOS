@@ -105,8 +105,11 @@ struct st_pcie_ep
  *
  * @param ep      Pointer to the device structure for the driver instance.
  * @param channel Channel of PCIe to init.
+ *
+ * @retval 0 on success.
+ * @retval error code on failure.
  */
-void R_PCIE_EP_Init(struct st_pcie_ep *ep, uint16_t channel);
+int R_PCIE_EP_Init(struct st_pcie_ep *ep, uint16_t channel);
 
 /**
  * @brief Map a host memory buffer to PCIe outbound region.
@@ -256,11 +259,16 @@ int R_PCIE_EP_TransferDataDMA(struct st_pcie_ep *ep, uint64_t pcie_addr,
 /** @} */ // end of PCIE_EP_Module
 
 /**
-* @brief Performing PCIe Inbound ATU
+* @brief Performing PCIe Outbound ATU
+*
+* @retval 0 on success.
+* @retval error code on failure.
 */
-void R_PCIE_EP_Inbound_ATU(struct st_pcie_ep *ep, uint16_t channel);
+int R_PCIE_EP_Outbound_ATU(struct st_pcie_ep *ep, uint16_t channel);
 /**
 * @brief Receiving test cmd from Host
 */
 void R_PCIE_EPF_Test_CmdHandler(struct st_pcie_ep *ep);
+
+int R_PCIE_DMAtransfer(uint16_t channel, uint32_t dma_wr_sar, uint32_t dma_rd_dar);
 #endif

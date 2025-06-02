@@ -9,8 +9,10 @@
 
 #include <stdbool.h>
 
-#define UCIE_CXL_CH0_BASE (0xd8000000u)
-#define UCIE_CXL_CH1_BASE (0xd9000000u)
+#define UCIE0_CXL_AXI_BASE		(0xD8000000)
+#define UCIE1_CXL_AXI_BASE		(0xD9000000)
+#define UCIE0_CXL_APB_BASE		(0xDC000000)
+#define UCIE1_CXL_APB_BASE		(0xDD000000)
 
 #define UCIE_D2D_CH0_LOWER		(0x00000000U)
 #define UCIE_D2D_CH0_UPPER		(0x00000200U)
@@ -32,10 +34,11 @@
 #define STATUS_IRQ_RAISED		0x40
 
 #define UCIE_HEADER_TYPE		0x0e
-#define UCIE_HEADER_TYPE_MASK		0x7F
+#define UCIE_HEADER_TYPE_MASK		0x7f
 #define UCIE_HEADER_TYPE_NORMAL		0
 
-#define UCIE_MISC_CONTROL_1_OFF		0x8BC
+#define UCIE_VENDOR_EXT_CAP		0x1cc
+#define UCIE_MISC_CONTROL_1_OFF		0x8bc
 #define UCIE_DBI_RO_WR_EN		0x1
 #define UCIE_VENDOR_ID			0x00
 #define UCIE_DEVICE_ID			0x02
@@ -55,12 +58,22 @@
 
 #define UCIE_PORT_LINK_CONTROL		0x710
 #define PORT_LINK_FAST_LINK_MODE	0x80
+#define UCIE_LINK_X4			0x70000
+#define UCIE_FAST_LINK_MODE		0x80
 #define PORT_LINK_DLL_LINK_EN		0x20
 #define PORT_LINK_MODE_MASK		0x3F0000
 #define PORT_LINK_MODE_2_LANES		0x30000
+
+#define UCIE_LANE_SKEW			0x714
+#define UCIE_DUAL_LANE_MOD		0x40
+
 #define UCIE_LINK_WIDTH_SPEED_CONTROL	0x80C
 #define PORT_LOGIC_LINK_WIDTH_MASK	0x1F00
 #define PORT_LOGIC_LINK_WIDTH_2_LANES	0x200
+#define PORT_LOGIC_LINK_WIDTH_4_LANES	0x400
+
+#define UCIE_TIMERCTL_MAXFUNC		0x718
+#define FASTLINK_SCALING_FACTOR		0x60000000
 
 #define OPCODE				0x1F
 #define OPCODE_MEM_READ32		0
@@ -80,6 +93,10 @@
 
 #define CONTROL_PARITY(n)		((n) << 30)
 #define DATA_PARITY(n)			((n) << 31)
+
+/* PCIe Capability registers */
+#define EXPCAP12			0x000A0
+#define	UCIE_EXP_TARGET_SPEED		0x0000000F
 
 /* APB registers */
 #define APB_BRIDGE_CTL0			0x0100
@@ -163,7 +180,6 @@
 #define UCIE_DMA_RD_INT_CLR             0x38048c
 
 #define MAX_TRANSFER_SIZE		0x100000 // 1MB
-#define SIZE_IN_BYTE			1024 //1KB
 #define EIO				5 // IO error
 #define ENOMEM				12 // Out of memory
 #define EINVAL				22 //Invalid argument
@@ -185,6 +201,10 @@ uint16_t R_UCIE_RegRead16(uint16_t channel, uint32_t Offset);
 void R_UCIE_RegWrite32(uint16_t channel, uint32_t Offset, uint32_t Value);
 
 uint32_t R_UCIE_RegRead32(uint16_t channel, uint32_t Offset);
+
+void R_UCIE_Write_1(uint32_t regAddr, uint32_t mask);
+
+void R_UCIE_Write_0(uint32_t regAddr, uint32_t mask);
 
 void R_PCIE_Outbound_ATU(uint16_t channel, uint64_t base_addr, uint64_t target_addr);
 

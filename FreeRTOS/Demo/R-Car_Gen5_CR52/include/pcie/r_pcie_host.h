@@ -105,8 +105,10 @@ struct st_pcie_scan_opt {
 /**
  * @brief Init a PCIe device channel to a Host Device.
  * 
+ * @retval 0 on success.
+ * @retval error code on failure.
  */
-void R_PCIE_InitHost(struct st_pcie_host *host, uint16_t channel);
+int R_PCIE_InitHost(struct st_pcie_host *host, uint16_t channel);
 
 /** 
  * @brief Scan for PCIe devices.
@@ -331,9 +333,12 @@ bool R_PCIE_RegionGetAllocateBase(struct st_pcie_host *host, pcie_bdf_t bdf, boo
 bool R_PCIE_RegionTranslate(struct st_pcie_host *host, pcie_bdf_t bdf, bool mem, bool mem64, size_t bar_size, uint32_t *bar_addr);
 
 /**
-* @brief Performing PCIe Outbound ATU
-*/
-void R_PCIE_Host_Outbound_ATU(uint16_t channel);
+ * @brief Performing PCIe Inbound ATU
+ *
+ * @retval 0 on success.
+ * @retval error code on failure.
+ */
+int R_PCIE_Host_Inbound_ATU(uint16_t channel);
 /*---------------------------------------- Configuration bits -----------------------------------------*/
 
 /*
