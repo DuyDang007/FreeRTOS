@@ -111,14 +111,14 @@ static int set_pdn_pin_high(void)
 {
     gpio_level_t readLevel;
     R_GPIO_PinRead(&g_gpio_instance_ctrl, GPIO_PORT_06_PIN_20, &readLevel);
-    printf("PinRead before Write High: %d\n", readLevel);
+
     if (R_GPIO_PinWrite(&g_gpio_instance_ctrl, GPIO_PORT_06_PIN_20, GPIO_LEVEL_HIGH) != 0)
     {
         printf("Can not write GPIO Port 6 Pin 20 High\n");
         return -1;
     }
     R_GPIO_PinRead(&g_gpio_instance_ctrl, GPIO_PORT_06_PIN_20, &readLevel);
-    printf("PinRead after Write High: %d\n", readLevel);
+
     return 0;
 }
 
@@ -198,14 +198,14 @@ int ak4619_configure_clock(e_ak4619_mclk_multiplier_t mclk_multiplier,
     }
 
     R_I2C_ReadRegMap(&g_i2c_device_ak4619, REG_SYSTEM_CLK_ADDRESS, &reg_clk_value, sizeof(reg_clk_value));
-    printf("REG_SYSTEM_CLK_ADDRESS before config = 0x%02X\n", reg_clk_value);
+
     if (write_i2c_reg(REG_SYSTEM_CLK_ADDRESS, reg_clk_value) != 0)
     {
         printf("Can not configure clock for AK4619 module using I2C\n");
         return -1;
     }
     R_I2C_ReadRegMap(&g_i2c_device_ak4619, REG_SYSTEM_CLK_ADDRESS, &reg_clk_value, sizeof(reg_clk_value));
-    printf("REG_SYSTEM_CLK_ADDRESS AFTER WRITE = 0x%02X\n", reg_clk_value);
+
     return 0;
 }
 
@@ -218,14 +218,12 @@ int ak4619_configure_audio_format(e_ak4619_interface_format_t format)
         printf("Can not read register format 1 to change audio format interface");
         return -1;
     }
-    printf("REG_AUDIO_IF_FORMAT_ADDRESS_1 SET AUDIO FM = 0x%02X\n", reg_value_fm_1);
 
     if (R_I2C_ReadRegMap(&g_i2c_device_ak4619, REG_AUDIO_IF_FORMAT_ADDRESS_2, &reg_value_fm_2, sizeof(reg_value_fm_2)) != 0) 
     {
         printf("Can not read register format 2 to change audio format interface\n");
         return -1;
     } 
-    printf("REG_AUDIO_IF_FORMAT_ADDRESS_2 SET AUDIO FM = 0x%02X\n", reg_value_fm_2);
 
     if (format == STEREO_I2S_COMPATIBLE)
     {
@@ -236,9 +234,9 @@ int ak4619_configure_audio_format(e_ak4619_interface_format_t format)
             printf("Can not configure stereo i2s compatible mode using I2C\n");
             return -1;
         }
+
         R_I2C_ReadRegMap(&g_i2c_device_ak4619, REG_AUDIO_IF_FORMAT_ADDRESS_1, &reg_value_fm_1, sizeof(reg_value_fm_1));
         R_I2C_ReadRegMap(&g_i2c_device_ak4619, REG_AUDIO_IF_FORMAT_ADDRESS_2, &reg_value_fm_2, sizeof(reg_value_fm_2));
-        printf("AFTER WRITE SET AUDIO FM: REG_AUDIO_IF_FORMAT_ADDRESS_1 = 0x%02X --- REG_AUDIO_IF_FORMAT_ADDRESS_2 = 0x%02X\n", reg_value_fm_1, reg_value_fm_2);
     }
     else 
     {
@@ -262,7 +260,6 @@ int ak4619_configure_word_length(e_ak4619_data_bit_length_t didl_set, e_ak4619_d
         printf("Can not read register format 2 to change word length");
         return -1;
     } 
-    printf("REG_AUDIO_IF_FORMAT_ADDRESS_2 SET WORD LENGTH = 0x%02X\n", reg_value_fm_2);
     
     reg_value_fm_2 &= ~0b00001111; // Clear 4 LSB bit, it use to change word length
     temp = (didl_set << 2) | (dodl_set);
@@ -274,7 +271,6 @@ int ak4619_configure_word_length(e_ak4619_data_bit_length_t didl_set, e_ak4619_d
         return -1;
     }
     R_I2C_ReadRegMap(&g_i2c_device_ak4619, REG_AUDIO_IF_FORMAT_ADDRESS_2, &reg_value_fm_2, sizeof(reg_value_fm_2));
-    printf("AFTER WRITE: REG_AUDIO_IF_FORMAT_ADDRESS_2 SET WORD LENGTH = 0x%02X\n", reg_value_fm_2);
 
     return 0;
 }
@@ -293,7 +289,6 @@ int ak4619_configure_input_dac(e_ak4619_dac_source_t dac_1)
         printf("Can not read register format 2 to change word length");
         return -1;
     } 
-    printf("REG_DAC_INPUT_SELECT_ADDRESS SET INPUT DAC = 0x%02X\n", reg_value_dac_input);
 
     reg_value_dac_input &= ~0b00000011; // Clear 2 LSB bit
     reg_value_dac_input |= dac_1; // dac_1 set 2 LSB bit
@@ -303,7 +298,6 @@ int ak4619_configure_input_dac(e_ak4619_dac_source_t dac_1)
         return -1;
     }
     R_I2C_ReadRegMap(&g_i2c_device_ak4619, REG_DAC_INPUT_SELECT_ADDRESS, &reg_value_dac_input, sizeof(reg_value_dac_input));
-    printf("AFTER WRITE: REG_DAC_INPUT_SELECT_ADDRESS SET INPUT DAC = 0x%02X\n", reg_value_dac_input);
     return 0;
 }
 
@@ -316,7 +310,7 @@ int ak4619_set_dac(bool DAC)
         printf("Can not read register power management to use DAC1");
         return -1;
     } 
-    printf("REG_POWER_MANAGEMENT_ADDRESS T/F DAC = 0x%02X\n", reg_value_pw_mnm);
+
     if (DAC == true)
     {
         if (R_GPIO_PinWrite(&g_gpio_instance_ctrl, GPIO_PORT_06_PIN_21, GPIO_LEVEL_LOW) != 0)
@@ -331,7 +325,6 @@ int ak4619_set_dac(bool DAC)
             return -1;
         }
         R_I2C_ReadRegMap(&g_i2c_device_ak4619, REG_POWER_MANAGEMENT_ADDRESS, &reg_value_pw_mnm, sizeof(reg_value_pw_mnm));
-        printf("AFTER WRITE: REG_POWER_MANAGEMENT_ADDRESS T/F DAC = 0x%02X\n", reg_value_pw_mnm);
 
     }
     else if (DAC == false)
@@ -354,7 +347,6 @@ int ak4619_set_reset_bit(bool rstn_bit_set)
         printf("Can not read register power management to set RSTN bit");
         return -1;
     } 
-    printf("REG_POWER_MANAGEMENT_ADDRESS SET RSTN BIT = 0x%02X\n", reg_value_pw_mnm);
 
     if (rstn_bit_set == true)
     {
@@ -365,7 +357,6 @@ int ak4619_set_reset_bit(bool rstn_bit_set)
             return -1;
         }
         R_I2C_ReadRegMap(&g_i2c_device_ak4619, REG_POWER_MANAGEMENT_ADDRESS, &reg_value_pw_mnm , sizeof(reg_value_pw_mnm));
-        printf("AFTER WRITE: REG_POWER_MANAGEMENT_ADDRESS SET RSTN BIT = 0x%02X\n", reg_value_pw_mnm);
 
     }
     else if (rstn_bit_set == false)
@@ -423,7 +414,6 @@ int ak4916_set_volume(void)
         return -1;
     }
     R_I2C_ReadRegMap(&g_i2c_device_ak4619, 0x0E, &reg_v, sizeof(reg_v));
-    printf("AFTER WRITE: Reg DAC1Left = 0x%02X\n", reg_v);
 
     if (write_i2c_reg(0x0F, reg_v) != 0)
     {
@@ -431,7 +421,7 @@ int ak4916_set_volume(void)
         return -1;
     }
     R_I2C_ReadRegMap(&g_i2c_device_ak4619, 0x0F, &reg_v, sizeof(reg_v));
-    printf("AFTER WRITE: Reg DAC1Right = 0x%02X\n", reg_v);
+
 }
 
 
@@ -455,7 +445,6 @@ int ak4619_module_init(ak4619_instance_set_t *instance_set, uint8_t max_channel,
         printf("Can not read Reg REG_AUDIO_IF_FORMAT_ADDRESS_1 slot lenght set");
         return -1;
     } 
-    printf("Reg REG_AUDIO_IF_FORMAT_ADDRESS_1 slot lenght set = 0x%02X\n", reg_v);
 
     reg_v &= ~0b00001100;
     reg_v |= ((instance_set->didl_set)<<2); // set DSL[1:0] = didl_set;
@@ -465,7 +454,6 @@ int ak4619_module_init(ak4619_instance_set_t *instance_set, uint8_t max_channel,
         return -1;
     }
     R_I2C_ReadRegMap(&g_i2c_device_ak4619, REG_AUDIO_IF_FORMAT_ADDRESS_1, &reg_v, sizeof(reg_v));
-    printf("AFTER WRITE: Reg REG_AUDIO_IF_FORMAT_ADDRESS_1 slot lenght set = 0x%02X\n", reg_v);
 
     ak4916_set_volume();
 

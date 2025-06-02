@@ -129,6 +129,12 @@ set(bsp_source
     ${BSP_DIR}/drivers/state-manager/state_manager.c
     ${BSP_DIR}/drivers/wcrc/r_wcrc.c
     ${BSP_DIR}/drivers/wcrc/r_crc_wrapper.c
+
+    ${BSP_DIR}/drivers/audio/adg.c
+    ${BSP_DIR}/drivers/audio/ssi.c
+    ${BSP_DIR}/drivers/audio/rcar_audio_api.c
+    ${BSP_DIR}/drivers/audio/rcar_audio.c
+    
 )
 
 set(posix_source
@@ -314,6 +320,7 @@ add_subdirectory(sample_apps/smmu_app)
 add_subdirectory(sample_apps/power-management_app)
 add_subdirectory(sample_apps/wcrc_app)
 add_subdirectory(sample_apps/utils_app)
+add_subdirectory(sample_apps/audio_app)
 if(ENABLE_OPENAMP)
     add_subdirectory(sample_apps/rpmsg_sample)
 endif()
