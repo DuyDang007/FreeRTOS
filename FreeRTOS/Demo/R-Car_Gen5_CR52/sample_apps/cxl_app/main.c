@@ -108,8 +108,8 @@ static void prvCXLTask( void *pvParameters )
     uint32_t offset;
     int i;
 
-    dma_wr_sar = 0x62000000;
-    dma_rd_dar = 0x62080000;
+    dma_wr_sar = 0x82000000;
+    dma_rd_dar = 0x82080000;
 
     printf("** Test verifying DMA transfer using UCIe/CXL **\r\n");
     for (offset = 0; offset < TESTDATA1_SIZE; offset++) {
