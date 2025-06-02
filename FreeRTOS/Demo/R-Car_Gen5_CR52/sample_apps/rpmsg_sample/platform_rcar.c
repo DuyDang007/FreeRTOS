@@ -47,6 +47,9 @@ struct remoteproc * platform_create_proc(int mfis_ch, int rsc_index)
     metal_phys_addr_t pa;
     void *tmp;
 
+    /* Initialize the resource table on shared memory */
+    init_resource_table();
+
     rsc_table = get_resource_table(rsc_index, &rsc_size);
 
     /* Initialize remoteproc instance */
