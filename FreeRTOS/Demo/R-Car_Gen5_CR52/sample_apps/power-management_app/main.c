@@ -297,21 +297,33 @@ static void pmAppExample(void)
 	}
 #endif
 
+#define SYSTEM_RST_TEST 1
     PM_LOG("*******TC%d: SCMI Clock control starting!*******\r\n",
             ++tc_number);
+#ifndef SYSTEM_RST_TEST
 	for (domain_id = X5H_CLOCK_ID_MDLC_VIPN_FCPCS0;
 		 domain_id < X5H_CLOCK_ID_COUNT;
 		 ++domain_id)
+#else
+        domain_id = X5H_CLOCK_ID_MDLC_VIPN_FCPCS0;
+#endif /* SYSTEM_RST_TEST */
 	{
 		if ((X5H_CLOCK_ID_MDLC_HSCIF0 == domain_id) ||
             (X5H_CLOCK_ID_MDLC_SCIF0 == domain_id) ||
             (X5H_CLOCK_ID_MDLC_INTAP1 <= domain_id)
             ) {
-			PM_LOG("Skip clock id %d\n", domain_id);
+#ifndef SYSTEM_RST_TEST
 			continue;
+#endif /* SYSTEM_RST_TEST */
 		}
 		pmClockTest(domain_id, rates);
 	}
+#ifndef SYSTEM_RST_TEST
+    PM_LOG("Following clock id are skipped testing due to board hang:\n"
+           "- X5H_CLOCK_ID_MDLC_HSCIF0\n"
+           "- X5H_CLOCK_ID_MDLC_SCIF0,\n"
+           "- From X5H_CLOCK_ID_MDLC_INTAP1 to the end\r\n");
+#endif /* SYSTEM_RST_TEST */
     PM_LOG("*******TC%d: SCMI Clock control end!*******\r\n\r\n",
             tc_number);
 
@@ -329,11 +341,15 @@ static void pmAppExample(void)
 
     PM_LOG("*******TC%d: SCMI System Reset starting!*******\r\n",
             ++tc_number);
+#ifdef SYSTEM_RST_TEST
     ret = R_StateManager_SysReboot();
 	if (ret) {
 		PM_LOG("Error: Failed to request System Reboot.\r\n");
 		return;
 	}
+#else
+    PM_LOG("Don't run the TC System Reset for much logs output!\r\n");
+#endif /* SYSTEM_RST_TEST */
     PM_LOG("*******TC%d: SCMI System Reset end!*******\r\n",
             tc_number);
 
