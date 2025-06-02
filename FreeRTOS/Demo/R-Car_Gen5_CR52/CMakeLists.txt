@@ -260,6 +260,30 @@ install(
         PATTERN "*.map"
     PATTERN "CMakeFiles" EXCLUDE
 )
+
+################ Function to convert output file to .srec #############################
+
+function(convert_bin_to_srec app_name)
+    if(NOT CMAKE_EXECUTABLE_SUFFIX)
+        set(CMAKE_EXECUTABLE_SUFFIX "")
+    endif()
+
+    set(BIN_FILE "${CMAKE_CURRENT_BINARY_DIR}/${app_name}${CMAKE_EXECUTABLE_SUFFIX}")
+    set(SREC_FILE "${CMAKE_CURRENT_BINARY_DIR}/${app_name}.srec")
+
+    add_custom_command(
+        OUTPUT ${SREC_FILE}
+        COMMAND ${CMAKE_OBJCOPY} -O srec --srec-forceS3 --remove-section .resource_table ${BIN_FILE} ${SREC_FILE}
+        DEPENDS ${BIN_FILE}
+        COMMENT "Converting ${BIN_FILE} to SREC format"
+        VERBATIM
+    )
+
+    add_custom_target(${app_name}_srec ALL
+        DEPENDS ${SREC_FILE}
+    )
+endfunction()
+
 #######################################################################################
 # Add subdirectory for applications below
 if(ENABLE_OPENAMP)
@@ -290,6 +314,7 @@ add_subdirectory(sample_apps/utils_app)
 if(ENABLE_OPENAMP)
     add_subdirectory(sample_apps/rpmsg_sample)
 endif()
+
 # TODO: Delete application makefile
 # TODO: Remove porting code in Kernel
 # TODO: Remove rcar code in FreeRTOS_POSIX repo

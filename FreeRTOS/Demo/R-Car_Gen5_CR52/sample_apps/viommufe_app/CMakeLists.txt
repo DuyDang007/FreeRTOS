@@ -26,3 +26,5 @@ target_link_options(${app_name}
         -Wl,-Map=${CMAKE_CURRENT_BINARY_DIR}/${app_name}.map
 )
 
+
+convert_bin_to_srec(${app_name})
