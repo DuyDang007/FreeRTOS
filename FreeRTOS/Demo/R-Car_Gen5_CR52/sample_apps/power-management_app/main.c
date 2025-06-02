@@ -130,7 +130,7 @@ static int pmClockTest(int clock_id, uint32_t *rate_set)
 {
 	int ret;
 	uint32_t rate[2] = {0};
-    int tc_number = 2;
+    int tc_number = 3;
 
     /* Set clock on */
     PM_LOG("**********TC%d %d-1: set clock id %d ON.**********\r\n",
@@ -180,15 +180,24 @@ static int pmClockTest(int clock_id, uint32_t *rate_set)
 	/* Set clock off  */
     PM_LOG("**********TC%d %d-4: set clock id %d OFF.**********\r\n",
             tc_number, clock_id, clock_id);
-	ret = R_StateManager_ClockOff(clock_id);
-    if (ret)
-    {
-        PM_LOG("Error: Failed to set clock id %d OFF.\r\n",
-               clock_id);
-    }
-    else
-    {
-        PM_LOG("Set clock id %d OFF OK!\r\n", clock_id);
+    if ((X5H_CLOCK_ID_MDLC_VIPN_MSYNC == clock_id) ||
+        (X5H_CLOCK_ID_MDLC_VIPS_MSYNC == clock_id) ||
+        (X5H_CLOCK_ID_MDLC_CR52CORE0 == clock_id) ||
+        (X5H_CLOCK_ID_MDLC_CR52CORE0_PO == clock_id) ||
+        (X5H_CLOCK_ID_MDLC_CR52SHADOW0 == clock_id) ||
+        (X5H_CLOCK_ID_MDLC_CR52SHADOW0_PO == clock_id)) {
+        PM_LOG("Currently not supported this operation.\r\n");
+    } else {
+        ret = R_StateManager_ClockOff(clock_id);
+        if (ret)
+        {
+            PM_LOG("Error: Failed to set clock id %d OFF.\r\n",
+                    clock_id);
+        }
+        else
+        {
+            PM_LOG("Set clock id %d OFF OK!\r\n", clock_id);
+        }
     }
 
 	return 0;
@@ -264,7 +273,8 @@ static void pmAppExample(void)
 		 domain_id < X5H_POWER_DOMAIN_ID_P_RPU_CORE00;
 		 ++domain_id)
 	{
-		if (X5H_POWER_DOMAIN_ID_RC00 == domain_id) {
+		if ((X5H_POWER_DOMAIN_ID_RC00 == domain_id) ||
+            (X5H_POWER_DOMAIN_ID_CMN == domain_id)) {
 			PM_LOG("Skip domain %d\n", domain_id);
 			continue;
 		}
@@ -294,7 +304,9 @@ static void pmAppExample(void)
 		 ++domain_id)
 	{
 		if ((X5H_CLOCK_ID_MDLC_HSCIF0 == domain_id) ||
-            (X5H_CLOCK_ID_MDLC_SCIF0 == domain_id)) {
+            (X5H_CLOCK_ID_MDLC_SCIF0 == domain_id) ||
+            (X5H_CLOCK_ID_MDLC_INTAP1 <= domain_id)
+            ) {
 			PM_LOG("Skip clock id %d\n", domain_id);
 			continue;
 		}
@@ -315,7 +327,6 @@ static void pmAppExample(void)
     PM_LOG("*******TC%d: SCMI Reset control end!*******\r\n\r\n",
             tc_number);
 
-#if 0
     PM_LOG("*******TC%d: SCMI System Reset starting!*******\r\n",
             ++tc_number);
     ret = R_StateManager_SysReboot();
@@ -325,7 +336,6 @@ static void pmAppExample(void)
 	}
     PM_LOG("*******TC%d: SCMI System Reset end!*******\r\n",
             tc_number);
-#endif
 
 	//PM_LOG("Wait 30s before requesting DeepStop...");
 	//vTaskDelay(1000*30);
