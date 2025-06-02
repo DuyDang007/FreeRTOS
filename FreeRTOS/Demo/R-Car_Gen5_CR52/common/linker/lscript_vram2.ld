@@ -247,8 +247,10 @@ SECTIONS
 
 #if defined(ENABLE_OPENAMP_)
 .resource_table : {
-	. = ALIGN(4);
-	*(.resource_table)
+    __resource_table_start = .;
+    . = ALIGN(4);
+    KEEP(*(.resource_table))
+    __resource_table_end = .;
 } > remote_proc_rsc_table
 #endif
 
