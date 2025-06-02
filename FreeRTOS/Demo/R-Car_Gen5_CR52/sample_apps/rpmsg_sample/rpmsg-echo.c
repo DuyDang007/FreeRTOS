@@ -20,7 +20,7 @@
 #include "interrupts.h"
 #include "platform_info.h"
 #include "rsc_table.h"
-#include "CMSIS_5/cmsis_rcar_gen5.h"
+#include "pfc/r_pfc_api.h"
 
 #define RPMSG_SERVICE_NAME         "rpmsg-client-sample"
 #define SHUTDOWN_MSG    0xEF56A55A
@@ -78,6 +78,8 @@ static void prvSetupHardware( void )
     portDISABLE_INTERRUPTS();
 
     Irq_Setup();
+
+    (void)pfcInitModules(getModuleConfigs());
 }
 
 /*-----------------------------------------------------------------------------*
