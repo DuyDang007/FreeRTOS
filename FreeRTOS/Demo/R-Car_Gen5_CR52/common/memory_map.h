@@ -34,7 +34,7 @@ typedef struct st_memory_region {
 #define SHARED_DRAM_SIZE_1          0x04000000  // to 0x8400_0000
 
 #define OSAL_MEMORY_ADDRESS         0x84000000
-#define OSAL_MEMORY_SIZE            0x1C000000  // to 0xA000_0000
+#define OSAL_MEMORY_SIZE            0x3C000000  // to 0xA000_0000
 
 #define PERIPHERAL_START_1          0xC0000000
 #define PERIPHERAL_SIZE_1           0x40000000  // to 0x1_0000_0000
