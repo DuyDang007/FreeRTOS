@@ -1571,34 +1571,42 @@ set_rtdma_err:
     return ret;
 }
 
-int wcrcClose(wcrc_instance_ctrl_t * const p_instance_ctrl)
+static int wcrcCloseSubModule(wcrc_instance_ctrl_t * const p_instance_ctrl,
+                             wcrc_sub_module_t module)
 {
     void * p_buf;
 
-    /* Clear CRC data */
-    p_buf = p_instance_ctrl->crc_data[CRC_SUB_MODULE].p_output_buffer;
+    p_buf = p_instance_ctrl->crc_data[module].p_output_buffer;
     wcrcRemoveBuffer(p_buf);
+    p_instance_ctrl->crc_data[module].p_output_buffer  = NULL;
 
-    p_buf = p_instance_ctrl->crc_data[KCRC_SUB_MODULE].p_output_buffer;
-    wcrcRemoveBuffer(p_buf);
-    p_instance_ctrl->crc_data[CRC_SUB_MODULE].p_output_buffer  = NULL;
-    p_instance_ctrl->crc_data[KCRC_SUB_MODULE].p_output_buffer = NULL;
+    if (p_instance_ctrl->p_cfg->mode != INDEPENDENT_CRC_MODE)
+    {
+        /* Release RT-DMA */
+        p_buf = p_instance_ctrl->p_extend[module];
+        wcrcRemoveBuffer(p_buf);
+        p_buf = p_instance_ctrl->p_context[module];
+        wcrcRemoveBuffer(p_buf);
+        p_instance_ctrl->p_extend[module]  = NULL;
+        p_instance_ctrl->p_context[module]  = NULL;
+    }
+}
+int wcrcClose(wcrc_instance_ctrl_t * const p_instance_ctrl)
+{
+    wcrc_sub_module_t sub_module = p_instance_ctrl->p_cfg->sub_module;
 
-    /* Release RT-DMA */
-    p_buf = p_instance_ctrl->p_extend[CRC_SUB_MODULE];
-    wcrcRemoveBuffer(p_buf);
-    p_buf = p_instance_ctrl->p_extend[KCRC_SUB_MODULE];
-    wcrcRemoveBuffer(p_buf);
-    p_instance_ctrl->p_extend[CRC_SUB_MODULE]  = NULL;
-    p_instance_ctrl->p_extend[KCRC_SUB_MODULE] = NULL;
-
-    /* Release RT-DMA */
-    p_buf = p_instance_ctrl->p_context[CRC_SUB_MODULE];
-    wcrcRemoveBuffer(p_buf);
-    p_buf = p_instance_ctrl->p_context[KCRC_SUB_MODULE];
-    wcrcRemoveBuffer(p_buf);
-    p_instance_ctrl->p_context[CRC_SUB_MODULE]  = NULL;
-    p_instance_ctrl->p_context[KCRC_SUB_MODULE] = NULL;
+    if (sub_module == CRC_KCRC_SUB_MODULE)
+    {
+        wcrcCloseSubModule(p_instance_ctrl, CRC_SUB_MODULE);
+        wcrcCloseSubModule(p_instance_ctrl, KCRC_SUB_MODULE);
+    }
+    else if (sub_module == CRC_SUB_MODULE || sub_module == KCRC_SUB_MODULE)
+        wcrcCloseSubModule(p_instance_ctrl, sub_module);
+    else
+    {
+        printf("%s: Invalid module\n", __func__);
+        return -1;
+    }
 
     return 0;
 }
