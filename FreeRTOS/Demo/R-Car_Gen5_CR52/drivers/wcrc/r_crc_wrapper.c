@@ -406,6 +406,12 @@ typedef enum e_wcrc_mode_fifo_port
 #define KCRC_XOR 0x00B0
 #define DEF_XOR 0xFFFFFFFF //default value
 
+/****************** CMA test ******************/
+#define CMA_START	0x60000000U
+#define CMA_SIZE	0x10000000U
+#define ALLOCATE_SIZE	200U
+/****************** CMA test ******************/
+
 static uint32_t getRegister(uint8_t module, wcrc_unit_t unit, uint32_t offset)
 {
     uint32_t base_addr;
@@ -980,6 +986,8 @@ get_size_err:
     return ret;
 }
 
+uintptr_t physAddr = CMA_START;
+
 static int wcrc_prepare_e2e(uint8_t module, wcrc_instance_ctrl_t * const p_instance_ctrl)
 {
     int ret = 0;
@@ -1007,8 +1015,9 @@ static int wcrc_prepare_e2e(uint8_t module, wcrc_instance_ctrl_t * const p_insta
         printf("%s: Data not align on AXI BUS!", __func__);
         return -1;
     }
-        
-    p_crc_data->p_output_buffer = pvPortMalloc(crc_data_size);
+
+    physAddr += crc_data_size;
+    p_crc_data->p_output_buffer = (void *)physAddr;
 
     if (p_crc_data->p_output_buffer == NULL) {
         printf("%s: Allocate p_output_buffer FAILED!", __func__);
@@ -1568,14 +1577,10 @@ int wcrcClose(wcrc_instance_ctrl_t * const p_instance_ctrl)
 
     /* Clear CRC data */
     p_buf = p_instance_ctrl->crc_data[CRC_SUB_MODULE].p_output_buffer;
-    //printf_delay("%d: 0x%x\n", CRC_SUB_MODULE, p_buf);
     wcrcRemoveBuffer(p_buf);
-    //printf_delay("CP0\n");
 
     p_buf = p_instance_ctrl->crc_data[KCRC_SUB_MODULE].p_output_buffer;
-    //printf_delay("%d: 0x%x\n", KCRC_SUB_MODULE, p_buf);
     wcrcRemoveBuffer(p_buf);
-    //printf_delay("CP1\n");
     p_instance_ctrl->crc_data[CRC_SUB_MODULE].p_output_buffer  = NULL;
     p_instance_ctrl->crc_data[KCRC_SUB_MODULE].p_output_buffer = NULL;
 
