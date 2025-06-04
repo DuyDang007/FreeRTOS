@@ -41,8 +41,12 @@
 
 #define main_CRC_TASK_PRIORITY        ( tskIDLE_PRIORITY + 1 )
 
-extern int printf_delay(const char *format, ...);
+#include "pfc/r_pfc_api.h"
+#include "device_tree_x5h.h"
 
+#include "state-manager/r_state_manager.h"
+#include "state-manager/r_clock_domain_id.h"
+#include "state-manager/r_power_domain_id.h"
 /*-----------------------------------------------------------*/
 
 /*
@@ -124,7 +128,7 @@ wcrc_cfg_t  g_wcrc_cfg1 =
     {
         .input_cfg      =
         {
-            .p_input_buffer = &crc_input,
+            .p_input_buffer = crc_input,
             .num_data       = sizeof(crc_input)/sizeof(crc_input[0]),
             .crc_seed       = 0xFFFFFFFF,
             .bit_width      = WIDTH_32_BIT
@@ -143,7 +147,7 @@ wcrc_cfg_t  g_wcrc_cfg1 =
     {
         .input_cfg      =
         {
-            .p_input_buffer = &kcrc_input,
+            .p_input_buffer = kcrc_input,
             .num_data       = sizeof(kcrc_input)/sizeof(kcrc_input[0]),
             .crc_seed       = 0xFFFFFFFF,
             .bit_width      = WIDTH_32_BIT
@@ -173,7 +177,7 @@ wcrc_cfg_t  g_wcrc_cfg3 =
     {
         .input_cfg      =
         {
-            .p_input_buffer = &crc_input2,
+            .p_input_buffer = crc_input2,
             .num_data       = sizeof(crc_input2)/sizeof(crc_input2[0]),
             .crc_seed       = 0xFFFFFFFF,
             .bit_width      = WIDTH_32_BIT
@@ -243,6 +247,10 @@ static void prvSetupHardware( void )
     portDISABLE_INTERRUPTS();
 
     Irq_Setup();
+
+    (void)pfcInitModules(getModuleConfigs());
+
+    (void)R_StateManager_ClockOn(X5H_CLOCK_ID_MDLC_WCRC0);
 }
 
 static void prvCRCTask( void *pvParameters )
@@ -258,37 +266,37 @@ static void prvCRCTask( void *pvParameters )
                                     DRV_RTDMAC_PRIO_FIX);
     ret = R_RTDMAC_RcarDmacCtrlInit(RT_DMAC1,
                                     DRV_RTDMAC_PRIO_FIX);
-    ret = R_RTDMAC_RcarDmacCtrlInit(RT_DMAC2,
-                                    DRV_RTDMAC_PRIO_FIX);
-    ret = R_RTDMAC_RcarDmacCtrlInit(RT_DMAC3,
-                                    DRV_RTDMAC_PRIO_FIX);
+    //ret = R_RTDMAC_RcarDmacCtrlInit(RT_DMAC2,
+    //                                DRV_RTDMAC_PRIO_FIX);
+    //ret = R_RTDMAC_RcarDmacCtrlInit(RT_DMAC3,
+    //                                DRV_RTDMAC_PRIO_FIX);
 
     init_data_input();
 
-    printf_delay("\n********** TC1: CRC Independent Mode **********\n");
+    printf("\n********** TC1: CRC Independent Mode **********\n");
     ret = R_CRC_Open(&g_wcrc_inst_ctrl_indepe, &g_wcrc_cfg0);
-    printf_delay("R_CRC_Open: ret = %d\n", ret);
+    printf("R_CRC_Open: ret = %d\n", ret);
     vTaskDelay(10);
 
     ret = R_CRC_Calculate(&g_wcrc_inst_ctrl_indepe);
-    printf_delay("\nR_CRC_Calculate: ret = %d\n\n", ret);
+    printf("\nR_CRC_Calculate: ret = %d\n\n", ret);
     vTaskDelay(10);
 
     ret = R_CRC_Get_Input_Data(&g_wcrc_inst_ctrl_indepe);
-    printf_delay("\nR_CRC_Get_Input_Data: ret = %d\n\n", ret);
+    printf("\nR_CRC_Get_Input_Data: ret = %d\n\n", ret);
     vTaskDelay(10);
 
     ret = R_CRC_Get_Generated_Value(&g_wcrc_inst_ctrl_indepe);
-    printf_delay("\nR_CRC_Get_Generated_Value: ret = %d\n", ret);
+    printf("\nR_CRC_Get_Generated_Value: ret = %d\n", ret);
     vTaskDelay(10);
 
     ret = R_CRC_Close(&g_wcrc_inst_ctrl_indepe);
-    printf_delay("\nR_CRC_Close: ret = %d\n", ret);
+    printf("\nR_CRC_Close: ret = %d\n", ret);
     vTaskDelay(10);
 
-    printf_delay("\n********** TC2: E2E CRC Mode **********\n");
+    printf("\n********** TC2: E2E CRC Mode **********\n");
     ret = R_CRC_Open(&g_wcrc_inst_ctrl_e2e, &g_wcrc_cfg1);
-    printf_delay("R_CRC_Open: ret = %d\n", ret);
+    printf("R_CRC_Open: ret = %d\n", ret);
     vTaskDelay(10);
 
     is_done[CRC_SUB_MODULE] = &g_wcrc_inst_ctrl_e2e.crc_data[CRC_SUB_MODULE].is_done;
@@ -298,28 +306,28 @@ static void prvCRCTask( void *pvParameters )
     is_done[KCRC_SUB_MODULE] = &g_wcrc_inst_ctrl_e2e.crc_data[KCRC_SUB_MODULE].is_done;
     ret |= R_CRC_Set_Callback(KCRC_SUB_MODULE, &g_wcrc_inst_ctrl_e2e,
                              kcrcUserCallback, is_done[KCRC_SUB_MODULE]);
-    printf_delay("R_CRC_Set_Callback: ret = %d\n", ret);
+    printf("R_CRC_Set_Callback: ret = %d\n", ret);
     vTaskDelay(10);
 
     ret = R_CRC_Calculate(&g_wcrc_inst_ctrl_e2e);
-    printf_delay("\nR_CRC_Calculate: ret = %d\n\n", ret);
+    printf("\nR_CRC_Calculate: ret = %d\n\n", ret);
     vTaskDelay(10);
 
     ret = R_CRC_Get_Input_Data(&g_wcrc_inst_ctrl_e2e);
-    printf_delay("\nR_CRC_Get_Input_Data: ret = %d\n\n", ret);
+    printf("\nR_CRC_Get_Input_Data: ret = %d\n\n", ret);
     vTaskDelay(10);
 
     ret = R_CRC_Get_Generated_Value(&g_wcrc_inst_ctrl_e2e);
-    printf_delay("\nR_CRC_Get_Generated_Value: ret = %d\n", ret);
+    printf("\nR_CRC_Get_Generated_Value: ret = %d\n", ret);
     vTaskDelay(10);
 
-    ret = R_CRC_Close(&g_wcrc_inst_ctrl_e2e);
-    printf_delay("\nR_CRC_Close: ret = %d\n", ret);
+    //ret = R_CRC_Close(&g_wcrc_inst_ctrl_e2e);
+    printf("\nR_CRC_Close: ret = %d\n", ret);
     vTaskDelay(10);
 
-    printf_delay("\n********** TC3: E2E CRC Mode **********\n");
+    printf("\n********** TC3: E2E CRC Mode **********\n");
     ret = R_CRC_Open(&g_wcrc_inst_ctrl_e2e_3, &g_wcrc_cfg3);
-    printf_delay("R_CRC_Open: ret = %d\n", ret);
+    printf("R_CRC_Open: ret = %d\n", ret);
     vTaskDelay(10);
 
     is_done[CRC_SUB_MODULE] = &g_wcrc_inst_ctrl_e2e_3.crc_data[CRC_SUB_MODULE].is_done;
@@ -329,23 +337,23 @@ static void prvCRCTask( void *pvParameters )
     is_done[KCRC_SUB_MODULE] = &g_wcrc_inst_ctrl_e2e_3.crc_data[KCRC_SUB_MODULE].is_done;
     ret |= R_CRC_Set_Callback(KCRC_SUB_MODULE, &g_wcrc_inst_ctrl_e2e_3,
                              kcrcUserCallback, is_done[KCRC_SUB_MODULE]);
-    printf_delay("R_CRC_Set_Callback: ret = %d\n", ret);
+    printf("R_CRC_Set_Callback: ret = %d\n", ret);
     vTaskDelay(10);
 
     ret = R_CRC_Calculate(&g_wcrc_inst_ctrl_e2e_3);
-    printf_delay("\nR_CRC_Calculate: ret = %d\n\n", ret);
+    printf("\nR_CRC_Calculate: ret = %d\n\n", ret);
     vTaskDelay(10);
 
     ret = R_CRC_Get_Input_Data(&g_wcrc_inst_ctrl_e2e_3);
-    printf_delay("\nR_CRC_Get_Input_Data: ret = %d\n\n", ret);
+    printf("\nR_CRC_Get_Input_Data: ret = %d\n\n", ret);
     vTaskDelay(10);
 
     ret = R_CRC_Get_Generated_Value(&g_wcrc_inst_ctrl_e2e_3);
-    printf_delay("\nR_CRC_Get_Generated_Value: ret = %d\n", ret);
+    printf("\nR_CRC_Get_Generated_Value: ret = %d\n", ret);
     vTaskDelay(10);
 
-    ret = R_CRC_Close(&g_wcrc_inst_ctrl_e2e_3);
-    printf_delay("\nR_CRC_Close: ret = %d\n", ret);
+    //ret = R_CRC_Close(&g_wcrc_inst_ctrl_e2e_3);
+    printf("\nR_CRC_Close: ret = %d\n", ret);
     vTaskDelay(10);
 
     for( ;; )
@@ -358,11 +366,13 @@ static void prvCRCTask( void *pvParameters )
 void crcUserCallback(void *data) {
     bool * is_done = (bool *)data;
     * is_done = true;
+    printf("CRC: cb\n");
 }
 
 void kcrcUserCallback(void *data) {
     bool * is_done = (bool *)data;
     * is_done = true;
+    printf("KCRC: cb\n");
 }
 /*-----------------------------------------------------------*/
 
