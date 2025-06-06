@@ -27,7 +27,7 @@
  **********************************************************************************************************************/
 #ifndef UART_ID
 #if (BOARD == X5H_VDK)
-#define UART_ID HSCIF0
+#define UART_ID SCIF1
 #else
 #define UART_ID HSCIF0
 #endif // BOARD

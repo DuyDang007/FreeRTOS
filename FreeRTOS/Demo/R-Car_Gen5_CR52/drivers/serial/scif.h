@@ -16,7 +16,7 @@
 
 #ifndef UART_BAUDRATE
 #if (BOARD == X5H_VDK)
-#define UART_BAUDRATE 1843200
+#define UART_BAUDRATE 115200
 #else
 #define UART_BAUDRATE 3000000
 #endif
