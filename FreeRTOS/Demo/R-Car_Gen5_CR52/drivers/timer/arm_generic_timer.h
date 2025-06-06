@@ -17,11 +17,11 @@
 #define CNTP_CVAL_WRITE(v)    __set_CNTP_CVAL(v)
 
 #if (BOARD == X5H_VDK)
-#define GENERIC_TIMER_CLK     1066666666UL
+#define GENERIC_TIMER_CLK     25000000UL
 #else
 /* The timer count up 16 counts with 66.667MHz clock.
 It means the counter operate at 1066.667MHz in equivalent */
-#define GENERIC_TIMER_CLK     25000000    // This is workaround for simulation system.
+#define GENERIC_TIMER_CLK     1066666666    // Hz
 
 #endif
 
