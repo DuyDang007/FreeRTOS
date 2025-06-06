@@ -186,6 +186,13 @@ CREATE_GROUP(scif0_grp, TX0, RX0, RTS0_N, CTS0_N, SCK0, SCIF_CLK)
 #define HSCK1               GEN_ID(REG_ALTSEL, RCAR_PFC_GROUP_05, RCAR_PFC_PIN_10, RCAR_PFC_FUNC_0)
 CREATE_GROUP(hscif1_grp, HTX1, HRX1, HRTS1_N, HCTS1_N, HSCK1)
 
+#define TX1                 GEN_ID(REG_ALTSEL, RCAR_PFC_GROUP_05, RCAR_PFC_PIN_06, RCAR_PFC_FUNC_1)
+#define RX1                 GEN_ID(REG_ALTSEL, RCAR_PFC_GROUP_05, RCAR_PFC_PIN_07, RCAR_PFC_FUNC_1)
+#define RTS1_N              GEN_ID(REG_ALTSEL, RCAR_PFC_GROUP_05, RCAR_PFC_PIN_08, RCAR_PFC_FUNC_1)
+#define CTS1_N              GEN_ID(REG_ALTSEL, RCAR_PFC_GROUP_05, RCAR_PFC_PIN_09, RCAR_PFC_FUNC_1)
+#define SCK1                GEN_ID(REG_ALTSEL, RCAR_PFC_GROUP_05, RCAR_PFC_PIN_10, RCAR_PFC_FUNC_1)
+CREATE_GROUP(scif1_grp, TX1, RX1, RTS1_N, CTS1_N, SCK1)
+
 #define SDA0                GEN_ID(REG_ALTSEL, RCAR_PFC_GROUP_02, RCAR_PFC_PIN_20, RCAR_PFC_FUNC_0)
 #define SCL0                GEN_ID(REG_ALTSEL, RCAR_PFC_GROUP_02, RCAR_PFC_PIN_19, RCAR_PFC_FUNC_0)
 #define MODSEL_SDA0         GEN_ID(REG_MODSEL, RCAR_PFC_GROUP_02, RCAR_PFC_PIN_20, MODSEL_I2C_MODE)
@@ -211,6 +218,7 @@ typedef struct {
 
 static const st_driver_group_t all_drv_groups[] = {
     {.module_id = MODULE_SCIF0, .group = ADD_GROUP(scif0_grp)},
+    {.module_id = MODULE_SCIF1, .group = ADD_GROUP(scif1_grp)},
     {.module_id = MODULE_I2C0,  .group = ADD_GROUP(i2c0_grp)},
     {.module_id = MODULE_I2C1,  .group = ADD_GROUP(i2c1_grp)},
     // Add driver groups.
