@@ -1,3 +1,10 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: MIT
+ *
+ */
+
 #include "FreeRTOS.h"
 #include "semphr.h"
 #include <stdio.h>

@@ -1,3 +1,10 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: MIT
+ *
+ */
+
 #ifndef _RENESAS_CRC_WRAPPER_H_
 #define _RENESAS_CRC_WRAPPER_H_
 
