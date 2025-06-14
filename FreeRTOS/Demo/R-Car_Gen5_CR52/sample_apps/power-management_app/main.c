@@ -253,12 +253,6 @@ static void pmAppExample(void)
 
     PM_LOG("*******TC%d: SCMI protocols information starting*******\r\n",
             ++tc_number);
-	ret = R_StateManager_Init();
-	if (ret) {
-		PM_LOG("Error: Failed to init State Manager.\r\n");
-		return;
-	}
-
 	ret = R_StateManager_SCMI_Info_Show();
 	if (ret) {
 		PM_LOG("Error: Failed to show SCMI information.\r\n");
