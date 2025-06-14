@@ -8,9 +8,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include "portmacro.h"
+#include "interrupts.h"
 #include "cmsis_rcar_gen5.h"
 #include "mpu.h"
 #include "memory_map.h"
+#include "state-manager/r_state_manager.h"
 
 extern const unsigned int __bss_start__;
 extern const unsigned int __bss_end__;
@@ -137,6 +140,12 @@ void SystemInit(void)
 #endif
     Init_MPU();
     __libc_init_array();
+    portDISABLE_INTERRUPTS();
+    Irq_Setup();
+	if (R_StateManager_Init()) {
+		printf("Error: Failed to init State Manager.\r\n");
+		return;
+	}
 }
 
 void assert_func(const char *file, int line, const char *func)
