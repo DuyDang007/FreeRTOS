@@ -38,19 +38,14 @@ typedef enum {
 #define SCMI_LOG_LEVEL_DEFAULT    SCMI_LOG_LEVEL_DBG
 
 #ifdef SCMI_DEBUG
-extern int printf_delay(const char *format, ...);
-
-#include "FreeRTOS.h"
-#include "task.h"
+#include "stdio.h"
 
 /* SCMI debug log macro */
 #define SCMI_LOG(level, format, ...)\
     if (SCMI_LOG_LEVEL_DEFAULT <= (level))\
     {\
-        printf_delay("SCMI [%s:%d] ", __func__, __LINE__);\
-		vTaskDelay(2);\
-        printf_delay(format "\r\n", ##__VA_ARGS__);\
-		vTaskDelay(3);\
+        printf("SCMI [%s:%d] ", __func__, __LINE__);\
+        printf(format "\r\n", ##__VA_ARGS__);\
     }
 #else   /* SCMI_DEBUG */
     #define SCMI_LOG(level, ...)
