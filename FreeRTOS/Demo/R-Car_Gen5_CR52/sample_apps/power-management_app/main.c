@@ -369,3 +369,20 @@ static void pmAppExample(void)
 #endif
 }
 
+/*-----------------------------------------------------------*/
+
+int printf_raw(const char *format, ...);
+
+void vMainAssertCalled( const char *pcFileName, uint32_t ulLineNumber )
+{
+    /* Don't use printf as it uses FreeRTOS resources */
+    printf_raw("ASSERT!  Line %d of file %s\n", ulLineNumber, pcFileName);
+    taskENTER_CRITICAL();
+    for( ;; );
+}
+
+void vDeleteCallingTask( void )
+{
+     vTaskDelete( NULL );
+}
+
