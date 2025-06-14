@@ -42,11 +42,11 @@
 #define main_CRC_TASK_PRIORITY        ( tskIDLE_PRIORITY + 1 )
 
 #include "pfc/r_pfc_api.h"
-#include "device_tree_x5h.h"
 
 #include "state-manager/r_state_manager.h"
-#include "state-manager/r_clock_domain_id.h"
 #include "state-manager/r_power_domain_id.h"
+#include "state-manager/r_clock_domain_id.h"
+#include "state-manager/r_reset_domain_id.h"
 /*-----------------------------------------------------------*/
 
 /*
@@ -239,6 +239,61 @@ int main( void )
 }
 /*-----------------------------------------------------------*/
 
+static void WcrcRequestClockOn(void)
+{
+    int ret;
+    uint32_t idx;
+    uint32_t clock_id[] = {
+        X5H_CLOCK_ID_MDLC_WCRC0,
+        X5H_CLOCK_ID_MDLC_WCRC1,
+        X5H_CLOCK_ID_MDLC_WCRC2,
+        X5H_CLOCK_ID_MDLC_WCRC3,
+        X5H_CLOCK_ID_MDLC_WCRC4,
+        X5H_CLOCK_ID_MDLC_WCRC5,
+        X5H_CLOCK_ID_MDLC_WCRC6,
+        X5H_CLOCK_ID_MDLC_WCRC7,
+        X5H_CLOCK_ID_MDLC_WCRC8,
+        X5H_CLOCK_ID_MDLC_WCRC9,
+        X5H_CLOCK_ID_MDLC_WCRC10,
+        X5H_CLOCK_ID_MDLC_CRC0,
+        X5H_CLOCK_ID_MDLC_CRC1,
+        X5H_CLOCK_ID_MDLC_CRC2,
+        X5H_CLOCK_ID_MDLC_CRC3,
+        X5H_CLOCK_ID_MDLC_CRC4,
+        X5H_CLOCK_ID_MDLC_CRC5,
+        X5H_CLOCK_ID_MDLC_CRC6,
+        X5H_CLOCK_ID_MDLC_CRC7,
+        X5H_CLOCK_ID_MDLC_CRC8,
+        X5H_CLOCK_ID_MDLC_CRC9,
+        X5H_CLOCK_ID_MDLC_CRC10,
+        X5H_CLOCK_ID_MDLC_KCRC0,
+        X5H_CLOCK_ID_MDLC_KCRC1,
+        X5H_CLOCK_ID_MDLC_KCRC2,
+        X5H_CLOCK_ID_MDLC_KCRC3,
+        X5H_CLOCK_ID_MDLC_KCRC4,
+        X5H_CLOCK_ID_MDLC_KCRC5,
+        X5H_CLOCK_ID_MDLC_KCRC6,
+        X5H_CLOCK_ID_MDLC_KCRC7,
+        X5H_CLOCK_ID_MDLC_KCRC8,
+        X5H_CLOCK_ID_MDLC_KCRC9,
+        X5H_CLOCK_ID_MDLC_KCRC10,
+    };
+
+    for(idx = 0; idx < sizeof(clock_id)/sizeof(clock_id[0]); idx++)
+    {
+        ret = R_StateManager_ClockOn(clock_id[idx]);
+        if (ret)
+        {
+            printf("Error: Failed to set clock id %d ON.\r\n",
+                    clock_id[idx]);
+        }
+        else
+        {
+            printf("Set clock id %d ON OK!\r\n", clock_id[idx]);
+        }
+    }
+}
+
 static void prvSetupHardware( void )
 {
     /* Ensure no interrupts execute while the scheduler is in an inconsistent
@@ -250,7 +305,7 @@ static void prvSetupHardware( void )
 
     (void)pfcInitModules(getModuleConfigs());
 
-    (void)R_StateManager_ClockOn(X5H_CLOCK_ID_MDLC_WCRC0);
+    WcrcRequestClockOn();
 }
 
 static void prvCRCTask( void *pvParameters )
@@ -266,33 +321,28 @@ static void prvCRCTask( void *pvParameters )
                                     DRV_RTDMAC_PRIO_FIX);
     ret = R_RTDMAC_RcarDmacCtrlInit(RT_DMAC1,
                                     DRV_RTDMAC_PRIO_FIX);
-    //ret = R_RTDMAC_RcarDmacCtrlInit(RT_DMAC2,
-    //                                DRV_RTDMAC_PRIO_FIX);
-    //ret = R_RTDMAC_RcarDmacCtrlInit(RT_DMAC3,
-    //                                DRV_RTDMAC_PRIO_FIX);
+    ret = R_RTDMAC_RcarDmacCtrlInit(RT_DMAC2,
+                                    DRV_RTDMAC_PRIO_FIX);
+    ret = R_RTDMAC_RcarDmacCtrlInit(RT_DMAC3,
+                                    DRV_RTDMAC_PRIO_FIX);
 
     init_data_input();
 
     printf("\n********** TC1: CRC Independent Mode **********\n");
     ret = R_CRC_Open(&g_wcrc_inst_ctrl_indepe, &g_wcrc_cfg0);
     printf("R_CRC_Open: ret = %d\n", ret);
-    vTaskDelay(10);
 
     ret = R_CRC_Calculate(&g_wcrc_inst_ctrl_indepe);
     printf("\nR_CRC_Calculate: ret = %d\n\n", ret);
-    vTaskDelay(10);
 
     ret = R_CRC_Get_Input_Data(&g_wcrc_inst_ctrl_indepe);
     printf("\nR_CRC_Get_Input_Data: ret = %d\n\n", ret);
-    vTaskDelay(10);
 
     ret = R_CRC_Get_Generated_Value(&g_wcrc_inst_ctrl_indepe);
     printf("\nR_CRC_Get_Generated_Value: ret = %d\n", ret);
-    vTaskDelay(10);
 
     ret = R_CRC_Close(&g_wcrc_inst_ctrl_indepe);
     printf("\nR_CRC_Close: ret = %d\n", ret);
-    vTaskDelay(10);
 
     printf("\n********** TC2: E2E CRC Mode **********\n");
     ret = R_CRC_Open(&g_wcrc_inst_ctrl_e2e, &g_wcrc_cfg1);
