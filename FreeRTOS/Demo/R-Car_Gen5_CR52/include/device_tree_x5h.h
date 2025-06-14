@@ -37,8 +37,11 @@ typedef enum {
 #define MODULE_CONFIGS \
     MODULE_CONFIG(MODULE_SCIF1, 1), \
     MODULE_CONFIG(MODULE_I2C0,  1), \
-    MODULE_CONFIG(MODULE_I2C1,  1)  \
-    // Add module configs
+    MODULE_CONFIG(MODULE_I2C1,  1), \
+    /* Add module configs here */   \
+    /* Sentinel guard: Do not remove */ \
+    MODULE_CONFIG(MODULE_INVALID, 0) \
+
 #endif
 
 /**
