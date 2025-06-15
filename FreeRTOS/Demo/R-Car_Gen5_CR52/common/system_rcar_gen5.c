@@ -12,8 +12,8 @@
 #include "interrupts.h"
 #include "cmsis_rcar_gen5.h"
 #include "mpu.h"
-#include "memory_map.h"
 #include "state-manager/r_state_manager.h"
+#include "memory_map/memory_map.h"
 
 extern const unsigned int __bss_start__;
 extern const unsigned int __bss_end__;

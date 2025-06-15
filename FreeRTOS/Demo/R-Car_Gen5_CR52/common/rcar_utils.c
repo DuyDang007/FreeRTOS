@@ -4,7 +4,7 @@
 * SPDX-License-Identifier: MIT
  *************************************************************************************************************/
 
-#include "memory_map.h"
+#include "memory_map/memory_map.h"
 #include "cmsis_rcar_gen5.h"
 #include "drivers/timer/arm_generic_timer.h"
 #include <stdlib.h>
