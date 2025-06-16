@@ -27,7 +27,8 @@ cmake -G "Unix Makefiles" \
     -DCMAKE_TOOLCHAIN_FILE=../toolchain_arm_none_eabi.cmake \
     -DCMAKE_INSTALL_PREFIX=<path/to/install/dir> \
     -DENABLE_OPENAMP=1 \
-..
+    -DBOARD=x5h_ironhide \
+    ..
 make
 ```
 
@@ -41,6 +42,10 @@ CMake options for the project:
 
 - `-DCMAKE_INSTALL_PREFIX=<path/to/install/dir>`: Location to output install directory
 - `-DENABLE_OPENAMP=1`: Enable libmetal, OpenAMP build
+- `-DBOARD`: Choose platform to build:
+  - `x5h_vdk`: For X5H on VDK
+  - `x5h_ironhide`: For X5H Ironhide board
+  - `ai-acc`: For AI Accelerator
 
 ## Output
 
