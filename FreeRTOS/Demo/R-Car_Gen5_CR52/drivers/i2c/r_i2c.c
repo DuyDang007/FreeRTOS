@@ -43,7 +43,7 @@ int R_I2C_Open(i2c_master_ctrl_t * const p_ctrl, i2c_master_cfg_t const * const 
     return 0;
 }
 
-int R_I2C_Close(i2c_master_ctrl_t * const p_ctrl, i2c_master_cfg_t const * const p_cfg) {
+int R_I2C_Close(i2c_master_ctrl_t * const p_ctrl) {
     i2c_instance_ctrl_t * p_instance_ctrl = (i2c_instance_ctrl_t *) p_ctrl;
 
     /* Abort an in-progress transfer with this device only */
@@ -52,7 +52,9 @@ int R_I2C_Close(i2c_master_ctrl_t * const p_ctrl, i2c_master_cfg_t const * const
     /* The device is now considered closed */
     p_instance_ctrl->open = 0U;
 
-    return RCar_I2C_Close(p_cfg->channel);
+    if (p_instance_ctrl->p_cfg != NULL) {
+        RCar_I2C_Close(p_instance_ctrl->p_cfg->channel);
+    }
 
     return 0;
 }

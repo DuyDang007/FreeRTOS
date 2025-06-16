@@ -145,7 +145,7 @@ static void prvI2CTask( void *pvParameters )
 	for (uint8_t i = 0; i < sizeof(default_value); i++)
 		printf("0x%x\t", default_value[i]);
 	printf("\r\n");
-	R_I2C_Close(&g_i2c_device_ctrl_1, &g_i2c_device_cfg_1);
+	R_I2C_Close(&g_i2c_device_ctrl_1);
 	printf("------------- END TEST I2C CHANNEL %d -------------\r\n", g_i2c_device_cfg_1.channel);
 
 
@@ -199,7 +199,7 @@ static void prvI2CTask( void *pvParameters )
 	for (uint8_t i = 0; i < sizeof(default_value); i++)
 		printf("0x%x\t", default_value[i]);
 	printf("\r\n");
-	R_I2C_Close(&g_i2c_device_ctrl_2, &g_i2c_device_cfg_2);
+	R_I2C_Close(&g_i2c_device_ctrl_2);
 	printf("------------- END TEST I2C CHANNEL %d -------------\r\n", g_i2c_device_cfg_2.channel);
 
 
@@ -263,7 +263,7 @@ static void prvI2CTask( void *pvParameters )
 	printf("DEFAULT VALUE: 0x%x\t", default_value[0]);
 	printf("\r\n");
 
-	R_I2C_Close(&g_i2c_device_ctrl_3, &g_i2c_device_cfg_3);
+	R_I2C_Close(&g_i2c_device_ctrl_3);
 	printf("------------- END TEST I2C CHANNEL %d -------------\r\n", g_i2c_device_cfg_3.channel);
 
 
@@ -326,7 +326,7 @@ static void prvI2CTask( void *pvParameters )
 	printf("DEFAULT VALUE: 0x%x\t", default_value[0]);
 	printf("\r\n");
 
-	R_I2C_Close(&g_i2c_device_ctrl_4, &g_i2c_device_cfg_4);
+	R_I2C_Close(&g_i2c_device_ctrl_4);
 	printf("------------- END TEST I2C CHANNEL %d -------------\r\n", g_i2c_device_cfg_4.channel);
 
 	/* Device driver part for channel 5 */
@@ -378,7 +378,7 @@ static void prvI2CTask( void *pvParameters )
 		printf("0x%x\t", default_value[i]);
 	printf("\r\n");
 
-	R_I2C_Close(&g_i2c_device_ctrl_5, &g_i2c_device_cfg_5);
+	R_I2C_Close(&g_i2c_device_ctrl_5);
 	printf("------------- END TEST I2C CHANNEL %d -------------\r\n", g_i2c_device_cfg_5.channel);
 
 
@@ -430,7 +430,7 @@ static void prvI2CTask( void *pvParameters )
 		printf("0x%x\t", default_value[i]);
 	printf("\r\n");
 
-	R_I2C_Close(&g_i2c_device_ctrl_6, &g_i2c_device_cfg_6);
+	R_I2C_Close(&g_i2c_device_ctrl_6);
 	printf("------------- END TEST I2C CHANNEL %d -------------\r\n", g_i2c_device_cfg_6.channel);
 
 	printf("------------- End -------------\r\n");
