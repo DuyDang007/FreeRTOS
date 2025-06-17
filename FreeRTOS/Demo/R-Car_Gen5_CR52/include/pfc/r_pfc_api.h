@@ -15,7 +15,6 @@ extern "C" {
 #include <stdbool.h>
 #include "device_tree_x5h.h"
 
-#define BIT(nr)             (1UL << (nr))
 
 /** PFC group */
 typedef enum e_rcar_pfc_group

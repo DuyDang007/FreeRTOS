@@ -13,6 +13,8 @@
 
 #define GPIO_BASE_ADDR_ERR           0xABCD
 
+#define BIT(nr)             (1UL << (nr))
+
 /* GPIO Bus Domain:
  * By default: use Bus Domain 0.
  */
