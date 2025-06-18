@@ -38,6 +38,7 @@
 #define printf_delay(fmt, ...)      \
 	vTaskDelay(1);		    \
 printf(fmt, ##__VA_ARGS__);         \
+
 /*-----------------------------------------------------------*/
 
 /*
@@ -80,33 +81,38 @@ static void prvSWDTTask( void *pvParameters )
 {
 	/* Remove compiler warning about unused parameter. */
 	( void ) pvParameters;
-	uint8_t i, timeout_sec;
+	uint8_t init_timeout = 59;
+	uint8_t ping_rate = 5;
+	uint8_t ping_count = 3;
 
-	/* Device driver part */
-	printf_delay("PROGRAM START\r\n");
-	printf_delay("------Period count test-------\r\n");
 
-	timeout_sec = 10;
-	R_SWDT_Init(timeout_sec);
-	printf_delay("r_swdt_init: done\r\n");
-
-	R_SWDT_Start();
-	printf_delay("r_swdt_start: watchdog start ticking\r\n");
-
-	/* Application works here */
-	for (i = 0; i < 5; i++){
-		R_SWDT_Ping(3);
-		printf(".");
+	printf("\n=== TC1: Init Watchdog Timer ===\n");
+	if (R_SWDT_Init(init_timeout) == 0) {
+		printf("\n[INFO] Watchdog Timer initialized with timeout = %u seconds.\n", init_timeout);
+	} else {
+		printf("\n[ERROR] Failed to initialize Watchdog Timer.\n");
 	}
-	printf_delay("\r\n");
-	printf_delay("Period count test: DONE\r\n");
 
-	/* Reset case starts here */
-	printf_delay("\r\n");
-	printf_delay("------Reset case test-------\r\n");
-	printf_delay("System will be reset in: %u\r\n", timeout_sec);
+	printf("\n=== TC2: Start Watchdog Timer ===\n");
+	if (R_SWDT_Start() == 0) {
+		printf("\n[INFO] Watchdog Timer started successfully.\n");
+	} else {
+		printf("\n[ERROR] Failed to start Watchdog Timer.\n");
+	}
 
-	printf_delay("PROGRAM END\r\n");
+	printf("\n=== TC3: Ping Watchdog Timer ===\n");
+	for (uint8_t i = 0; i < ping_count; i++) {
+		printf("[INFO] Ping %u: Set pingrate to %u seconds.\n", i + 1, ping_rate);
+		if (R_SWDT_Ping(ping_rate) != 0) {
+			printf("[ERROR] Ping failed at count %u\n", i + 1);
+		}
+	}
+
+	printf("\n=== TC4: Stop pinging to let system reset ===\n");
+	printf("\n[INFO] Ping count reached %u. No further pings — system should reset after timeout (%u seconds).\n",
+	ping_count, init_timeout);
+	printf("\n[NOTE] Waiting for system reset...\n");
+
 	for( ;; )
 	{
 	}
