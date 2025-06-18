@@ -9,6 +9,8 @@
 #include "task.h"
 #include <stdio.h>
 #include "watchdog/r_swdt_api.h"
+#include "state-manager/r_clock_domain_id.h"
+#include "state-manager/r_state_manager.h"
 
 #define SWDT_BASE	0x1C050000
 #define SWTCNT		0x0
@@ -19,10 +21,13 @@
 #define SWTCSRA_TME	(1 << 7)
 
 #define SWTCSRB		0x08
-#define OSCCLK		32800 //HWUM is:131570
+#define OSCCLK		131570
 
-#define RST_DM0_BASE	0xC6560000
+#define RST_DM0_BASE	0xC1320000
+
+#define RST_KCPROT_DIS	0xA5A5A501
 #define RST_WDTRSTCR	0x0420
+#define RST_RESKCPROT0	0x04F0
 #define SWDT_RSTMSK	(1 << 1)
 #define RST_RESFC	0x0460
 #define RST_SRES1FC5	(1 << 25)
@@ -72,6 +77,13 @@ static void r_swdt_wait_cycles(uint8_t cycles) {
 
 uint8_t R_SWDT_Init(uint8_t timeout_sec) {
 	uint16_t clks_per_sec;
+	uint8_t ret;
+	int clock_id;
+
+	clock_id = X5H_CLOCK_ID_MDLC_SWDT0;
+	ret = R_StateManager_ClockOn(clock_id);
+	if (ret)
+		printf("Error: Failed to set clock id %d ON.\r\n", clock_id);
 
 	/* for SWDT */
 	r_swdt_write(SWDT_BASE + SWTCSRA, (0xA5A5A5 << 8) | (r_swdt_read(SWDT_BASE + SWTCSRA) & ~SWTCSRA_TME));
@@ -87,8 +99,11 @@ uint8_t R_SWDT_Init(uint8_t timeout_sec) {
 			break;
 		}
 	}
-	init_timeout = timeout_sec;
+
 	/* for RST_CTRL */
+	r_swdt_write(RST_DM0_BASE + RST_RESKCPROT0, RST_KCPROT_DIS);
+
+	init_timeout = timeout_sec;
 	r_swdt_write(RST_DM0_BASE + RST_RESFC, r_rst_read(RST_DM0_BASE + RST_RESFC) & ~RST_SRES1FC5);
 
 	/* Wait WRFLG becomes 0 */
@@ -101,16 +116,14 @@ uint8_t R_SWDT_Init(uint8_t timeout_sec) {
 	return 0;
 }
 
-uint8_t R_SWDT_Ping(uint8_t ping_rate)
-{
-	r_swdt_write(SWDT_BASE + SWTCNT, (0x5A5A << 16) | (65536 - MUL_BY_CLKS_PER_SEC(cks, init_timeout)));
+uint8_t R_SWDT_Ping(uint8_t ping_rate) {
 	vTaskDelay(ping_rate*1000);
+	r_swdt_write(SWDT_BASE + SWTCNT, (0x5A5A << 16) | (65536 - MUL_BY_CLKS_PER_SEC(cks, init_timeout)));
 
 	return 0;
 }
 
 uint32_t R_SWDT_Start() {
-	vTaskDelay(30);
 	r_swdt_write(SWDT_BASE + SWTCSRA, (0xA5A5A5 << 8) | (r_swdt_read(SWDT_BASE + SWTCSRA) | SWTCSRA_TME));
 
 	return 0;
