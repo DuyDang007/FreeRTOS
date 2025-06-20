@@ -269,6 +269,7 @@ install(
     DESTINATION bins
     FILES_MATCHING
         PATTERN "*.elf"
+        PATTERN "*.srec"
         PATTERN "*.map"
     PATTERN "CMakeFiles" EXCLUDE
 )
