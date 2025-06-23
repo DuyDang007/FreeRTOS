@@ -95,7 +95,6 @@ typedef enum {
  *                           - `true` (default): Reset mode, the system will reset when an error occurs.
  *                           - `false`: NMI mode, the system will generate a Non-Maskable Interrupt (NMI) on error.
  *
- * @retval 0 if the initialization is successful, non-zero value in case of failure.
  */
 void R_WWDT_Init(wwdt_unit_t unit, wwdt_wsize_t wsize, uint32_t timeout_msec, bool irq_75p, wwdt_erm_t err_mode);
 
