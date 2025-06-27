@@ -35,6 +35,8 @@
 #include "stdio.h"
 #define main_Logging_TASK_PRIORITY        ( tskIDLE_PRIORITY + 1 )
 
+#include "pfc/r_pfc_api.h"
+#include "device_tree_x5h.h"
 /* Logging Function include. */
 #ifdef LIBRARY_LOG_LEVEL
 #include "logging_stack.h"
@@ -76,6 +78,8 @@ static void prvSetupHardware( void )
 	portDISABLE_INTERRUPTS();
 
 	Irq_Setup();
+
+    (void)pfcInitModules(getModuleConfigs());
 }
 
 static void prvLoggingTask( void *pvParameters )
