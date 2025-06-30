@@ -22,7 +22,9 @@
 #define PM_LOG(format, ...) \
     {\
         printf("PM [%s:%d] ", __func__, __LINE__);\
+        vTaskDelay(5); \
         printf(format "\r\n", ##__VA_ARGS__);\
+        vTaskDelay(5); \
     }
 
 static void prvPmAppTask(void *pvParameters);
