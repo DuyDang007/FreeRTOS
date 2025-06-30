@@ -155,7 +155,7 @@ int R_StateManager_Init(void)
 	uint32_t attributes;
 
     if (initialized) {
-        SCMI_LOG_INFO("State Manager is initialized already!\r\n");
+        SCMI_LOG_DBG("State Manager is initialized already!\r\n");
         return 0;
     }
 
@@ -170,7 +170,7 @@ int R_StateManager_Init(void)
 		SCMI_LOG_ERR("Error: Failed to get scmi base protocol version.\r\n");
 		return ret;
 	}
-	SCMI_LOG_INFO("SCMI protocol version=0x%x", version);
+	SCMI_LOG_DBG("SCMI protocol version=0x%x", version);
 
 	ret = scmi_power_protocol_attributes(&attributes);
 	if (ret) {
@@ -178,7 +178,7 @@ int R_StateManager_Init(void)
 		return ret;
 	}
 	max_powerdomain_num = attributes;
-	SCMI_LOG_INFO("Number of supported power domains: %d", max_powerdomain_num);
+	SCMI_LOG_DBG("Number of supported power domains: %d", max_powerdomain_num);
 
 	ret = scmi_clock_protocol_attributes(&attributes);
 	if (ret) {
@@ -186,7 +186,7 @@ int R_StateManager_Init(void)
 		return ret;
 	}
 	max_clockdomain_num = attributes;
-	SCMI_LOG_INFO("Number of supported clock domains: %d", max_clockdomain_num);
+	SCMI_LOG_DBG("Number of supported clock domains: %d", max_clockdomain_num);
 
 	ret = scmi_reset_protocol_attributes(&attributes);
 	if (ret) {
@@ -194,7 +194,7 @@ int R_StateManager_Init(void)
 		return ret;
 	}
 	max_resetdomain_num = attributes;
-	SCMI_LOG_INFO("Number of supported reset domains: %d", max_resetdomain_num);
+	SCMI_LOG_DBG("Number of supported reset domains: %d", max_resetdomain_num);
 
 	ret = scmi_system_request_notify(true);
 	if (ret) {
@@ -312,7 +312,7 @@ int R_StateManager_RequestDeepStop(void)
 		SCMI_LOG_ERR("Only main FreeRTOS can request Deep Stop!");
 		return -1;
 	}
-	SCMI_LOG_INFO("System is suspending...");
+	SCMI_LOG_DBG("System is suspending...");
 #ifdef S2R_DRAFT_FLOW
 	cur_s2r_transition = MYSELF;
 	SCMI_LOG_INFO("Step 2. S2R request");
@@ -347,7 +347,7 @@ int R_StateManager_SysReboot(void)
 {
 	int ret;
 
-	SCMI_LOG_INFO("System is resetting...");
+	SCMI_LOG_DBG("System is resetting...");
 	ret = scmi_system_power_state_set(FLAGS_GRACEFUL, SYSTEM_STATE_COLD_RESET);
 	if (ret) {
 		SCMI_LOG_ERR("Error: Failed to set system suspend gracefully.");
@@ -361,7 +361,7 @@ int R_StateManager_SysPowerOff(void)
 {
 	int ret;
 
-	SCMI_LOG_INFO("System is shutting down...");
+	SCMI_LOG_DBG("System is shutting down...");
 	ret = scmi_system_power_state_set(FLAGS_FORCEFUL, SYSTEM_STATE_SHUTDOWN);
 	if (ret) {
 		SCMI_LOG_ERR("Error: Failed to shutdown system forcefully.");
