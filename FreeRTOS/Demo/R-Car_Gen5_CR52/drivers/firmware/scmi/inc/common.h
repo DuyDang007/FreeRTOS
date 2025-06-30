@@ -35,7 +35,7 @@ typedef enum {
 } e_scmi_log_level_t;
 
 /* Configuration of log level */
-#define SCMI_LOG_LEVEL_DEFAULT    SCMI_LOG_LEVEL_DBG
+#define SCMI_LOG_LEVEL_DEFAULT    SCMI_LOG_LEVEL_INFO
 
 #ifdef SCMI_DEBUG
 #include "stdio.h"
