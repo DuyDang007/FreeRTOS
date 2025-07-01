@@ -33,6 +33,8 @@
 #include "interrupts.h"
 #include "stdio.h"
 #include "watchdog/r_swdt_api.h"
+#include "pfc/r_pfc_api.h"
+#include "device_tree_x5h.h"
 
 #define main_SWDT_TASK_PRIORITY        ( tskIDLE_PRIORITY + 1 )
 #define printf_delay(fmt, ...)      \
@@ -75,6 +77,7 @@ static void prvSetupHardware( void )
 	portDISABLE_INTERRUPTS();
 
 	Irq_Setup();
+	(void)pfcInitModules(getModuleConfigs());
 }
 
 static void prvSWDTTask( void *pvParameters )
