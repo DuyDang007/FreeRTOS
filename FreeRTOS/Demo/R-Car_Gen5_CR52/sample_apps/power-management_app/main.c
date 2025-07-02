@@ -323,13 +323,30 @@ static void pmAppExample(void)
 
     PM_LOG("*******TC%d: SCMI Reset control starting!*******\r\n",
             ++tc_number);
-	{
-#if 1
-        PM_LOG("Currenty SCP FW doesn't support reset protocol\r\n");
+#ifndef SYSTEM_RST_TEST
+	for (domain_id = X5H_RESET_DOMAIN_ID_VIPN_FCPCS0;
+		 domain_id < X5H_RESET_DOMAIN_ID_COUNT;
+		 ++domain_id)
 #else
-		pmResetTest(X5H_RESET_DOMAIN_ID_HSCIF0);
+        domain_id = X5H_RESET_DOMAIN_ID_VIPN_FCPCS0;
+#endif /* SYSTEM_RST_TEST */
+	{
+		if ((X5H_RESET_DOMAIN_ID_HSCIF0 == domain_id) ||
+            (X5H_RESET_DOMAIN_ID_SCIF0 == domain_id) ||
+            (X5H_RESET_DOMAIN_ID_INTAP1 <= domain_id)
+            ) {
+#ifndef SYSTEM_RST_TEST
+			continue;
 #endif
+		}
+		pmResetTest(domain_id);
 	}
+#ifndef SYSTEM_RST_TEST
+    PM_LOG("Following reset id are skipped testing due to board hang:\n"
+           "- X5H_RESET_DOMAIN_ID_HSCIF0\n"
+           "- X5H_RESET_DOMAIN_ID_SCIF0,\n"
+           "- From X5H_RESET_DOMAIN_ID_INTAP1 to the end\r\n");
+#endif /* SYSTEM_RST_TEST */
     PM_LOG("*******TC%d: SCMI Reset control end!*******\r\n\r\n",
             tc_number);
 
