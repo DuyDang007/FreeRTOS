@@ -31,14 +31,14 @@ typedef enum {
     MODULE_MAX = 255			///< Max module ID.
 } e_module_id_t;
 
-#if (BOARD == X5H_VDK)
+//#if (BOARD == X5H_VDK)
 #define MODULE_CONFIGS \
     MODULE_CONFIG(MODULE_SCIF0, 1),   /* module_id, is_enabled */ \
     /* Add module configs here */   \
     /* Sentinel guard: Do not remove */ \
     MODULE_CONFIG(MODULE_INVALID, 0) \
 
-#endif
+//#endif
 
 /**
  * @brief Configuration PFC for module HW IP.
