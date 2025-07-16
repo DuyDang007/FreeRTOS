@@ -36,6 +36,7 @@
 #include "dmac/sysdmac_ctrl.h"
 #include "pfc/r_pfc_api.h"
 #include "device_tree_x5h.h"
+#include "rcar_utils.h"
 
 #include "stdio.h"
 #include "stdbool.h"
@@ -57,8 +58,8 @@ static void prvDMACTask( void *pvParameters );
 rDmacCfg_t cfg0 =
 {
 	//Fill in the configuration details
-	.mSrcAddr = 0x80000000,
-	.mDestAddr = 0x81000000,
+	.mSrcAddr = 0x84001000,
+	.mDestAddr = 0x85000000,
 	.mTransferCount = 1,
 	.mDMAMode = DRV_DMAC_DMA_NO_DESCRIPTOR, // Assuming DRV_DMAC_DMA_NO_DESCRIPTOR is defined
 	.mSrcAddrMode = DRV_RTDMAC_ADDR_FIXED, // Assuming ADDR_MODE_FIXED is defined
@@ -177,6 +178,9 @@ static void prvDMACTask( void *pvParameters )
 	/* Device Driver Part */
 	R_RTDMAC_RcarDmacCtrlInit(RT_DMAC3, DRV_RTDMAC_PRIO_FIX);
 
+	*(volatile uint32_t*)cfg0.mDestAddr = 0x9;
+	printf("Value at DestAddr before DMA: 0x%x \n", *(volatile uint32_t*)cfg0.mDestAddr);
+
 	*(volatile uint32_t*)cfg0.mSrcAddr = 0x3;
 	printf("Value at SrcAddr: 0x%x \n",*(volatile uint32_t*)cfg0.mSrcAddr);
 
@@ -195,8 +199,14 @@ static void prvDMACTask( void *pvParameters )
 
 	// Verify destination data
 	uint32_t destData = *(volatile uint32_t*)cfg0.mDestAddr;
-	printf("Value at DestAddr after DMA: 0x%x \n", destData);
+	printf("[No Invalidate DCache] 	Value at DestAddr after DMA: 0x%x \n", destData);
 
+	uint32_t total_transfer_size = 4;
+	R_UTILS_InvalidateDCache((uint32_t)cfg0.mDestAddr, total_transfer_size);
+
+	// Let CPU read again
+	destData = *(volatile uint32_t*)cfg0.mDestAddr;
+	printf("[Invalidate DCache] 	Value at DestAddr after DMA: 0x%x \n", destData);
 	for( ;; )
 	{
 	}
