@@ -92,6 +92,18 @@ void * aligned_malloc(size_t align, size_t size);
 void aligned_free(void * ptr);
 
 
+/**
+ * @brief Invalidate Data cache.
+ *
+ * Notify CPU to invalidate data cache before reading.
+ *
+ * @param[in] addr Physical start address.
+ *
+ * @param[in] size Buffer size in byte.
+ *
+ */
+void R_UTILS_InvalidateDCache(uint32_t addr, uint32_t size);
+
 /**-----------------------------------------------------------**/
 
 #ifdef __cplusplus

@@ -92,3 +92,8 @@ void aligned_free(void * ptr)
         vPortFree(p);
     }
 }
+
+void R_UTILS_InvalidateDCache(uint32_t addr, uint32_t size)
+{
+   L1C_InvalidateDCacheAddress(addr, size);
+}
