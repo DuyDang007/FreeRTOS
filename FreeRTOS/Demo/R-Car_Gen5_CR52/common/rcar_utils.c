@@ -97,3 +97,8 @@ void R_UTILS_InvalidateDCache(uint32_t addr, uint32_t size)
 {
    L1C_InvalidateDCacheAddress(addr, size);
 }
+
+void R_UTILS_InvalidateDCacheAll()
+{
+   L1C_InvalidateDCacheAll();
+}

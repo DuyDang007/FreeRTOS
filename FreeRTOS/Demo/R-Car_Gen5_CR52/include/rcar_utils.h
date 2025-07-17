@@ -104,6 +104,14 @@ void aligned_free(void * ptr);
  */
 void R_UTILS_InvalidateDCache(uint32_t addr, uint32_t size);
 
+/**
+ * @brief Invalidate All Data cache.
+ *
+ * Notify CPU to invalidate data cache before reading.
+ *
+ */
+void R_UTILS_InvalidateDCacheAll();
+
 /**-----------------------------------------------------------**/
 
 #ifdef __cplusplus
