@@ -41,6 +41,7 @@
 #include "stdio.h"
 #include "stdbool.h"
 #define main_DMAC_TASK_PRIORITY        ( tskIDLE_PRIORITY + 1 )
+#define DESTINATION_OFFSET 			   0x01000000
 
 void dmacUserCallback(void *data);
 
@@ -58,8 +59,8 @@ static void prvDMACTask( void *pvParameters );
 rDmacCfg_t cfg0 =
 {
 	//Fill in the configuration details
-	.mSrcAddr = 0x84001000,
-	.mDestAddr = 0x85000000,
+	.mSrcAddr = 0,
+	.mDestAddr = 0,
 	.mTransferCount = 1,
 	.mDMAMode = DRV_DMAC_DMA_NO_DESCRIPTOR, // Assuming DRV_DMAC_DMA_NO_DESCRIPTOR is defined
 	.mSrcAddrMode = DRV_RTDMAC_ADDR_FIXED, // Assuming ADDR_MODE_FIXED is defined
@@ -74,8 +75,8 @@ rDmacCfg_t cfg0 =
 rDmacCfg_t cfg1 =
 {
 	//Fill in the configuration details
-	.mSrcAddr = 0x80000000,
-	.mDestAddr = 0x81000000,
+	.mSrcAddr = 0,
+	.mDestAddr = 0,
 	.mTransferCount = 3,
 	.mDMAMode = DRV_DMAC_DMA_DESC_NORMAL, // Assuming DRV_DMAC_DMA_DESC_NORMAL is defined
 	.mSrcAddrMode = DRV_RTDMAC_ADDR_FIXED, // Assuming ADDR_MODE_FIXED is defined
@@ -102,8 +103,8 @@ rDmacDescCfg_t descCfg1 =
 /* Define configure DMA Controller */
 rDmacCfg_t cfg2 =
 {
-    .mSrcAddr = 0x80000000,                     // Source address
-    .mDestAddr = 0x81000000,                    // Destination address
+	.mSrcAddr = 0,
+	.mDestAddr = 0,
     .mTransferCount = 4,                        // Transfer count
     .mDMAMode = DRV_DMAC_DMA_DESC_REPEAT,       // Reapeat descriptor mode
     .mSrcAddrMode = DRV_RTDMAC_ADDR_FIXED,      // Source address fixed
@@ -174,7 +175,18 @@ static void prvDMACTask( void *pvParameters )
 	{
 		.ctx = &rDmacIrqHandler_t_irq,
 	};
-
+	/* Get memory region first */
+	st_memory_t region = R_UTILS_GetMemoryRegionInfo(OSAL, 0);
+	cfg0.mSrcAddr = region.base_address;
+	cfg0.mDestAddr = region.base_address + DESTINATION_OFFSET;
+	if (cfg0.mDestAddr > region.base_address + region.size) 
+	{
+		printf("Failed: Destination address 0x%08X exceeds memory region (end at 0x%08X)\n", cfg0.mDestAddr, region.base_address + region.size);
+		for( ;; )
+		{
+			vTaskDelay(3000);
+		}
+	}
 	/* Device Driver Part */
 	R_RTDMAC_RcarDmacCtrlInit(RT_DMAC3, DRV_RTDMAC_PRIO_FIX);
 
