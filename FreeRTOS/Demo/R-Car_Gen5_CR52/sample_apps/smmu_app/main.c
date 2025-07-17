@@ -41,9 +41,12 @@
 #include "dmac/sysdmac_ctrl.h"
 #include "pfc/r_pfc_api.h"
 #include "device_tree_x5h.h"
+#include "rcar_utils.h"
 
 #define main_SMMU_TASK_PRIORITY        ( tskIDLE_PRIORITY + 1 )
-
+#define DESTINATION_OFFSET 			   0x01000000
+#define SOURCE_OFFSET_MAPPING          0x10000000
+#define DESTINATION_OFFSET_MAPPING     0x11000000
 /*-----------------------------------------------------------*/
 
 /*
@@ -59,8 +62,8 @@ rDmacCfg_t cfg =
 	//Fill in the configuration details
 	// .mSrcAddr = 0x189E7000,
 	// .mDestAddr = 0x189E7100,
-    .mSrcAddr = 0x80000000,
-	.mDestAddr = 0x81000000,
+    .mSrcAddr = 0,
+	.mDestAddr = 0,
 	.mTransferCount = 1,
 	.mDMAMode = DRV_DMAC_DMA_NO_DESCRIPTOR, // Assuming DRV_DMAC_DMA_NO_DESCRIPTOR is defined
 	.mSrcAddrMode = DRV_RTDMAC_ADDR_FIXED, // Assuming ADDR_MODE_FIXED is defined
@@ -112,6 +115,18 @@ static void prvSMMUTask( void *pvParameters )
     /* Remove compiler warning about unused parameter. */
     (void)pvParameters;
     int ret,i;
+    /* Get memory region first */
+	st_memory_t region = R_UTILS_GetMemoryRegionInfo(OSAL, 0);
+	cfg.mSrcAddr = region.base_address;
+	cfg.mDestAddr = region.base_address + DESTINATION_OFFSET;
+	if (cfg.mDestAddr > region.base_address + region.size) 
+	{
+		printf("Failed: Destination address 0x%08X exceeds memory region (end at 0x%08X)\n", cfg.mDestAddr, region.base_address + region.size);
+		for( ;; )
+		{
+			vTaskDelay(3000);
+		}
+	}
 
     st_smmu_streamid_instance_ctrl_t smmu_crtl = {
         .stream_id = 0x50001,
@@ -138,7 +153,8 @@ static void prvSMMUTask( void *pvParameters )
     }
     printf("**********************************************\r\n");
     
-    R_SMMU_Map(&smmu_crtl, 0x80000000, 0x90000000, 0x5006000);
+    // R_SMMU_Map(&smmu_crtl, 0x80000000, 0x90000000, 0x5006000);
+    R_SMMU_Map(&smmu_crtl, cfg.mSrcAddr, cfg.mSrcAddr + SOURCE_OFFSET_MAPPING, 0x5006000);
     
     printf("* Test case 3: Issue command *\r\n");
     int ret_cmd1, ret_cmd2 = -1;
@@ -162,8 +178,8 @@ static void prvSMMUTask( void *pvParameters )
     /* Device Driver Part */
     R_SYSDMAC_RcarDmacCtrlInit(SYS_DMAC3, DRV_RTDMAC_PRIO_FIX);
 
-    volatile uint32_t *pa_src_ptr = (volatile uint32_t *)0x90000000;
-    volatile uint32_t *pa_dst_ptr = (volatile uint32_t *)0x91000000;
+    volatile uint32_t *pa_src_ptr = (volatile uint32_t *)(cfg.mSrcAddr + SOURCE_OFFSET_MAPPING);
+    volatile uint32_t *pa_dst_ptr = (volatile uint32_t *)(cfg.mSrcAddr + DESTINATION_OFFSET_MAPPING);
 
     *(volatile uint32_t *)pa_src_ptr = 0x7012;
     *(volatile uint32_t *)cfg.mSrcAddr = 0x123;
