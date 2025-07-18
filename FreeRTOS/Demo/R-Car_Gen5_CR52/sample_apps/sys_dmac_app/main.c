@@ -191,6 +191,9 @@ static void prvDMACTask( void *pvParameters )
 	/* Device Driver Part */
 	R_SYSDMAC_RcarDmacCtrlInit(SYS_DMAC3, DRV_RTDMAC_PRIO_FIX);
 
+	*(volatile uint32_t*)cfg1.mDestAddr = 0x9;
+	printf("Value at DestAddr before DMA: 0x%x \n", *(volatile uint32_t*)cfg1.mDestAddr);
+
 	*(volatile uint32_t*)cfg1.mSrcAddr = 0x3;
 	printf("Value at SrcAddr: 0x%x \n",*(volatile uint32_t*)cfg1.mSrcAddr);
 
@@ -209,7 +212,14 @@ static void prvDMACTask( void *pvParameters )
 
 	// Verify destination data
 	uint32_t destData = *(volatile uint32_t*)cfg1.mDestAddr;
-	printf("Value at DestAddr after DMA: 0x%x \n", destData);
+	printf("[No Invalidate DCache] 	Value at DestAddr after DMA: 0x%x \n", destData);
+
+	uint32_t total_transfer_size = 4;
+	R_UTILS_InvalidateDCache((uint32_t)cfg1.mDestAddr, total_transfer_size);
+
+	// Let CPU read again
+	destData = *(volatile uint32_t*)cfg1.mDestAddr;
+	printf("[Invalidate DCache] 	Value at DestAddr after DMA: 0x%x \n", destData);
 
 	for( ;; )
 	{
