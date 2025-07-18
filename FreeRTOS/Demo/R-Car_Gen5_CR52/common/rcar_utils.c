@@ -102,3 +102,9 @@ void R_UTILS_InvalidateDCacheAll()
 {
    L1C_InvalidateDCacheAll();
 }
+
+uint32_t R_UTILS_ReadMemForDMA(void *addr, uint32_t size)
+{
+    R_UTILS_InvalidateDCache((uint32_t)addr, size);
+    return *(volatile uint32_t *)addr;
+}

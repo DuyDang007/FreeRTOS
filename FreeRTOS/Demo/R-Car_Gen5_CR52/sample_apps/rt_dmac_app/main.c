@@ -210,15 +210,9 @@ static void prvDMACTask( void *pvParameters )
 		printf("DMA execution failed with status: %d\n", dmaStatus);
 
 	// Verify destination data
-	uint32_t destData = *(volatile uint32_t*)cfg0.mDestAddr;
-	printf("[No Invalidate DCache] 	Value at DestAddr after DMA: 0x%x \n", destData);
-
 	uint32_t total_transfer_size = 4;
-	R_UTILS_InvalidateDCache((uint32_t)cfg0.mDestAddr, total_transfer_size);
-
-	// Let CPU read again
-	destData = *(volatile uint32_t*)cfg0.mDestAddr;
-	printf("[Invalidate DCache] 	Value at DestAddr after DMA: 0x%x \n", destData);
+	uint32_t destData = R_UTILS_ReadMemForDMA((void*)cfg0.mDestAddr, total_transfer_size);
+	printf("Value at DestAddr after DMA: 0x%x \n", destData);
 	for( ;; )
 	{
 	}
