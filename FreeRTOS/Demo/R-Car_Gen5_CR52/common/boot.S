@@ -81,9 +81,9 @@ _reset:
 	ldr r0, =(HSCTLR_RES1 | SCTLR_I_BIT | SCTLR_C_BIT)
 	mcr p15, 4, r0, c1, c0, 0
 
-    /* Configure Arm Genereric Timer frequency */
-    ldr r0, =GENERIC_TIMER_CLK
-    mcr p15, 0, r0, c14, c0, 0
+	/* Configure Arm Genereric Timer frequency */
+	ldr r0, =GENERIC_TIMER_CLK
+	mcr p15, 0, r0, c14, c0, 0
 
 	/* Init HACTLR: Enable EL1 access to all IMP DEF registers */
 	ldr r0, =HACTLR_INIT
@@ -192,8 +192,8 @@ EL1_Reset_Handler:
 	fmdrr d13, r1, r1
 	fmdrr d14, r1, r1
 	fmdrr d15, r1, r1
-        vmsr fpscr, r1
-    	vmsr fpexc, r1
+	vmsr fpscr, r1
+	vmsr fpexc, r1
 #endif
 
 	/*
@@ -227,6 +227,7 @@ EL1_Reset_Handler:
 
 	mov 	r14, #0
 
+#if (CACHE == 1)
 	# Enable data and instruction cache in SVC mode
 	mrc     p15, 0, r2, c1, c0, 0   ;# Read System Control Register (SCTLR)
 	orr     r2, r2, #0x1 <<12       ;# instruction cache enable (SCTLR.I)
@@ -235,6 +236,7 @@ EL1_Reset_Handler:
 	mcr     p15, 0, r0, c7, c5, 6   ;# Invalidate all entries from branch predictors (BPIALL)
 	mcr     p15, 0, r2, c1, c0, 0   ;# enabled instruction and data cache (SCTLR)
 	isb
+#endif
 
 	ldr r0, =(_vector_table)
 	mcr p15, 0, r0, c12, c0, 0 /* Set vector table address */
