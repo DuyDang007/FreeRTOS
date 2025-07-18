@@ -188,6 +188,7 @@ static void prvSMMUTask( void *pvParameters )
     {
         .ctx = &rDmacIrqHandler_t_irq,
     };
+    *(volatile uint32_t *)pa_dst_ptr = 0x123;
 
     ret = R_SYSDMAC_RcarCallBackSet(&rDmacIrqHandler_t_irq, dmacUserCallback, &usr_context);
 
@@ -196,12 +197,20 @@ static void prvSMMUTask( void *pvParameters )
     for (i=0; i<10000; i++)
     {}
 
+    printf("* Test case 4: Test transaction data *\r\n");
     // Verify destination data
     uint32_t destData = *(volatile uint32_t *)pa_dst_ptr;
-    printf("* Test case 4: Test transaction data *\r\n");
+	printf("[No Invalidate DCache] 	Value at DestAddr after DMA: 0x%x \n", destData);
+
+	uint32_t total_transfer_size = 4;
+	R_UTILS_InvalidateDCache((uint32_t)pa_dst_ptr, total_transfer_size);
+
+	// Let CPU read again
+	destData = *(volatile uint32_t*)pa_dst_ptr;
+	printf("[Invalidate DCache] 	Value at DestAddr after DMA: 0x%x \n", destData);
+
     printf("pa src address: 0x%lx, src data: 0x%lx\n",pa_src_ptr, *(volatile uint32_t *)pa_src_ptr );
     printf("pa dst address: 0x%lx, dst data: 0x%lx\n",pa_dst_ptr, destData );
-
     if (destData == (*(volatile uint32_t *)pa_src_ptr)) {
         printf("Result: Passed\n");
     } else {
