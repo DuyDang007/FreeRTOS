@@ -112,6 +112,19 @@ void R_UTILS_InvalidateDCache(uint32_t addr, uint32_t size);
  */
 void R_UTILS_InvalidateDCacheAll();
 
+/**
+ * @brief Invalidate cache and read memory for DMA.
+ * 
+ * Invalidates cache for the given address range and reads memory to ensure
+ * fresh data after DMA transfer.
+ * 
+ * @param[in] addr Address to read.
+ * @param[in] size Size of memory range to invalidate.
+ * 
+ * @return uint32_t Value read from memory.
+ */
+uint32_t R_UTILS_ReadMemForDMA(void *addr, uint32_t size);
+
 /**-----------------------------------------------------------**/
 
 #ifdef __cplusplus
