@@ -30,11 +30,14 @@ typedef struct st_memory_region {
 #define PERIPHERAL_START_0          0x18800000
 #define PERIPHERAL_SIZE_0           0x1FA80000  // to 0x3828_0000
 
-#define LINUX_CMA_ADDRESS_0         0x86600000
-#define LINUX_CMA_SIZE_0            0x04000000  // to 0x8000_0000
-
 #define OSAL_MEMORY_ADDRESS         0x63800000
 #define OSAL_MEMORY_SIZE            0x20000000  // to 0x8380_0000
+
+#define SHARE_CR_CA_ADDRESS         0x96600000
+#define SHARE_CR_CA_SIZE            0x08000000  // to 0x9E60_0000
+
+#define LINUX_CMA_ADDRESS_0         0xa2600000
+#define LINUX_CMA_SIZE_0	    0x1DA00000  // to 0xC000_0000
 
 #define PERIPHERAL_START_1          0xC0000000
 #define PERIPHERAL_SIZE_1           0x40000000  // to 0x1_0000_0000
@@ -42,6 +45,7 @@ typedef struct st_memory_region {
 static const st_memory_region_t RCAR_MEMMORY_ARR[] = {
     {.type = OSAL,          .mem_addr = {.base_address = (uint32_t) OSAL_MEMORY_ADDRESS, .size = (uint32_t) OSAL_MEMORY_SIZE},    .attr = RAM_ATTR},
     {.type = SHARE_MEM,     .mem_addr = {.base_address = (uint32_t) LINUX_CMA_ADDRESS_0, .size = (uint32_t) LINUX_CMA_SIZE_0},    .attr = RAM_ATTR},
+    {.type = SHARE_MEM,     .mem_addr = {.base_address = (uint32_t) SHARE_CR_CA_ADDRESS, .size = (uint32_t) SHARE_CR_CA_SIZE},    .attr = RAM_ATTR},
     {.type = PERIPHERAL,    .mem_addr = {.base_address = (uint32_t) PERIPHERAL_START_0,  .size = (uint32_t) PERIPHERAL_SIZE_0},   .attr = DEVICE_ATTR},
     {.type = PERIPHERAL,    .mem_addr = {.base_address = (uint32_t) PERIPHERAL_START_1,  .size = (uint32_t) PERIPHERAL_SIZE_1},   .attr = DEVICE_ATTR}
 };
