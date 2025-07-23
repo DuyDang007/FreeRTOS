@@ -54,6 +54,14 @@ else()
     set(BOARD_ID 2)
 endif()
 
+if (BOARD STREQUAL "x5h_ironhide")
+    set(UCIE_VER "RCAR_UCIE_V100")
+elseif(BOARD STREQUAL "ai-acc")
+    set(UCIE_VER "RCAR_UCIE_V102")
+else()
+    set(UCIE_VER "NONE")
+endif()
+
 ### Global compile definitions
 set(global_definition
     -DconfigUSE_POSIX_ERRNO=1
@@ -73,6 +81,7 @@ add_compile_options(
     -Wno-unknown-pragmas -DSCMI_DEBUG -DBOARD=${BOARD_ID} -DRAM_REGION=${RAM_REGION} -g
     -DCACHE=${CACHE}
     ${global_definition}
+    -D${UCIE_VER}=1
 )
 
 add_link_options(
@@ -131,6 +140,7 @@ set(bsp_source
     ${BSP_DIR}/drivers/ucie/ucie_controller.c
     ${BSP_DIR}/drivers/ucie/ucie_host.c
     ${BSP_DIR}/drivers/ucie/ucie_ep.c
+    ${BSP_DIR}/drivers/ucie_hwemu/ucie_teg/uciedrv.c
     ${BSP_DIR}/drivers/iommu/virtio_mmu.c
     ${SCMI_SRC_LIST}
     ${BSP_DIR}/drivers/state-manager/state_manager.c
@@ -190,6 +200,11 @@ target_include_directories(freertos_bsp
         $<BUILD_INTERFACE:${BSP_DIR}/drivers/firmware>
         $<BUILD_INTERFACE:${BSP_DIR}/drivers/smmu>
         $<BUILD_INTERFACE:${BSP_DIR}/drivers/wcrc>
+        $<BUILD_INTERFACE:${BSP_DIR}/drivers/ucie_hwemu>
+        $<BUILD_INTERFACE:${BSP_DIR}/drivers/ucie_hwemu/clock_controller>
+        $<BUILD_INTERFACE:${BSP_DIR}/drivers/ucie_hwemu/module_controller>
+        $<BUILD_INTERFACE:${BSP_DIR}/drivers/ucie_hwemu/reg_rcar/x5h>
+        $<BUILD_INTERFACE:${BSP_DIR}/drivers/ucie_hwemu/ucie_0621_1>
         # POSIX
         $<BUILD_INTERFACE:${BSP_DIR}/common/POSIX_portable>
         $<BUILD_INTERFACE:${POSIX_DIR}/include>
@@ -329,6 +344,7 @@ add_subdirectory(sample_apps/power-management_app)
 add_subdirectory(sample_apps/wcrc_app)
 add_subdirectory(sample_apps/utils_app)
 add_subdirectory(sample_apps/audio_app)
+add_subdirectory(sample_apps/ucie_hwemu_app)
 if(ENABLE_OPENAMP)
     add_subdirectory(sample_apps/rpmsg_sample)
 endif()
