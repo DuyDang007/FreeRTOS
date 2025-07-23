@@ -91,6 +91,17 @@ uint32_t R_UTILS_GetTimerFrequency(void);
 void * aligned_malloc(size_t align, size_t size);
 void aligned_free(void * ptr);
 
+/**
+ * @brief Flush (clean) data cache for a memory region.
+ *
+ * Writes dirty cache lines back to RAM to ensure memory is up to date.
+ *
+ * @param[in] addr Physical start address.
+ *
+ * @param[in] size Buffer size in bytes.
+ *
+ */
+void R_UTILS_FlushDCache(uint32_t addr, uint32_t size);
 
 /**
  * @brief Invalidate Data cache.

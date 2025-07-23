@@ -93,6 +93,11 @@ void aligned_free(void * ptr)
     }
 }
 
+void R_UTILS_FlushDCache(uint32_t addr, uint32_t size)
+{
+    L1C_CleanDCacheAddress(addr, size);
+}
+
 void R_UTILS_InvalidateDCache(uint32_t addr, uint32_t size)
 {
    L1C_InvalidateDCacheAddress(addr, size);
