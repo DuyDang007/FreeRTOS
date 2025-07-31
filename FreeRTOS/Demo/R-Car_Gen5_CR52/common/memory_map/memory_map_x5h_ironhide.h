@@ -33,8 +33,8 @@ typedef struct st_memory_region {
 #define OSAL_MEMORY_ADDRESS         0x63800000
 #define OSAL_MEMORY_SIZE            0x20000000  // to 0x8380_0000
 
-#define SHARE_CR_CA_ADDRESS         0x96600000
-#define SHARE_CR_CA_SIZE            0x08000000  // to 0x9E60_0000
+#define SHARE_CR_CA_ADDRESS         0x8E600000
+#define SHARE_CR_CA_SIZE            0x10000000  // to 0x9E60_0000
 
 #define LINUX_CMA_ADDRESS_0         0xa2600000
 #define LINUX_CMA_SIZE_0	    0x1DA00000  // to 0xC000_0000
