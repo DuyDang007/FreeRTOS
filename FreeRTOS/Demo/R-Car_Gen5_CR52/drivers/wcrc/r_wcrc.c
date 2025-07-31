@@ -95,6 +95,51 @@ int R_CRC_Close(wcrc_ctrl_t * p_ctrl)
     return ret;
 }
 
+static int is_done(wcrc_sub_module_t module, wcrc_ctrl_t * p_ctrl, uint32_t timeout)
+{
+    wcrc_instance_ctrl_t * p_instance_ctrl = (wcrc_instance_ctrl_t *) p_ctrl;
+    bool is_done = p_instance_ctrl->crc_data[module].is_done;
+
+    while (timeout-- && (is_done != true)) {
+        is_done = p_instance_ctrl->crc_data[module].is_done;
+        vTaskDelay(1);
+    }
+
+    if (is_done != true)
+        return -1;
+
+    return 0;
+}
+
+int R_CRC_Wait_Operation(wcrc_ctrl_t * p_ctrl, uint32_t timeout)
+{
+    int ret = 0;
+    wcrc_instance_ctrl_t * p_instance_ctrl = (wcrc_instance_ctrl_t *) p_ctrl;
+    wcrc_cfg_t * p_cfg = (wcrc_cfg_t *) p_instance_ctrl->p_cfg;
+
+    switch (p_cfg->sub_module) {
+    case CRC_SUB_MODULE:
+        ret = is_done(CRC_SUB_MODULE, p_ctrl, timeout);
+        break;
+    case KCRC_SUB_MODULE:
+        ret = is_done(KCRC_SUB_MODULE, p_ctrl, timeout);
+        break;
+    case CRC_KCRC_SUB_MODULE:
+        ret  = is_done(CRC_SUB_MODULE, p_ctrl, timeout);
+        ret |= is_done(KCRC_SUB_MODULE, p_ctrl, timeout);
+        break;
+    default:
+        printf_delay("%s: Invalid module\n", __func__);
+        ret = -1;
+        break;
+    };
+
+    if (ret)
+        printf("%s: Waiting timeout\n", __func__);
+
+    return ret;
+}
+
 static int get_crc_data(crc_output_t const * const p_crc_data)
 {
     int index;
@@ -240,5 +285,31 @@ int R_CRC_Get_Input_Data(wcrc_ctrl_t const * const p_ctrl)
         break;
     }
 
+    return ret;
+}
+
+int R_CRC_Set_BufferAddress(wcrc_ctrl_t * const p_ctrl, uint32_t crc_addr, uint32_t kcrc_addr)
+{
+    int ret = 0;
+    wcrc_instance_ctrl_t * p_instance_ctrl = (wcrc_instance_ctrl_t *) p_ctrl;
+
+    ret  = wcrcSetBufferAddress(CRC_SUB_MODULE, p_instance_ctrl, crc_addr);
+    ret |= wcrcSetBufferAddress(KCRC_SUB_MODULE, p_instance_ctrl, kcrc_addr);
+
+    return ret;
+}
+
+uint32_t R_CRC_Get_BufferSize(wcrc_sub_module_t module, wcrc_ctrl_t * const p_ctrl,
+                             uint32_t * buf_size)
+{
+    uint32_t ret = 0;
+    wcrc_instance_ctrl_t * p_instance_ctrl = (wcrc_instance_ctrl_t *) p_ctrl;
+
+    if (module != CRC_SUB_MODULE && module != KCRC_SUB_MODULE) {
+        ret = -1;
+        printf("%s: Invalid module\n", __func__);
+    }
+
+    ret = wcrcGetCrcSize(module, p_instance_ctrl, buf_size);
     return ret;
 }

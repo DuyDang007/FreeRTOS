@@ -406,12 +406,6 @@ typedef enum e_wcrc_mode_fifo_port
 #define KCRC_XOR 0x00B0
 #define DEF_XOR 0xFFFFFFFF //default value
 
-/****************** CMA test ******************/
-#define CMA_START	0x60000000U
-#define CMA_SIZE	0x10000000U
-#define ALLOCATE_SIZE	200U
-/****************** CMA test ******************/
-
 static uint32_t getRegister(uint8_t module, wcrc_unit_t unit, uint32_t offset)
 {
     uint32_t base_addr;
@@ -487,6 +481,9 @@ static int crc_start(wcrc_unit_t unit,
 static int kcrc_start(wcrc_unit_t unit,
                       crc_input_t const * const p_crc_input,
                       crc_output_t * p_crc_result);
+
+static int wcrc_get_crc_data_size(wcrc_sub_module_t module, wcrc_cfg_t const * const p_cfg,
+                                 uint32_t * p_crc_size);
 
 int wcrcSetMode(wcrc_instance_ctrl_t * const p_instance_ctrl)
 {
@@ -646,6 +643,25 @@ static int wcrc_start_e2e(wcrc_instance_ctrl_t * const p_instance_ctrl,
     Context_t * p_usr_context[E2E_CRC_USE_2_DMA_CHAN];
     void * p_usr_temp;
 
+    /* 3. WCRC setups DMA */
+    p_instance_ctrl->p_extend[module]    = pvPortMalloc(sizeof(wcrc_cfg_dma_t) * E2E_CRC_USE_2_DMA_CHAN);
+
+    if (p_instance_ctrl->p_extend[module] == NULL) {
+        printf("%s: Allocate p_extend FAILED!", __func__);
+        return -1;
+    }
+
+    p_cfg_dma[E2E_PORT_DATA]    = p_instance_ctrl->p_extend[module];
+    p_cfg_dma[E2E_PORT_RESULT]  = p_cfg_dma[E2E_PORT_DATA] + 1;
+
+    /* DMA TX: E2E_PORT_DATA */
+    ret |= wcrc_set_rtdma(module, p_instance_ctrl, p_cfg_dma[E2E_PORT_DATA],
+                         PORT_DATA(module), MEM_TO_DEV);
+    /* DMA RX: E2E_PORT_RESULT */
+    ret |= wcrc_set_rtdma(module, p_instance_ctrl, p_cfg_dma[E2E_PORT_RESULT],
+                         PORT_RES(module), DEV_TO_MEM);
+
+    /* 4. WCRC setups user context */
     p_usr_temp                          = p_context;
     p_instance_ctrl->p_context[module]  = pvPortMalloc(sizeof(Context_t) * E2E_CRC_USE_2_DMA_CHAN);
 
@@ -682,7 +698,7 @@ static int wcrc_start_e2e(wcrc_instance_ctrl_t * const p_instance_ctrl,
     // Store pointer irq_cfg[E2E_PORT_RESULT] to context of IRQ.
     p_usr_context[E2E_PORT_RESULT]->ctx = irq_cfg[E2E_PORT_RESULT];
 
-    /* CRC: DMA TX */
+    /* 5. WCRC: start DMA TX */
     ret  = R_DMAC_RcarCallBackSet(irq_cfg[E2E_PORT_DATA],
                                  NULL,
                                  p_usr_context[E2E_PORT_DATA]);
@@ -691,7 +707,7 @@ static int wcrc_start_e2e(wcrc_instance_ctrl_t * const p_instance_ctrl,
                               rtdma_ch[E2E_PORT_DATA],
                               rtdma_cfg[E2E_PORT_DATA], NULL);
 
-    /* CRC: DMA RX */
+    /* 6. WCRC: start DMA RX */
     ret |= R_DMAC_RcarCallBackSet(irq_cfg[E2E_PORT_RESULT],
                                  p_callback,
                                  p_usr_context[E2E_PORT_RESULT]);
@@ -948,6 +964,52 @@ func_err:
     return each_data_size;
 }
 
+int wcrcSetBufferAddress(uint8_t module, wcrc_instance_ctrl_t * const p_instance_ctrl,
+                        uint32_t addr)
+{
+    int ret = 0;
+    crc_output_t *p_crc_data;
+
+    switch(module) {
+    case CRC_SUB_MODULE:
+        p_crc_data = &p_instance_ctrl->crc_data[CRC_SUB_MODULE];
+        break;
+    case KCRC_SUB_MODULE:
+        p_crc_data = &p_instance_ctrl->crc_data[KCRC_SUB_MODULE];
+        break;
+    default:
+        printf("%s: Module INVALID\n", __func__);
+        ret = 1;
+        goto end;
+    }
+
+    p_crc_data->p_output_buffer = (void *)addr;
+
+end:
+    return ret;
+}
+
+int wcrcGetCrcSize(wcrc_sub_module_t module, wcrc_instance_ctrl_t * const p_instance_ctrl,
+                  uint32_t * p_crc_size)
+{
+    int ret = 0;
+    wcrc_cfg_t const * p_cfg   = p_instance_ctrl->p_cfg;
+
+    switch(module) {
+    case CRC_SUB_MODULE:
+        ret = wcrc_get_crc_data_size(CRC_SUB_MODULE, p_cfg, p_crc_size);
+        break;
+    case KCRC_SUB_MODULE:
+        ret = wcrc_get_crc_data_size(KCRC_SUB_MODULE, p_cfg, p_crc_size);
+        break;
+    default:
+        printf("%s: Module INVALID\n", __func__);
+        ret = -1;
+    }
+
+    return ret;
+}
+
 static int wcrc_get_crc_data_size(wcrc_sub_module_t module, wcrc_cfg_t const * const p_cfg,
                                  uint32_t * p_crc_size)
 {
@@ -957,6 +1019,11 @@ static int wcrc_get_crc_data_size(wcrc_sub_module_t module, wcrc_cfg_t const * c
     crc_module_cfg_t  const * const p_crc_cfg  = &p_cfg->crc_cfg;
     kcrc_module_cfg_t const * const p_kcrc_cfg = &p_cfg->kcrc_cfg;
     crc_input_t const * p_input_cfg;
+
+    if (p_cfg->mode == INDEPENDENT_CRC_MODE) {
+        crc_data_size = 4;
+        goto end;
+    }
 
     /* Get each data size in byte */
     each_data_size = get_width_input(module, p_cfg);
@@ -973,7 +1040,7 @@ static int wcrc_get_crc_data_size(wcrc_sub_module_t module, wcrc_cfg_t const * c
         printf("%s: Invalid module\n", __func__);
         ret = -1;
         crc_data_size = 0;
-        goto get_size_err;
+        goto end;
     }
 
     crc_conv_size   = p_cfg->conv_size[module];
@@ -981,12 +1048,10 @@ static int wcrc_get_crc_data_size(wcrc_sub_module_t module, wcrc_cfg_t const * c
     num_crc_data    = data_input_size / crc_conv_size;
     crc_data_size   = num_crc_data * each_data_size;
 
-get_size_err:
+end:
     *p_crc_size = crc_data_size;
     return ret;
 }
-
-uintptr_t physAddr = CMA_START;
 
 static int wcrc_prepare_e2e(uint8_t module, wcrc_instance_ctrl_t * const p_instance_ctrl)
 {
@@ -1008,51 +1073,19 @@ static int wcrc_prepare_e2e(uint8_t module, wcrc_instance_ctrl_t * const p_insta
 
     /* 2. WCRC allocates buffer for CRC data */
     p_crc_data                  = &p_instance_ctrl->crc_data[module];
+
     ret                         = wcrc_get_crc_data_size(module, p_cfg, &crc_data_size);
+    if(ret) {
+        printf("%s: Get CRC size FAIL!\n", __func__);
+        return -1;
+    }
+
     p_crc_data->num_data        = crc_data_size / get_width_input(module, p_cfg);
 
     if ((p_crc_data->num_data % NUM_DATA_ALIGN_AXI_BUS) != 0) {
-        printf("%s: Data not align on AXI BUS!", __func__);
+        printf("%s: Data not align on AXI BUS!\n", __func__);
         return -1;
     }
-
-    physAddr += crc_data_size;
-    p_crc_data->p_output_buffer = (void *)physAddr;
-
-    if (p_crc_data->p_output_buffer == NULL) {
-        printf("%s: Allocate p_output_buffer FAILED!", __func__);
-        return -1;
-    }
-
-    //printf_delay("%d: A> 0x%x\n", module, p_crc_data->p_output_buffer);
-
-    /* 3. WCRC allocates buffer for user callback context */
-    //p_instance_ctrl->p_context[module] = pvPortMalloc(sizeof(Context_t) * E2E_CRC_USE_2_DMA_CHAN);
-
-    //if (p_instance_ctrl->p_context[module] == NULL) {
-    //    printf("%s: Allocate p_context FAILED!", __func__);
-    //    return -1;
-    //}
-    //printf_delay("%d: A> 0x%x\n", module, p_instance_ctrl->p_context[module]);
-    //printf_delay("%d: size %d\n", module, sizeof(Context_t));
-
-    /* 4. WCRC setups DMA */
-    p_instance_ctrl->p_extend[module]    = pvPortMalloc(sizeof(wcrc_cfg_dma_t) * E2E_CRC_USE_2_DMA_CHAN);
-
-    if (p_instance_ctrl->p_extend[module] == NULL) {
-        printf("%s: Allocate p_extend FAILED!", __func__);
-        return -1;
-    }
-
-    p_cfg_dma[E2E_PORT_DATA]    = p_instance_ctrl->p_extend[module];
-    p_cfg_dma[E2E_PORT_RESULT]  = p_cfg_dma[E2E_PORT_DATA] + 1;
-
-    /* DMA TX: E2E_PORT_DATA */
-    ret |= wcrc_set_rtdma(module, p_instance_ctrl, p_cfg_dma[E2E_PORT_DATA],
-                         PORT_DATA(module), MEM_TO_DEV);
-    /* DMA RX: E2E_PORT_RESULT */
-    ret |= wcrc_set_rtdma(module, p_instance_ctrl, p_cfg_dma[E2E_PORT_RESULT],
-                         PORT_RES(module), DEV_TO_MEM);
 
     return ret;
 }
@@ -1576,9 +1609,9 @@ static int wcrcCloseSubModule(wcrc_instance_ctrl_t * const p_instance_ctrl,
 {
     void * p_buf;
 
-    p_buf = p_instance_ctrl->crc_data[module].p_output_buffer;
-    wcrcRemoveBuffer(p_buf);
-    p_instance_ctrl->crc_data[module].p_output_buffer  = NULL;
+    //p_buf = p_instance_ctrl->crc_data[module].p_output_buffer;
+    //wcrcRemoveBuffer(p_buf);
+    //p_instance_ctrl->crc_data[module].p_output_buffer  = NULL;
 
     if (p_instance_ctrl->p_cfg->mode != INDEPENDENT_CRC_MODE)
     {
@@ -1591,6 +1624,7 @@ static int wcrcCloseSubModule(wcrc_instance_ctrl_t * const p_instance_ctrl,
         p_instance_ctrl->p_context[module]  = NULL;
     }
 }
+
 int wcrcClose(wcrc_instance_ctrl_t * const p_instance_ctrl)
 {
     wcrc_sub_module_t sub_module = p_instance_ctrl->p_cfg->sub_module;
@@ -1750,9 +1784,9 @@ static int crc_start(wcrc_unit_t unit,
     p_crc_data->is_done = false;
 
     /* Independent mode return CRC data size 4-byte.
-     * So, allocate buffer 4-byte.
+     * Get user buffer from application.
+     * Only check if user buffer is valid or not.
      */
-    p_crc_data->p_output_buffer = pvPortMalloc(INDEPENDENT_CRC_DATA_SIZE);
     if (p_crc_data->p_output_buffer == NULL) {
         printf("%s: Allocate FAILED!", __func__);
         return -1;
@@ -1906,9 +1940,9 @@ static int kcrc_start(wcrc_unit_t unit,
     p_kcrc_data->is_done = false;
 
     /* Independent mode return CRC data size 4-byte.
-     * So, allocate buffer 4-byte.
+     * Get user buffer from application.
+     * Only check if user buffer is valid or not.
      */
-    p_kcrc_data->p_output_buffer = pvPortMalloc(INDEPENDENT_CRC_DATA_SIZE);
     if (p_kcrc_data->p_output_buffer == NULL) {
         printf("%s: Allocate FAILED!", __func__);
         return -1;

@@ -38,6 +38,7 @@
 #include "dmac/dmac_common.h"
 #include "dmac/rtdmac_ctrl.h"
 #include <stdio.h>
+#include "rcar_utils.h"
 
 #define main_CRC_TASK_PRIORITY        ( tskIDLE_PRIORITY + 1 )
 
@@ -79,8 +80,8 @@ wcrc_cfg_t  g_wcrc_cfg0 =
     {
         .input_cfg      =
         {
-            .p_input_buffer = &crc_input[0],
-            .num_data       = sizeof(crc_input[0])/sizeof(crc_input[0]),
+            .p_input_buffer = crc_input,
+            .num_data       = sizeof(crc_input)/sizeof(crc_input[0]),
             .crc_seed       = 0xFFFFFFFF,
             .bit_width      = WIDTH_32_BIT
         },
@@ -98,8 +99,8 @@ wcrc_cfg_t  g_wcrc_cfg0 =
     {
         .input_cfg      =
         {
-            .p_input_buffer = &kcrc_input[0],
-            .num_data       = sizeof(kcrc_input[0])/sizeof(kcrc_input[0]),
+            .p_input_buffer = kcrc_input,
+            .num_data       = sizeof(kcrc_input)/sizeof(kcrc_input[0]),
             .crc_seed       = 0xFFFFFFFF,
             .bit_width      = WIDTH_32_BIT
         },
@@ -196,7 +197,7 @@ wcrc_cfg_t  g_wcrc_cfg3 =
     {
         .input_cfg      =
         {
-            .p_input_buffer = &kcrc_input2,
+            .p_input_buffer = kcrc_input2,
             .num_data       = sizeof(kcrc_input2)/sizeof(kcrc_input2[0]),
             .crc_seed       = 0xFFFFFFFF,
             .bit_width      = WIDTH_32_BIT
@@ -313,6 +314,9 @@ static void prvCRCTask( void *pvParameters )
     uint8_t ret;
     uint32_t num_data;
     bool * is_done[2];
+    st_memory_t region;
+    uint32_t crc_buf, kcrc_buf, crc_size;
+    wcrc_instance_ctrl_t * p_instance_ctrl;
 
     /* Remove compiler warning about unused parameter. */
     ( void ) pvParameters;
@@ -332,8 +336,23 @@ static void prvCRCTask( void *pvParameters )
     ret = R_CRC_Open(&g_wcrc_inst_ctrl_indepe, &g_wcrc_cfg0);
     printf("R_CRC_Open: ret = %d\n", ret);
 
+    /* CRC buffer address */
+    region = R_UTILS_GetMemoryRegionInfo(OSAL, 0);
+    crc_buf = region.base_address;
+
+    /* KCRC buffer address */
+    ret = R_CRC_Get_BufferSize(CRC_SUB_MODULE, &g_wcrc_inst_ctrl_indepe, &crc_size);
+    kcrc_buf = crc_buf + crc_size;
+
+    /* Set KCRC/CRC buffer address */
+    ret = R_CRC_Set_BufferAddress(&g_wcrc_inst_ctrl_indepe, crc_buf, kcrc_buf);
+
     ret = R_CRC_Calculate(&g_wcrc_inst_ctrl_indepe);
     printf("\nR_CRC_Calculate: ret = %d\n\n", ret);
+
+    /* Wait WCRC operation in 3ms */
+    ret = R_CRC_Wait_Operation(&g_wcrc_inst_ctrl_indepe, 3);
+    printf("\nR_CRC_Wait_Operation: ret = %d\n\n", ret);
 
     ret = R_CRC_Get_Input_Data(&g_wcrc_inst_ctrl_indepe);
     printf("\nR_CRC_Get_Input_Data: ret = %d\n\n", ret);
@@ -347,7 +366,18 @@ static void prvCRCTask( void *pvParameters )
     printf("\n********** TC2: E2E CRC Mode **********\n");
     ret = R_CRC_Open(&g_wcrc_inst_ctrl_e2e, &g_wcrc_cfg1);
     printf("R_CRC_Open: ret = %d\n", ret);
-    vTaskDelay(10);
+
+    /* CRC buffer address */
+    region = R_UTILS_GetMemoryRegionInfo(OSAL, 0);
+    //crc_buf = region.base_address + 0x1000;
+    crc_buf = region.base_address + 0x200;
+
+    /* KCRC buffer address */
+    ret = R_CRC_Get_BufferSize(CRC_SUB_MODULE, &g_wcrc_inst_ctrl_e2e, &crc_size);
+    kcrc_buf = crc_buf + crc_size;
+
+    /* Set KCRC/CRC buffer address */
+    ret = R_CRC_Set_BufferAddress(&g_wcrc_inst_ctrl_e2e, crc_buf, kcrc_buf);
 
     is_done[CRC_SUB_MODULE] = &g_wcrc_inst_ctrl_e2e.crc_data[CRC_SUB_MODULE].is_done;
     ret  = R_CRC_Set_Callback(CRC_SUB_MODULE, &g_wcrc_inst_ctrl_e2e,
@@ -357,28 +387,36 @@ static void prvCRCTask( void *pvParameters )
     ret |= R_CRC_Set_Callback(KCRC_SUB_MODULE, &g_wcrc_inst_ctrl_e2e,
                              kcrcUserCallback, is_done[KCRC_SUB_MODULE]);
     printf("R_CRC_Set_Callback: ret = %d\n", ret);
-    vTaskDelay(10);
 
     ret = R_CRC_Calculate(&g_wcrc_inst_ctrl_e2e);
     printf("\nR_CRC_Calculate: ret = %d\n\n", ret);
-    vTaskDelay(10);
+
+    /* Wait WCRC operation in 3ms */
+    ret = R_CRC_Wait_Operation(&g_wcrc_inst_ctrl_e2e, 3);
+    printf("\nR_CRC_Wait_Operation: ret = %d\n\n", ret);
 
     ret = R_CRC_Get_Input_Data(&g_wcrc_inst_ctrl_e2e);
     printf("\nR_CRC_Get_Input_Data: ret = %d\n\n", ret);
-    vTaskDelay(10);
 
     ret = R_CRC_Get_Generated_Value(&g_wcrc_inst_ctrl_e2e);
     printf("\nR_CRC_Get_Generated_Value: ret = %d\n", ret);
-    vTaskDelay(10);
 
-    //ret = R_CRC_Close(&g_wcrc_inst_ctrl_e2e);
+    ret = R_CRC_Close(&g_wcrc_inst_ctrl_e2e);
     printf("\nR_CRC_Close: ret = %d\n", ret);
-    vTaskDelay(10);
 
     printf("\n********** TC3: E2E CRC Mode **********\n");
     ret = R_CRC_Open(&g_wcrc_inst_ctrl_e2e_3, &g_wcrc_cfg3);
     printf("R_CRC_Open: ret = %d\n", ret);
-    vTaskDelay(10);
+
+    region = R_UTILS_GetMemoryRegionInfo(OSAL, 0);
+    crc_buf = region.base_address + 0x1000;
+
+    /* KCRC buffer address */
+    ret = R_CRC_Get_BufferSize(CRC_SUB_MODULE, &g_wcrc_inst_ctrl_e2e_3, &crc_size);
+    kcrc_buf = crc_buf + crc_size;
+
+    /* Set KCRC/CRC buffer address */
+    ret = R_CRC_Set_BufferAddress(&g_wcrc_inst_ctrl_e2e_3, crc_buf, kcrc_buf);
 
     is_done[CRC_SUB_MODULE] = &g_wcrc_inst_ctrl_e2e_3.crc_data[CRC_SUB_MODULE].is_done;
     ret  = R_CRC_Set_Callback(CRC_SUB_MODULE, &g_wcrc_inst_ctrl_e2e_3,
@@ -388,23 +426,22 @@ static void prvCRCTask( void *pvParameters )
     ret |= R_CRC_Set_Callback(KCRC_SUB_MODULE, &g_wcrc_inst_ctrl_e2e_3,
                              kcrcUserCallback, is_done[KCRC_SUB_MODULE]);
     printf("R_CRC_Set_Callback: ret = %d\n", ret);
-    vTaskDelay(10);
 
     ret = R_CRC_Calculate(&g_wcrc_inst_ctrl_e2e_3);
     printf("\nR_CRC_Calculate: ret = %d\n\n", ret);
-    vTaskDelay(10);
+
+    /* Wait WCRC operation in 3ms */
+    ret = R_CRC_Wait_Operation(&g_wcrc_inst_ctrl_e2e_3, 3);
+    printf("\nR_CRC_Wait_Operation: ret = %d\n\n", ret);
 
     ret = R_CRC_Get_Input_Data(&g_wcrc_inst_ctrl_e2e_3);
     printf("\nR_CRC_Get_Input_Data: ret = %d\n\n", ret);
-    vTaskDelay(10);
 
     ret = R_CRC_Get_Generated_Value(&g_wcrc_inst_ctrl_e2e_3);
     printf("\nR_CRC_Get_Generated_Value: ret = %d\n", ret);
-    vTaskDelay(10);
 
-    //ret = R_CRC_Close(&g_wcrc_inst_ctrl_e2e_3);
+    ret = R_CRC_Close(&g_wcrc_inst_ctrl_e2e_3);
     printf("\nR_CRC_Close: ret = %d\n", ret);
-    vTaskDelay(10);
 
     for( ;; )
     {
