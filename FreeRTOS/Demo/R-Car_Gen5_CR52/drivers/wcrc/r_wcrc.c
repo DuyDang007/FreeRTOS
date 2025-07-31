@@ -11,6 +11,7 @@
 #include "wcrc/r_wcrc_common.h"
 #include "wcrc/r_wcrc.h"
 #include "r_crc_wrapper.h"
+#include "rcar_utils.h"
 #include <stdio.h>
 
 #define CRC_OPEN    (0x00000001U)
@@ -108,6 +109,8 @@ static int get_crc_data(crc_output_t const * const p_crc_data)
     num_data = p_crc_data->num_data;
     p_data = (uint32_t *)p_crc_data->p_output_buffer;
 
+    R_UTILS_InvalidateDCache((uint32_t)p_crc_data->p_output_buffer, num_data*sizeof(uint32_t));
+
     for (index = 0; index < num_data; index++) {
         printf_delay(" 0x%x\n", (*p_data));
         p_data++;
@@ -129,6 +132,8 @@ static int get_kcrc_data(crc_output_t const * const p_kcrc_data)
 
     num_data = p_kcrc_data->num_data;
     p_data = (uint32_t *)p_kcrc_data->p_output_buffer;
+
+    R_UTILS_InvalidateDCache((uint32_t)p_kcrc_data->p_output_buffer, num_data*sizeof(uint32_t));
 
     for (index = 0; index < num_data; index++) {
         printf_delay(" 0x%x\n", (*p_data));
