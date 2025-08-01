@@ -33,17 +33,21 @@ typedef struct st_memory_region {
 #define OSAL_MEMORY_ADDRESS         0x63800000
 #define OSAL_MEMORY_SIZE            0x20000000  // to 0x8380_0000
 
+#define LDR_MEMORY_ADDRESS          0x8E400000
+#define LDR_MEMORY_SIZE             0x00200000  // to 0x8E60_0000
+
 #define SHARE_CR_CA_ADDRESS         0x8E600000
 #define SHARE_CR_CA_SIZE            0x10000000  // to 0x9E60_0000
 
 #define LINUX_CMA_ADDRESS_0         0xa2600000
-#define LINUX_CMA_SIZE_0	    0x1DA00000  // to 0xC000_0000
+#define LINUX_CMA_SIZE_0            0x1DA00000  // to 0xC000_0000
 
 #define PERIPHERAL_START_1          0xC0000000
 #define PERIPHERAL_SIZE_1           0x40000000  // to 0x1_0000_0000
 
 static const st_memory_region_t RCAR_MEMMORY_ARR[] = {
     {.type = OSAL,          .mem_addr = {.base_address = (uint32_t) OSAL_MEMORY_ADDRESS, .size = (uint32_t) OSAL_MEMORY_SIZE},    .attr = RAM_ATTR},
+    {.type = SHARE_MEM,     .mem_addr = {.base_address = (uint32_t) LDR_MEMORY_ADDRESS,  .size = (uint32_t) LDR_MEMORY_SIZE},     .attr = RAM_NOCACHE_ATTR},
     {.type = SHARE_MEM,     .mem_addr = {.base_address = (uint32_t) LINUX_CMA_ADDRESS_0, .size = (uint32_t) LINUX_CMA_SIZE_0},    .attr = RAM_NOCACHE_ATTR},
     {.type = SHARE_MEM,     .mem_addr = {.base_address = (uint32_t) SHARE_CR_CA_ADDRESS, .size = (uint32_t) SHARE_CR_CA_SIZE},    .attr = RAM_NOCACHE_ATTR},
     {.type = PERIPHERAL,    .mem_addr = {.base_address = (uint32_t) PERIPHERAL_START_0,  .size = (uint32_t) PERIPHERAL_SIZE_0},   .attr = DEVICE_ATTR},
