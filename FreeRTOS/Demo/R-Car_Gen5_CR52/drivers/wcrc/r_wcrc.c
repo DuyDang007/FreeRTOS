@@ -17,8 +17,6 @@
 #define CRC_OPEN    (0x00000001U)
 #define CRC_CLOSE   (0x00000002U)
 
-extern int printf_delay(const char *format, ...);
-
 int R_CRC_Open(wcrc_ctrl_t * const p_ctrl, wcrc_cfg_t const * const p_cfg)
 {
     int ret;
@@ -35,10 +33,9 @@ int R_CRC_Open(wcrc_ctrl_t * const p_ctrl, wcrc_cfg_t const * const p_cfg)
     ret = wcrcSetMode(p_instance_ctrl);
     if (ret != 0) {
         printf("wcrcSetMode: FAILED\n");
-        goto open_err;
+        return ret;
     }
 
-open_err:
     return ret;
 }
 
@@ -73,10 +70,9 @@ int R_CRC_Calculate(wcrc_ctrl_t * const p_ctrl)
     ret = wcrcStart(p_instance_ctrl);
     if (ret != 0) {
         printf("wcrcStart: FAILED\n");
-        goto calculate_err;
+        return ret;
     }
 
-calculate_err:
     return ret;
 }
 
@@ -129,7 +125,7 @@ int R_CRC_Wait_Operation(wcrc_ctrl_t * p_ctrl, uint32_t timeout)
         ret |= is_done(KCRC_SUB_MODULE, p_ctrl, timeout);
         break;
     default:
-        printf_delay("%s: Invalid module\n", __func__);
+        printf("%s: Invalid module\n", __func__);
         ret = -1;
         break;
     };
@@ -147,7 +143,7 @@ static int get_crc_data(crc_output_t const * const p_crc_data)
     uint32_t * p_data;
 
     if (p_crc_data->is_done == false) {
-        printf_delay("%s: crc is running\n", __func__);
+        printf("%s: crc is running\n", __func__);
         return -1;
     }
 
@@ -157,7 +153,7 @@ static int get_crc_data(crc_output_t const * const p_crc_data)
     R_UTILS_InvalidateDCache((uint32_t)p_crc_data->p_output_buffer, num_data*sizeof(uint32_t));
 
     for (index = 0; index < num_data; index++) {
-        printf_delay(" 0x%x\n", (*p_data));
+        printf(" 0x%x\n", (*p_data));
         p_data++;
     }
 
@@ -171,7 +167,7 @@ static int get_kcrc_data(crc_output_t const * const p_kcrc_data)
     uint32_t * p_data;
 
     if (p_kcrc_data->is_done == false) {
-        printf_delay("%s: kcrc is running\n", __func__);
+        printf("%s: kcrc is running\n", __func__);
         return -1;
     }
 
@@ -181,7 +177,7 @@ static int get_kcrc_data(crc_output_t const * const p_kcrc_data)
     R_UTILS_InvalidateDCache((uint32_t)p_kcrc_data->p_output_buffer, num_data*sizeof(uint32_t));
 
     for (index = 0; index < num_data; index++) {
-        printf_delay(" 0x%x\n", (*p_data));
+        printf(" 0x%x\n", (*p_data));
         p_data++;
     }
 
@@ -198,18 +194,18 @@ int R_CRC_Get_Generated_Value(wcrc_ctrl_t const * const p_ctrl)
 
     switch (p_cfg->sub_module) {
     case CRC_SUB_MODULE:
-        printf_delay("**** CRC data ****\n");
+        printf("**** CRC data ****\n");
         ret = get_crc_data(p_crc_data);
         break;
     case KCRC_SUB_MODULE:
-        printf_delay("**** KCRC data ****\n");
+        printf("**** KCRC data ****\n");
         ret = get_kcrc_data(p_kcrc_data);
         break;
     case CRC_KCRC_SUB_MODULE:
-        printf_delay("**** CRC data ****\n");
+        printf("**** CRC data ****\n");
         ret = get_crc_data(p_crc_data);
 
-        printf_delay("**** KCRC data ****\n");
+        printf("**** KCRC data ****\n");
         ret |= get_kcrc_data(p_kcrc_data);
         break;
     default:
@@ -232,7 +228,7 @@ static int get_crc_input(wcrc_cfg_t const * const p_cfg)
     p_input_buffer = (uint32_t *)input_cfg->p_input_buffer;
 
     for (index = 0; index < num_data; index++) {
-        printf_delay(" 0x%x\n", (*p_input_buffer));
+        printf(" 0x%x\n", (*p_input_buffer));
         p_input_buffer++;
     }
 
@@ -250,7 +246,7 @@ static int get_kcrc_input(wcrc_cfg_t const * const p_cfg)
     p_input_buffer = (uint32_t *)input_cfg->p_input_buffer;
 
     for (index = 0; index < num_data; index++) {
-        printf_delay(" 0x%x\n", (*p_input_buffer));
+        printf(" 0x%x\n", (*p_input_buffer));
         p_input_buffer++;
     }
 
@@ -265,18 +261,18 @@ int R_CRC_Get_Input_Data(wcrc_ctrl_t const * const p_ctrl)
 
     switch (p_cfg->sub_module) {
     case CRC_SUB_MODULE:
-        printf_delay("**** CRC input ****\n");
+        printf("**** CRC input ****\n");
         ret = get_crc_input(p_cfg);
         break;
     case KCRC_SUB_MODULE:
-        printf_delay("**** KCRC input ****\n");
+        printf("**** KCRC input ****\n");
         ret = get_kcrc_input(p_cfg);
         break;
     case CRC_KCRC_SUB_MODULE:
-        printf_delay("**** CRC input ****\n");
+        printf("**** CRC input ****\n");
         ret = get_crc_input(p_cfg);
 
-        printf_delay("**** KCRC input ****\n");
+        printf("**** KCRC input ****\n");
         ret |= get_kcrc_input(p_cfg);
         break;
     default:

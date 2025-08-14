@@ -23,8 +23,6 @@
 #define CRC_MODULE  1
 #define KCRC_MODULE 2
 
-extern int printf_delay(const char *format, ...);
-
 typedef struct st_wcrc_cfg_dma {
     rDmacCfg_t      cfg;
     rDmacIrqCfg_t   irq;
@@ -886,7 +884,7 @@ static int wcrc_set_e2e_mode(uint8_t module, wcrc_cfg_t const * const p_cfg)
         module != KCRC_SUB_MODULE) {
         printf("%s: Invalid module\n", __func__);
         ret = -1;
-        goto end_mode;
+        return ret;
     }
 
     //Enable WCRC Stop Interrupt.
@@ -922,7 +920,6 @@ static int wcrc_set_e2e_mode(uint8_t module, wcrc_cfg_t const * const p_cfg)
     reg_val = CMD_EN;
     writel(reg_val, reg_addr);
 
-end_mode:
     return ret;
 }
 
@@ -940,7 +937,7 @@ static int get_width_input(wcrc_sub_module_t module, wcrc_cfg_t const * const p_
     } else {
         printf("%s: Invalid module\n", __func__);
         each_data_size = 0;
-        goto func_err;
+        return each_data_size;
     }
 
     /* Get each data size in byte */
@@ -957,10 +954,9 @@ static int get_width_input(wcrc_sub_module_t module, wcrc_cfg_t const * const p_
     default:
         printf("%s: Input bit width INVALID\n", __func__);
         each_data_size = 0;
-        goto func_err;
+        return each_data_size;
     }
 
-func_err:
     return each_data_size;
 }
 
@@ -980,12 +976,11 @@ int wcrcSetBufferAddress(uint8_t module, wcrc_instance_ctrl_t * const p_instance
     default:
         printf("%s: Module INVALID\n", __func__);
         ret = 1;
-        goto end;
+        return ret;
     }
 
     p_crc_data->p_output_buffer = (void *)addr;
 
-end:
     return ret;
 }
 
@@ -1022,7 +1017,8 @@ static int wcrc_get_crc_data_size(wcrc_sub_module_t module, wcrc_cfg_t const * c
 
     if (p_cfg->mode == INDEPENDENT_CRC_MODE) {
         crc_data_size = 4;
-        goto end;
+        *p_crc_size = crc_data_size;
+        return ret;
     }
 
     /* Get each data size in byte */
@@ -1040,7 +1036,8 @@ static int wcrc_get_crc_data_size(wcrc_sub_module_t module, wcrc_cfg_t const * c
         printf("%s: Invalid module\n", __func__);
         ret = -1;
         crc_data_size = 0;
-        goto end;
+        *p_crc_size = crc_data_size;
+        return ret;
     }
 
     crc_conv_size   = p_cfg->conv_size[module];
@@ -1048,7 +1045,6 @@ static int wcrc_get_crc_data_size(wcrc_sub_module_t module, wcrc_cfg_t const * c
     num_crc_data    = data_input_size / crc_conv_size;
     crc_data_size   = num_crc_data * each_data_size;
 
-end:
     *p_crc_size = crc_data_size;
     return ret;
 }
@@ -1109,10 +1105,8 @@ static int wcrcPrepareE2eCrcMode(wcrc_instance_ctrl_t * const p_instance_ctrl)
         default:
             printf("%s: Invalid module\n", __func__);
             ret = -1;
-            goto end_mode;
+            return ret;
     }
-
-end_mode:
     return ret;
 }
 
@@ -1129,7 +1123,7 @@ static int wcrc_set_data_through_mode(uint8_t module, wcrc_cfg_t const * const p
         module != KCRC_SUB_MODULE) {
         printf("%s: Invalid module\n", __func__);
         ret = -1;
-        goto end_mode;
+        return ret;
     }
 
     //Enable WCRC Stop Interrupt.
@@ -1142,7 +1136,6 @@ static int wcrc_set_data_through_mode(uint8_t module, wcrc_cfg_t const * const p
     reg_val = IN_EN | OUT_EN;
     writel(reg_val, reg_addr);
 
-end_mode:
     return ret;
 }
 
@@ -1223,10 +1216,9 @@ static int wcrcPrepareDataThrough(wcrc_instance_ctrl_t * const p_instance_ctrl)
         default:
             printf("%s: Invalid module\n", __func__);
             ret = -1;
-            goto end_mode;
+            return ret;
     }
 
-end_mode:
     return ret;
 }
 
@@ -1479,7 +1471,7 @@ static uint32_t get_dma_int_id(uint32_t dma_unit_chan)
             int_id = INTID_RTDMA3_CH14; 
             break;
         default:
-            printf_delay("%s: Invalid interrupt id\n", __func__);
+            printf("%s: Invalid interrupt id\n", __func__);
             int_id = 0;
             break;
     }
@@ -1508,7 +1500,7 @@ static int wcrc_get_dma_transf_unit_size_config(uint8_t transfer_size)
         config = DRV_RTDMAC_TRANS_UNIT_64BYTE;
         break;
     default:
-        printf_delay("%s: Invalid transfer size %d\n", __func__, transfer_size);
+        printf("%s: Invalid transfer size %d\n", __func__, transfer_size);
         config = -1;
         break;
     }
@@ -1539,7 +1531,7 @@ static int wcrc_set_rtdma(uint8_t module, wcrc_instance_ctrl_t * const p_instanc
         module != KCRC_SUB_MODULE) {
         printf("%s: Invalid module\n", __func__);
         ret = -1;
-        goto set_rtdma_err;
+        return ret;
     }
 
     /* Get ide dma channels */
@@ -1600,7 +1592,6 @@ static int wcrc_set_rtdma(uint8_t module, wcrc_instance_ctrl_t * const p_instanc
     //printf_delay("%d: Dst 0x%x\n", module, p_wcrc_cfg_dma->cfg.mDestAddr);
     //printf_delay("%d: TCR %d\n", module, p_wcrc_cfg_dma->cfg.mTransferCount);
 
-set_rtdma_err:
     return ret;
 }
 
