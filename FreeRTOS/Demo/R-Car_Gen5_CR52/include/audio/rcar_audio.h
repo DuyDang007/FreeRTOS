@@ -10,6 +10,15 @@
 
 #include <stdint.h>
 
+/**
+ * @defgroup Audio_Module Audio Module
+ * @{
+ * @brief This module provides functions to configure and use audio device driver.
+ *
+ * This file defines data structures and function prototypes for controlling audio operations,
+ * including configure sample rate, bit depth, format, and number of channels.
+ */
+
 /***********************************************************************************************************************
  * Macro definitions
  **********************************************************************************************************************/
@@ -17,10 +26,10 @@
 
 /***********************************************************************************************************************
  * Typedef definitions
- **********************************************************************************************************************/
+ *************************************************************a*********************************************************/
 
 /**
- * @brief Audio operating mode
+ * @brief Audio operation mode
  */
 typedef enum e_audio_master_mode
 {
@@ -57,7 +66,7 @@ typedef enum e_audio_master_bit_depth_t
 } e_audio_master_bit_depth_t;
 
 /**
-* @brief Complete run-time configuration passed to ::R_Audio_Init().
+* @brief Audio configuration for initialization.
 */
 typedef struct st_audio_cfg
 {
@@ -140,4 +149,5 @@ int R_Audio_Config(st_audio_instance_ctrl_t * const p_instance_ctrl);
  */
 int R_Audio_Deinit(st_audio_instance_ctrl_t * const p_instance_ctrl);
 
+/** @} */
 #endif
