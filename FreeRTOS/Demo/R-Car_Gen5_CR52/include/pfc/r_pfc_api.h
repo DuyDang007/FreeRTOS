@@ -15,8 +15,20 @@ extern "C" {
 #include <stdbool.h>
 #include "device_tree_x5h.h"
 
+/**
+* @defgroup PFC_Module Pin Function Control Module
+* @{
+* @brief Functions to configure pin functions and pull-up/pull-down settings for hardware modules.
+*
+* This module provides pin configuration for PFC mode and pull resistor settings.
+* It includes initialization of pin groups and setting pins to pull-up, pull-down, or no pull states.
+*/
 
-/** PFC group */
+/**
+ * @brief PFC groups enumeration.
+ * 
+ * Defines groups of pins for pin function control.
+ */
 typedef enum e_rcar_pfc_group
 {
     RCAR_PFC_GROUP_00 = 0x00,           ///< PFC Group 00
@@ -32,7 +44,11 @@ typedef enum e_rcar_pfc_group
     RCAR_PFC_GROUP_10 = 0x0A,           ///< PFC Group 10
 } rcar_pfc_group_t;
 
-/** Pin each group */
+/** 
+ * @brief PFC pins enumeration.
+ * 
+ * Defines pin numbers within each PFC group.
+ */
 typedef enum e_rcar_pfc_pin
 {
     RCAR_PFC_PIN_00 = 0x00,           ///< PFC Pin 00
@@ -69,7 +85,11 @@ typedef enum e_rcar_pfc_pin
     RCAR_PFC_PIN_31 = 0x1F,           ///< PFC Pin 31
 } rcar_pfc_pin_t;
 
-/** Pin function control */
+/** 
+ * @brief Pin function pull settings.
+ * 
+ * Specifies the pull resistor configuration for a pin.
+ */
 typedef enum e_rcar_pfc_functions
 {
     RCAR_PFC_PULL_DOWN = 0,         ///< Pull down
@@ -78,71 +98,59 @@ typedef enum e_rcar_pfc_functions
 } rcar_pfc_functions_t;
 
 /**
- * Sets pin function for HW IP.
- *
- * @param[in] module		- HW IP's module config.
- *
- * @retval 0 if successful
- *
+ * @brief Sets pin function for HW IP.
+ * 
+ * @param module - HW IP's module config.
+ * @return 0 if successful 
  */
 int pfcInitModule(st_module_config_t module);
 
 /**
- * Sets pin function for all defined HW IP's modules config.
- *
- * @param[in] module_list	- Pointer to HW IP's module config.
- *
- * @retval 0 if successful
- *
+ * @brief Sets pin function for all defined HW IP's modules config.
+ * 
+ * @param module_list - Pointer to HW IP's module config.
+ * @return 0 if successful 
  */
 int pfcInitModules(st_module_config_t* module_list);
 
 /**
- * Sets a pin's function to gpio mode.
- *
- * @param[in] grp               - GPIO group, see @ref rcar_pfc_group_t
- * @param[in] pin               - GPIO pin, see @ref rcar_pfc_pin_t
- *
- * @retval 0 if successful
- *
+ * @brief Sets a pin's function to gpio mode.
+ * 
+ * @param grp - GPIO group, see @ref rcar_pfc_group_t
+ * @param pin - GPIO pin, see @ref rcar_pfc_pin_t
+ * @return 0 if successful
  */
 int pfcSetGPIO(rcar_pfc_group_t grp, rcar_pfc_pin_t pin);
 
 /**
- * Sets a pin's function to pull-up.
- *
- * @param[in] grp               - GPIO group, see @ref rcar_pfc_group_t
- * @param[in] pin               - GPIO pin, see @ref rcar_pfc_pin_t
- *
- * @retval 0 if successful
- *
+ * @brief Sets a pin's function to pull-up.
+ * 
+ * @param grp - GPIO group, see @ref rcar_pfc_group_t
+ * @param pin - GPIO pin, see @ref rcar_pfc_pin_t
+ * @return 0 if successful 
  */
 int pfcSetPullUp(rcar_pfc_group_t grp, rcar_pfc_pin_t pin);
 
 /**
- * Sets a pin's function to pull-down.
- *
- * @param[in] grp               - GPIO group, see @ref rcar_pfc_group_t
- * @param[in] pin               - GPIO pin, see @ref rcar_pfc_pin_t
- *
- * @retval 0 if successful
- *
+ * @brief Sets a pin's function to pull-down.
+ * 
+ * @param grp - GPIO group, see @ref rcar_pfc_group_t
+ * @param pin - GPIO pin, see @ref rcar_pfc_pin_t
+ * @return 0 if successful 
  */
 int pfcSetPullDown(rcar_pfc_group_t grp, rcar_pfc_pin_t pin);
 
 /**
- * Sets a pin's function to no pull.
- *
- * @param[in] grp               - GPIO group, see @ref rcar_pfc_group_t
- * @param[in] pin               - GPIO pin, see @ref rcar_pfc_pin_t
- *
- * @retval 0 if successful
- *
+ * @brief Sets a pin's function to no pull.
+ * 
+ * @param grp - GPIO group, see @ref rcar_pfc_group_t
+ * @param pin - GPIO pin, see @ref rcar_pfc_pin_t
+ * @return 0 if successful 
  */
 int pfcSetNoPull(rcar_pfc_group_t grp, rcar_pfc_pin_t pin);
 
 #ifdef __cplusplus
 }
 #endif
-
+/** @} */
 #endif /* R_PFC_API_H_ */
