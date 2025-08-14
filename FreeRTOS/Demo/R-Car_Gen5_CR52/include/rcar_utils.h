@@ -135,6 +135,7 @@ void R_UTILS_InvalidateDCacheAll();
  * @return uint32_t Value read from memory.
  */
 uint32_t R_UTILS_ReadMemForDMA(void *addr, uint32_t size);
+uint32_t R_UTILS_GetCPUCycles();
 
 /**-----------------------------------------------------------**/
 
