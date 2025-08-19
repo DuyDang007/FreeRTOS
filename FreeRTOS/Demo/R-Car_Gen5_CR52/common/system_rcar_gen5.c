@@ -132,6 +132,30 @@ static void FPU_Enable(void)
 
 }
 
+/* Enable data and instruction cache in SVC mode */
+void EnableCache()
+{
+    uint32_t reg_val = 0;
+
+    // Invalidate all Instruction Caches to PoU (ICIALLU)
+    __asm__ volatile ("mcr p15, 0, %0, c7, c5, 0" : : "r"(0) : "memory");
+
+    // Invalidate all entries from branch predictors (BPIALL)
+    __asm__ volatile ("mcr p15, 0, %0, c7, c5, 6" : : "r"(0) : "memory");
+
+    // Read System Control Register (SCTLR)
+    __asm__ volatile ("mrc p15, 0, %0, c1, c0, 0" : "=r"(reg_val) : : "memory");
+
+    // instruction cache enable (SCTLR.I), data cache enable (SCTLR.C)
+    reg_val |= BIT(12) | BIT (2);
+
+    // Enabled instruction and data cache (SCTLR)
+    __asm__ volatile ("mcr p15, 0, %0, c1, c0, 0" : : "r"(reg_val) : "memory");
+
+    __DSB();
+    __ISB();
+}
+
 void SystemInit(void)
 {
     bss_init((unsigned int *)&__bss_start__, (unsigned int *)&__bss_end__);
@@ -139,6 +163,9 @@ void SystemInit(void)
     FPU_Enable();
 #endif
     Init_MPU();
+#if (CACHE == 1)
+    EnableCache();
+#endif
     __libc_init_array();
     portDISABLE_INTERRUPTS();
     Irq_Setup();
