@@ -25,7 +25,7 @@ extern const struct remoteproc_ops x5h_r_a_proc_ops;
 static struct remoteproc rproc_inst;
 static struct mfis_channel mfis_inst =
 {
-    .ch = 0,
+    .ch = MFIS_CHAN,
     .int_source = 0,
     .recv_message = 0,
     .cb_function = NULL
@@ -91,7 +91,7 @@ struct remoteproc * platform_create_proc(int mfis_ch, int rsc_index)
 */
 int platform_init(int channel, void **platform)
 {
-    unsigned long mfis_ch = 0;
+    unsigned long mfis_ch = channel;
     unsigned long rsc_id = 0;
     struct remoteproc *rproc;
 

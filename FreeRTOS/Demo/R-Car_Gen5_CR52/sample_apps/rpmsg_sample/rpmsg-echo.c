@@ -107,7 +107,7 @@ void echoTask( void *pvParameters )
     LPRINTF("Starting application...\r\n");
 
     /* Initialize platform */
-    ret = platform_init(0, &platform);
+    ret = platform_init(MFIS_CHAN, &platform);
     if (ret) {
         LPERROR("Failed to initialize platform.\r\n");
         ret = -1;
