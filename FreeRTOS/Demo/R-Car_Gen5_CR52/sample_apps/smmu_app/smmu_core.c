@@ -1,0 +1,181 @@
+/*
+ * FreeRTOS Kernel V11.1.0
+ * Copyright (C) 2021 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: MIT
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of
+ * this software and associated documentation files (the "Software"), to deal in
+ * the Software without restriction, including without limitation the rights to
+ * use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+ * the Software, and to permit persons to whom the Software is furnished to do so,
+ * subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+ * FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+ * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+ * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+ * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ *
+ * http://www.FreeRTOS.org
+ * http://github.com/FreeRTOS
+ *
+ */
+
+/* Scheduler include files. */
+#include "FreeRTOS.h"
+#include "task.h"
+
+#include "interrupts.h"
+#include <stdio.h>
+#include <string.h>
+#include <stdbool.h>
+
+#include "smmu/smmu.h"
+#include "pfc/r_pfc_api.h"
+#include "device_tree_x5h.h"
+#include "rcar_utils.h"
+
+#define main_SMMU_TASK_PRIORITY        ( tskIDLE_PRIORITY + 1 )
+#define MASK 0x00000FFF
+/*-----------------------------------------------------------*/
+/*
+ * Configure the hardware as necessary to run this demo.
+ */
+static void prvSetupHardware( void );
+
+static void prvSMMU_RT_Task( void *pvParameters );
+
+int main( void )
+{
+	/* Configure the hardware ready to run the demo. */
+	prvSetupHardware();
+    
+    
+    xTaskCreate( prvSMMU_RT_Task, "SMMU_RT_Task", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1, NULL );
+    /* Start the tasks and timer running. */
+    vTaskStartScheduler();
+    for( ;; )
+    {
+    }
+	/* Don't expect to reach here. */
+	return 0;
+}
+/*-----------------------------------------------------------*/
+
+static void prvSetupHardware( void )
+{
+	/* Ensure no interrupts execute while the scheduler is in an inconsistent
+	state.  Interrupts are automatically enabled when the scheduler is
+	started. */
+	portDISABLE_INTERRUPTS();
+
+	Irq_Setup();
+	(void)pfcInitModules(getModuleConfigs());
+}
+
+static void prvSMMU_RT_Task( void *pvParameters )
+{
+    /* Remove compiler warning about unused parameter. */
+    ( void ) pvParameters;
+    int ret;
+    bool is_secure = true;
+
+    uint32_t streamId[] = {
+		0x00000,
+		0x00C00,
+    };
+
+    st_smmu_streamid_instance_ctrl_t smmu_ctrl = {
+        .smmu_domain = SMMU_RT,
+	.is_secure = is_secure,
+    };
+
+    printf("**********************************************\r\n");
+
+    printf("* SMMU-RT Cortex-R52 Cluster0 core0 *\r\n");
+
+    R_SMMU_Init(SMMU_RT, is_secure);
+    R_SMMU_InvalidateTLB(SMMU_RT, is_secure);
+
+    for (uint8_t i = 0; i < sizeof(streamId)/sizeof(uint32_t); i ++) {
+        smmu_ctrl.stream_id = streamId[i];
+
+        ret = R_SMMU_Attach(&smmu_ctrl);
+        if (ret == 0) {
+            printf("Attach stream id 0x%x result: Passed\r\n", streamId[i]);
+        } else {
+            printf("Attach stream id 0x%x result: Failed\r\n", streamId[i]);
+        }
+
+        R_SMMU_Map(&smmu_ctrl, 0x00, 0x00, 0x60000000);
+        R_SMMU_Map(&smmu_ctrl, 0xC0000000, 0xC0000000, 0x40000000);
+        R_SMMU_Map(&smmu_ctrl, 0x80000000, 0x1840000000, 0x1000000);
+        R_SMMU_Map(&smmu_ctrl, 0x70000000, 0x90000000, 0x1000000);
+        R_SMMU_Map(&smmu_ctrl, 0x90000000, 0x90000000, 0x1000000);
+    }
+
+    R_SMMU_Enable(SMMU_RT, is_secure);
+
+    printf("**********************************************\r\n");
+
+    printf("* Test case 5: Disable SMMU bypass mode Cluster0 core0 *\r\n");
+    
+    volatile uint32_t *RCTBUBYPSEN = (volatile uint32_t *)0x18B47800;
+    uint32_t smmu_bypass = 0xFFE;
+    uint32_t old = *RCTBUBYPSEN;
+    uint32_t new = (old & ~MASK) | (smmu_bypass & MASK);
+    *RCTBUBYPSEN = new;
+    vTaskDelay(10);
+
+    if ((*RCTBUBYPSEN & MASK) == (smmu_bypass & MASK))
+        printf("Disable Successfully\r\n");
+    else
+        printf("Disable Failed\r\n");
+
+    printf("**********************************************\r\n");
+
+    printf("* Test case 6: Verify data *\r\n");
+
+    *(uint32_t *)0x90000000 = 0x7012;
+    *(uint32_t *)0x70000000 = 0x123;
+    *(uint32_t *)0x80000000 = *(uint32_t *)0x90000000;
+
+    vTaskDelay(10);
+    printf("Value at VA 0x70000000 - PA 0x90000000:   0x%x\n", *(uint32_t *)0x90000000);
+    printf("Value at VA 0x80000000 - PA 0x1840000000: 0x%x\n", *(uint32_t *)0x80000000);
+
+    if (*(uint32_t *)0x70000000 == *(uint32_t *)0x90000000) {
+        printf("Result: Passed\r\n");
+    }
+    else {
+        printf("Result: Failed\r\n");
+    }
+
+    printf("**********************************************\r\n");
+
+    for(;;);
+}
+
+/*-----------------------------------------------------------*/
+
+int printf_raw(const char *format, ...);
+
+void vMainAssertCalled( const char *pcFileName, uint32_t ulLineNumber )
+{
+    /* Don't use printf as it uses FreeRTOS resources */
+    printf_raw("ASSERT!  Line %d of file %s\n", ulLineNumber, pcFileName);
+    taskENTER_CRITICAL();
+    for( ;; );
+}
+
+void vDeleteCallingTask( void )
+{
+     vTaskDelete( NULL );
+}
+
