@@ -99,13 +99,13 @@ static void Map_Region(uint64_t *ttb, struct st_mm_region *region_map)
         tbl_level++;
         table = (uint64_t *)(uintptr_t)(*(table + entry_idx) & ENTRY_ADDR_MASK);
 
-        while (tbl_level < 4)
+        while (tbl_level < 4 && mem_size)
         {
             entry_idx = (virt_addr >> shift_table_level(tbl_level)) & ENTRY_TABLE_MASK;
 
             mem_block = 1ULL << shift_table_level(tbl_level);
 
-            if (mem_size >= mem_block && !(phys_addr & (mem_block - 1)))
+            if (mem_size >= mem_block && !(phys_addr & (mem_block - 1)) && !(virt_addr & (mem_block - 1)))
             {
                 if (tbl_level == 3)
                 {
@@ -164,7 +164,8 @@ uint64_t *CreateTranslationTable(uint64_t *ttb, uint64_t va, uint64_t pa, uint64
         .virt_addr = va,
         .phys_addr = pa,
         .mem_size = size,
-        .mem_attrs = BLOCK_MEM_TYPE(NORMAL_NC_MEM_TYPE) | BLOCK_TYPE_INNER_SHARE};
+        .mem_attrs = 0x441,
+        };
 
     Map_Region(Table, &region_mem);
 

@@ -129,11 +129,13 @@ typedef struct st_smmu_ste
 
 #define CTXDESC_CD_TCR_TBI0     1
 
+#define CTXDESC_CD_48BIT_IPA    5
 #define CTXDESC_CD_AA64         1
 #define CTXDESC_CD_S            1
 #define CTXDESC_CD_R            1
 #define CTXDESC_CD_A            1
 #define CTXDESC_CD_ASET         1
+#define CTXDESC_CD_HAD0_DIS     1
 
 /**
  * @brief Level 1 Context Descriptor structure in two-level Context descriptor tables
@@ -223,6 +225,8 @@ typedef struct st_smmu_cd
 #define STRTAB_STE_1_S1STALLD       1
 
 #define STRTAB_STE_1_STRW_EL2       2
+
+#define STRTAB_STE_DRE_EN           1
 
 #define MAX_L1STE_BITS     12
 #define MAX_L1STE_ENTRY  (1 << MAX_L1STE_BITS)

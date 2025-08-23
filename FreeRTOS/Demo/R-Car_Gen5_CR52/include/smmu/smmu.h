@@ -9,6 +9,8 @@
 #ifndef R_SMMU_H_
 #define R_SMMU_H_
 
+#include "stdbool.h"
+
 /**
  * @brief Enum representing different SMMU domain types.
  *
@@ -152,19 +154,21 @@ typedef struct st_smmu_streamid_instance_ctrl
     uint32_t stream_id;                /**< The stream id of SMMU domain */
     void *p_context;                   /**< Context */
     const e_smmu_domain_t smmu_domain; /**< The SMMU domain type */
+    bool is_secure;                    /**< Stream id type.
+                                            True: Secure, False: Non-secure */
 } st_smmu_streamid_instance_ctrl_t;
 
 /**
- * @brief Initializes and enables the SMMU.
+ * @brief Initializes the SMMU.
  *
  * This function initializes the SMMU for the specified instance.
- * And enables the SMMU to start performing address translation.
  *
  * @param[in] smmu_domain SMMU domain.
+ * @param[in] is_secure SMMU type. True: Secure, False: Non-secure.
  *
  * @return 0 if initialization is successful, non-zero if an error occurs.
  */
-int R_SMMU_Init(e_smmu_domain_t smmu_domain);
+int R_SMMU_Init(e_smmu_domain_t smmu_domain, bool is_secure);
 
 /**
  * @brief Disables the SMMU.
@@ -173,8 +177,9 @@ int R_SMMU_Init(e_smmu_domain_t smmu_domain);
  * Release all SMMU resource.
  *
  * @param[in] smmu_domain SMMU domain.
+ * @param[in] is_secure SMMU type. True: Secure, False: Non-secure.
  */
-void R_SMMU_Deinit(e_smmu_domain_t smmu_domain);
+void R_SMMU_Deinit(e_smmu_domain_t smmu_domain, bool is_secure);
 
 /**
  * @brief Attach stream id into the specified SMMU domain.
@@ -233,10 +238,11 @@ void R_SMMU_ProcessEventQueue(void);
  * This function invalidates the TLB entries for the specified SMMU instance.
  *
  * @param[in] smmu_domain SMMU domain.
+ * @param[in] is_secure SMMU type. True: Secure, False: Non-secure.
  *
  * @return 0 if the TLB invalidation is successful, non-zero otherwise.
  */
-int R_SMMU_InvalidateTLB(e_smmu_domain_t smmu_domain);
+int R_SMMU_InvalidateTLB(e_smmu_domain_t smmu_domain, bool is_secure);
 
 /**
  * @brief Issues a command to the command queue.
@@ -244,11 +250,24 @@ int R_SMMU_InvalidateTLB(e_smmu_domain_t smmu_domain);
  * This function issues a command to the SMMU command queue.
  *
  * @param[in] smmu_domain SMMU domain.
+ * @param[in] is_secure SMMU type. True: Secure, False: Non-secure.
  * @param[in] p_cmd Pointer to the command to be issued.
- * @param[in] sync Pass 0 if don't want to sync and another if want to sync. 
+ * @param[in] sync Pass false if don't want to sync and true if want to sync. 
  *
  * @return 0 if command is successfully issued, non-zero otherwise.
  */
-int R_SMMU_IssueCommand(e_smmu_domain_t smmu_domain, st_smmu_cmd_t *p_cmd, uint8_t sync);
+int R_SMMU_IssueCommand(e_smmu_domain_t smmu_domain, bool is_secure, st_smmu_cmd_t *p_cmd, bool sync);
+
+/**
+ * @brief Enables the SMMU.
+ *
+ * This function enables the SMMU to start performing address translation.
+ *
+ * @param[in] smmu_domain SMMU domain.
+ * @param[in] is_secure SMMU type. True: Secure, False: Non-secure.
+ *
+ * @return 0 if initialization is successful, non-zero if an error occurs.
+ */
+int R_SMMU_Enable(e_smmu_domain_t smmu_domain, bool is_secure);
 
 #endif /* R_SMMU_H_ */
