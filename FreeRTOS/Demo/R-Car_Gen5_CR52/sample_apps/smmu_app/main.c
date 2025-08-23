@@ -115,6 +115,8 @@ static void prvSMMUTask( void *pvParameters )
     /* Remove compiler warning about unused parameter. */
     (void)pvParameters;
     int ret,i;
+    bool is_secure = false;
+
     /* Get memory region first */
 	st_memory_t region = R_UTILS_GetMemoryRegionInfo(OSAL, 0);
 	cfg.mSrcAddr = region.base_address;
@@ -128,15 +130,16 @@ static void prvSMMUTask( void *pvParameters )
 		}
 	}
 
-    st_smmu_streamid_instance_ctrl_t smmu_crtl = {
+    st_smmu_streamid_instance_ctrl_t smmu_ctrl = {
         .stream_id = 0x50001,
         .smmu_domain = SMMU_PERW,
+	.is_secure = is_secure,
     };
 
-    st_smmu_cmd_t cmd_ste_cfg = {0};
+    printf("**********************************************\r\n");
 
     printf("* Test case 1: Initializes and Enable SMMU. *\r\n");
-    ret = R_SMMU_Init(SMMU_PERW);
+    ret = R_SMMU_Init(SMMU_PERW, is_secure);
     if (ret == 0) {
         printf("Result: Passed\r\n");
     } else {
@@ -144,8 +147,8 @@ static void prvSMMUTask( void *pvParameters )
     }
     printf("**********************************************\r\n");
 
-    printf("* Test case 2: Attach stream id. *\r\n");
-    ret = R_SMMU_Attach(&smmu_crtl);
+    printf("* Test case 2: Invalidate TLB *\r\n");
+    ret = R_SMMU_InvalidateTLB(SMMU_PERW, is_secure);
     if (ret == 0) {
         printf("Result: Passed\r\n");
     } else {
@@ -153,21 +156,22 @@ static void prvSMMUTask( void *pvParameters )
     }
     printf("**********************************************\r\n");
     
-    R_SMMU_Map(&smmu_crtl, cfg.mSrcAddr, cfg.mSrcAddr + SOURCE_OFFSET_MAPPING, 0x5006000);
-    
-    printf("* Test case 3: Issue command *\r\n");
-    int ret_cmd1, ret_cmd2 = -1;
+    printf("* Test case 3: Attach stream id. *\r\n");
 
-    memset(&cmd_ste_cfg, 0, sizeof(cmd_ste_cfg));
-    cmd_ste_cfg.opcode = CMDQ_OP_CFGI_STE;
-    cmd_ste_cfg.st_cmd_cfgi_ste_t.sid = smmu_crtl.stream_id;
-    cmd_ste_cfg.st_cmd_cfgi_ste_t.leaf = 1;
-    ret_cmd1 = R_SMMU_IssueCommand(SMMU_PERW, &cmd_ste_cfg, true);
+    ret = R_SMMU_Attach(&smmu_ctrl);
+    if (ret == 0) {
+        printf("Result: Passed\r\n");
+    } else {
+        printf("Result: Failed\r\n");
+    }
 
-    // Issue commands to invalidate all cached configuration and TLB entrie
-    ret_cmd2 = R_SMMU_InvalidateTLB(SMMU_PERW);
-    
-    if ((ret_cmd1 == 0) && (ret_cmd2 == 0)) {
+    R_SMMU_Map(&smmu_ctrl, cfg.mSrcAddr, cfg.mSrcAddr + SOURCE_OFFSET_MAPPING, 0x5006000);
+
+    printf("**********************************************\r\n");
+
+    printf("* Test case 4: Enable SMMU *\r\n");
+    ret = R_SMMU_Enable(SMMU_PERW, is_secure);
+    if (ret == 0) {
        printf("Result: Passed\r\n");
     } else {
         printf("Result: Failed \r\n");
@@ -195,8 +199,7 @@ static void prvSMMUTask( void *pvParameters )
 
     int dmaStatus = R_SYSDMAC_RcarDmacExec(SYS_DMAC3, DMAC_CH1, &cfg, 0);
 
-    for (i=0; i<10000; i++)
-    {}
+    vTaskDelay(10);
 
     // Verify destination data
     uint32_t total_transfer_size = 4;
