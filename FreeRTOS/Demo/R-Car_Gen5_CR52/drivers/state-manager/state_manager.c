@@ -20,14 +20,6 @@
 #include "state-manager/r_clock_domain_id.h"
 #include "state-manager/r_reset_domain_id.h"
 
-enum s2r_transition {
-	MYSELF = 0,
-	CA,
-	FREERTOS2ND,
-	AUTOSAR,
-	NONE
-};
-
 #define VALIDATE_ID(id, max) \
     do { \
         if ((id) >= max) { \
@@ -36,8 +28,6 @@ enum s2r_transition {
         } \
     } while(0)
 
-enum s2r_transition cur_s2r_transition  = NONE;
-bool s2r_others_completed = false;
 uint32_t max_clockdomain_num;
 uint32_t max_powerdomain_num;
 uint32_t max_resetdomain_num;
@@ -80,58 +70,6 @@ static void system_notification(void *data)
 			flags_to_str[notifier->flags],
 			system_state_to_str[notifier->system_state], notifier->timeout);
 
-#ifdef S2R_DRAFT_FLOW
-	/* Return if no S2R transition is requested. */
-	if (NONE == cur_s2r_transition)
-		return;
-
-	switch (cur_s2r_transition) {
-		case MYSELF:
-			SCMI_LOG_INFO("Step 2 (notif). Main FreeRTOS just sent S2R req.");
-			SCMI_LOG_INFO("Step 8. Send s2r req assuming from CA to SCP.\r\n");
-			ret = scmi_system_power_state_set(FLAGS_GRACEFUL, SYSTEM_STATE_SUSPEND);
-			++cnt;
-			++cur_s2r_transition;
-			break;
-
-		case CA:
-			if (1 == cnt) {
-				SCMI_LOG_INFO("Step 9. CA S2R done.");
-				SCMI_LOG_INFO("Step 10. Send S2R req to 2nd FreeRTOS.\r\n");
-			} else {
-				SCMI_LOG_INFO("Step 10 (notif). Main FreeRTOS just sent s2r req to 2nd.");
-				SCMI_LOG_INFO("Step 12. Send s2r req assuming from 2nd FreeRTOS to SCP.\r\n");
-				++cur_s2r_transition;
-			}
-			ret = scmi_system_power_state_set(FLAGS_GRACEFUL, SYSTEM_STATE_SUSPEND);
-			++cnt;
-			break;
-
-		case FREERTOS2ND:
-			if (3 == cnt) {
-				SCMI_LOG_INFO("Step 13. 2nd FreeRTOS S2R done.");
-				SCMI_LOG_INFO("Step 14. Send S2R req to Autosar.\r\n");
-			} else {
-				SCMI_LOG_INFO("Step 14 (notif). Main FreeRTOS just sent s2r req to Autosar.");
-				SCMI_LOG_INFO("Step 16. Assuming this msg is from Autosar to SCP.");
-				++cur_s2r_transition;
-			}
-			ret = scmi_system_power_state_set(FLAGS_GRACEFUL, SYSTEM_STATE_SUSPEND);
-			++cnt;
-			break;
-
-		case AUTOSAR:
-			if (5 == cnt) {
-				SCMI_LOG_INFO("Step 18. Classic Autosar S2R done.");
-				s2r_others_completed = true;
-				cnt = 0;
-			}
-			break;
-
-		default:
-			SCMI_LOG_ERR("Invalid transition.");
-	}
-#else
 	if (((SYSTEM_STATE_SUSPEND == notifier->system_state) ||
 		(SYSTEM_STATE_SHUTDOWN == notifier->system_state)) &&
 		(SCMI_AGENT_ID_FRTOS_1ST != notifier->agent_id)) {
@@ -144,7 +82,6 @@ static void system_notification(void *data)
 		}
 		/* Post shutdown or suspend */
 	}
-#endif
 }
 
 int R_StateManager_Init(void)
@@ -302,8 +239,6 @@ int R_StateManager_SCMI_Info_Show(void)
 	return 0;
 }
 
-#include "FreeRTOS.h"
-#include "task.h"
 int R_StateManager_RequestDeepStop(void)
 {
 	int ret;
@@ -313,32 +248,11 @@ int R_StateManager_RequestDeepStop(void)
 		return -1;
 	}
 	SCMI_LOG_INFO("System is suspending...");
-#ifdef S2R_DRAFT_FLOW
-	cur_s2r_transition = MYSELF;
-	SCMI_LOG_INFO("Step 2. S2R request");
 	ret = scmi_system_power_state_set(FLAGS_GRACEFUL, SYSTEM_STATE_SUSPEND);
 	if (ret) {
 		SCMI_LOG_ERR("Error: Failed to request S2R");
 		return ret;
 	}
-
-	while (!s2r_others_completed) {
-		vTaskDelay(1);
-	}
-	cur_s2r_transition = NONE;
-	SCMI_LOG_INFO("Step 19. Shutdown with SUSPEND flag to SCP");
-	ret = scmi_system_power_state_set(FLAGS_GRACEFUL, SYSTEM_STATE_SUSPEND);
-	if (ret) {
-		SCMI_LOG_ERR("Error: Failed to suspend system gracefully.");
-		return ret;
-	}
-#else
-	ret = scmi_system_power_state_set(FLAGS_GRACEFUL, SYSTEM_STATE_SUSPEND);
-	if (ret) {
-		SCMI_LOG_ERR("Error: Failed to request S2R");
-		return ret;
-	}
-#endif
 
 	return 0;
 }
