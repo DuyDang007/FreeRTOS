@@ -120,23 +120,22 @@ static void prvSMMU_RT_Task( void *pvParameters )
         R_SMMU_Map(&smmu_ctrl, 0x90000000, 0x90000000, 0x1000000);
     }
 
-    R_SMMU_Enable(SMMU_RT, is_secure);
-
     printf("**********************************************\r\n");
 
     printf("* Test case 5: Disable SMMU bypass mode Cluster0 core0 *\r\n");
-    
+
     volatile uint32_t *RCTBUBYPSEN = (volatile uint32_t *)0x18B47800;
     uint32_t smmu_bypass = 0xFFE;
     uint32_t old = *RCTBUBYPSEN;
     uint32_t new = (old & ~MASK) | (smmu_bypass & MASK);
     *RCTBUBYPSEN = new;
-    vTaskDelay(10);
 
     if ((*RCTBUBYPSEN & MASK) == (smmu_bypass & MASK))
         printf("Disable Successfully\r\n");
     else
         printf("Disable Failed\r\n");
+
+    R_SMMU_Enable(SMMU_RT, is_secure);
 
     printf("**********************************************\r\n");
 
