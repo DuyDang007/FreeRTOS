@@ -37,6 +37,7 @@
 
 #include "pfc/r_pfc_api.h"
 #include "device_tree_x5h.h"
+#include "rcar_utils.h"
 /*-----------------------------------------------------------*/
 
 /*
@@ -83,10 +84,10 @@ static void prvHelloWorldTask( void *pvParameters )
 
     /* Remove compiler warning about unused parameter. */
     ( void ) pvParameters;
-
+    uint32_t cpu_id = R_UTILS_GetCpuID();
     for( ;; )
     {
-        printf("prvHelloWorldTask ...\n");
+        printf("CPU %d: prvHelloWorldTask ...\n", cpu_id);
         vTaskDelay(3000);
     }
 }

@@ -10,6 +10,9 @@
 #include <stdlib.h>
 #include <stddef.h>
 #include "FreeRTOS.h"
+#include "cmsis_cp15.h"
+
+#define NUMBER_OF_CORES_IN_CLUSTER          4
 
 st_memory_t R_UTILS_GetMemoryRegionInfo(e_memory_type_t type, uint8_t region_idx)
 {   
@@ -52,6 +55,14 @@ uint64_t R_UTILS_GetTimerCounter(void)
 uint32_t R_UTILS_GetTimerFrequency(void)
 {
     return CNTFRQ_READ();
+
+}
+
+uint32_t R_UTILS_GetCpuID(void)
+{
+    uint32_t cpuid = __get_MPIDR();
+    cpuid = ((cpuid>>8) & 0xff) * NUMBER_OF_CORES_IN_CLUSTER + cpuid & 0xff;
+    return cpuid;
 
 }
 
