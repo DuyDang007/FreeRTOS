@@ -15,7 +15,7 @@
 
 #include "pfc/r_pfc_api.h"
 #include "device_tree_x5h.h"
-
+#include "smmu/smmu.h"
 #include "ucie_teg/uciedrv.h"
 
 #define main_ucie_TASK_PRIORITY        (tskIDLE_PRIORITY + 1)
@@ -34,6 +34,7 @@
 
 #define DBSC01_HDMA_PA(n)       (DRAM_DBSC01_ADDR_PA + (n) * DMA_SIZE_PER_CHAN)
 
+#define MASK 0x00000FFF
 // For RC write EP read test data
 const struct hdma_info_ex hdma_tbl_wrtest_dt[] = {	// UCIE1 WRCHx1
 	/*	ucieCh	dmaCh	sar					dar					llp			rw	size		        tc	weight	*/
@@ -205,6 +206,88 @@ static void ucie_comm_task(void *pvParameters)
     printf("Starting UCIe RC HDMA WRCHx1\n");
     ucie_xfer(hdma_tbl_wrtest_dt);
     printf("UCIE RC HDMA transfer done\n");
+
+    printf("[X5H TEG] UCIE CR:Setup PIO mode\n");
+    printf("[X5H TEG] UCIE CR:Setup SMMU\n");
+
+    mem_write32(UCIE_AXI_BASE(uice_chn) + 0x000004, 0x00110007); // ???
+    mem_read32(UCIE_AXI_BASE(uice_chn) + 0x000004);
+
+    bool is_secure = true;
+
+    uint32_t streamId[] = {
+		0x00000,
+		0x00C00,
+    };
+
+    st_smmu_streamid_instance_ctrl_t smmu_ctrl = {
+        .smmu_domain = SMMU_RT,
+	.is_secure = is_secure,
+    };
+    uint64_t  ucie1_mem = 0x24000000000;  // D2D (UCIe ch1/no coherent (CXL))
+    uint32_t  ucie1_tgt = 0x90000000;
+    printf("**********************************************\r\n");
+
+    printf("* SMMU-RT Cortex-R52 Cluster0 core0 *\r\n");
+
+    R_SMMU_Init(SMMU_RT, is_secure);
+    R_SMMU_InvalidateTLB(SMMU_RT, is_secure);
+
+    for (uint8_t i = 0; i < sizeof(streamId)/sizeof(uint32_t); i ++) {
+        smmu_ctrl.stream_id = streamId[i];
+
+        ret = R_SMMU_Attach(&smmu_ctrl);
+        if (ret == 0) {
+            printf("Attach stream id 0x%x result: Passed\r\n", streamId[i]);
+        } else {
+            printf("Attach stream id 0x%x result: Failed\r\n", streamId[i]);
+        }
+
+        R_SMMU_Map(&smmu_ctrl, 0x00, 0x00, 0x60000000);
+        R_SMMU_Map(&smmu_ctrl, 0xC0000000, 0xC0000000, 0x40000000);
+        R_SMMU_Map(&smmu_ctrl, 0x90000000, ucie1_mem, 0x1000000);
+        R_SMMU_Map(&smmu_ctrl, 0x70000000, ucie1_mem, 0x1000000);
+        // R_SMMU_Map(&smmu_ctrl, 0x90000000, 0x0000000, 0x1000000);
+    }
+
+    printf("**********************************************\r\n");
+
+    printf("* Test case 5: Disable SMMU bypass mode Cluster0 core0 *\r\n");
+
+    volatile uint32_t *RCTBUBYPSEN = (volatile uint32_t *)0x18B47800;
+    uint32_t smmu_bypass = 0xFFE;
+    uint32_t old = *RCTBUBYPSEN;
+    uint32_t new = (old & ~MASK) | (smmu_bypass & MASK);
+    *RCTBUBYPSEN = new;
+
+    if ((*RCTBUBYPSEN & MASK) == (smmu_bypass & MASK))
+        printf("Disable Successfully\r\n");
+    else
+        printf("Disable Failed\r\n");
+
+
+    R_SMMU_Enable(SMMU_RT, is_secure);
+
+    printf("**********************************************\r\n");
+    printf("[X5H TEG] UCIE CR:Setup SMMU done\n");
+
+    printf("\nProgram pending. Press any key to start tranfer data for pio mode\n");
+    while (console_getc(&p_char)) {
+        __asm__ volatile("nop");
+    }
+
+    printf("Starting UCIe RC PIO\n");
+    *(uint32_t *)ucie1_tgt = 0x1234567;
+    vTaskDelay(10);
+    printf("vaulue at VA 0x90000000: 0x%x \n", *(uint32_t *)0x90000000 );
+    printf("vaulue at VA 0x70000000: 0x%x \n", *(uint32_t *)0x70000000 );
+
+    printf("write: 0x%08x\n", *(uint32_t *)ucie1_tgt);
+    vTaskDelay(5000);
+
+    printf("[X5H TEG] RC: TEST DONE\n");
+
+
 
 LABEL_ERROR:
 

@@ -152,7 +152,55 @@ static void ucie_comm_task(void *pvParameters)
     verify_test_data(hdma_tbl_wrtest_dt->dar, TEST_DATA0, DMA_SIZE_PER_CHAN);
     printf("EP Data after transfer:\n");
     print_test_data(hdma_tbl_wrtest_dt->dar, DMA_SIZE_PER_CHAN);
-  
+    
+    printf("[X5H TEG] UCIE EP:Setup PIO mode\n");
+    printf("[X5H TEG] UCIE EP:Setup inbound\n");
+    mem_write32(UCIE_AXI_BASE(uice_chn) + 0x000004, 0x00110007); // ???
+    mem_read32(UCIE_AXI_BASE(uice_chn) + 0x000004);
+    mem_write32(UCIE_AXI_BASE(uice_chn) + 0x000080, 0x00000000); // ???
+    mem_read32(UCIE_AXI_BASE(uice_chn) + 0x000080);
+	mem_write32(UCIE_AXI_BASE(uice_chn) + 0x0008BC, 0x040BFF4A); // ???
+    mem_read32(UCIE_AXI_BASE(uice_chn) + 0x0008BC);
+	mem_write32(UCIE_AXI_BASE(uice_chn) + 0x0008BC, 0x040BFF4E); // ???
+    mem_read32(UCIE_AXI_BASE(uice_chn) + 0x0008BC);
+
+	/*====================================*/
+	/* UCIE memory area                   */
+	/*====================================*/
+    uint64_t  ucie1_mem = 0x24000000000;  // D2D (UCIe ch1/no coherent (CXL))
+    uint32_t  ucie1_tgt = 0x90000000;     // UCIE0 INBOUND: translate from 0x20000000000 to 0x4E000000
+ 
+	/*====================================*/
+	/* Setup inbound region               */
+	/*====================================*/
+   	/*** ch0 ***/
+    val = mem_read32(UCIE_AXI_BASE(uice_chn) + 0x300510) | 0x00FFFFF0;		    //; IATU LIMIT_ADDR_OFF_INBOUND_2
+    printf("val %x \v", val);
+    // val = mem_read32(UCIE_AXI_BASE(uice_chn) + 0x300510) | 0x000FFFF0;		    //; IATU LIMIT_ADDR_OFF_INBOUND_2
+    mem_write32(UCIE_AXI_BASE(uice_chn) + 0x300510, val);			            //; LIMIT_ADD_RW -> 16MB
+    mem_read32(UCIE_AXI_BASE(uice_chn) + 0x300510);
+
+    mem_write32(UCIE_AXI_BASE(uice_chn) + 0x300508, ucie1_mem & 0xFFFFFFFF);	//; IATU LWR_BASE_ADDR_OFF_INBOUND_2
+    mem_write32(UCIE_AXI_BASE(uice_chn) + 0x30050C, ucie1_mem >> 32);		    //; IATU UPPER_BASE_ADDR_OFF_INBOUND_2
+    mem_write32(UCIE_AXI_BASE(uice_chn) + 0x300514, ucie1_tgt);                //; IATU LWR_TARGET_ADDR_OFF_INBOUND_2
+	mem_write32(UCIE_AXI_BASE(uice_chn) + 0x300518, 0x00000000);               //; IATU UPPER_TARGET_ADDR_OFF_INBOUND_2
+    mem_write32(UCIE_AXI_BASE(uice_chn) + 0x300500, 0x00000000);			    //; IATU REGION_CTRL_1_OFF_INBOUND_2
+    mem_write32(UCIE_AXI_BASE(uice_chn) + 0x300504, 0x80000000);			    //; IATU REGION_CTRL_2_OFF_INBOUND_2: [31] REDION_EN=1, [30] MATCH_MODE=0 (Address Match Mode)
+    printf("[X5H TEG] UCIE EP:Setup inbound done\n");
+
+    printf("Waiting for RC tranfer data. Press any key if RC tranfer done to continue!\n");
+    while (console_getc(&p_char)) {
+        __asm__ volatile("nop");
+    }
+
+    printf("ep waiting rx transfer\n");
+    vTaskDelay(2000);
+    printf("read: address: 0x%x",(uint32_t *)ucie1_tgt);
+    printf(" value: 0x%08x\n", *(uint32_t *)ucie1_tgt);
+
+    printf("[X5H TEG] EP: TEST DONE\n");
+
+
     for(;;) {
         printf("\nInfinity loop");
         vTaskDelay(5000);
