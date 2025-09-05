@@ -43,6 +43,8 @@
 
 #define main_SMMU_TASK_PRIORITY        ( tskIDLE_PRIORITY + 1 )
 #define MASK 0x00000FFF
+#define SMMU_COREID_MAX 2
+#define NUMBER_OF_STREAMID 2
 /*-----------------------------------------------------------*/
 /*
  * Configure the hardware as necessary to run this demo.
@@ -85,10 +87,17 @@ static void prvSMMU_RT_Task( void *pvParameters )
     ( void ) pvParameters;
     int ret;
     bool is_secure = true;
+    uint32_t coreid = R_UTILS_GetCpuID();
+    
+    if(coreid >= SMMU_COREID_MAX)
+    {
+        printf("Error: invalid core_id=%u (max supported=%u)\n", coreid, SMMU_COREID_MAX - 1);
+        return;
+    }
 
-    uint32_t streamId[] = {
-		0x00000,
-		0x00C00,
+    uint32_t streamId[SMMU_COREID_MAX][NUMBER_OF_STREAMID] = {
+        { 0x00000, 0x00C00},    // core0
+        { 0x10C01, 0x10100}     // core1
     };
 
     st_smmu_streamid_instance_ctrl_t smmu_ctrl = {
@@ -98,19 +107,19 @@ static void prvSMMU_RT_Task( void *pvParameters )
 
     printf("**********************************************\r\n");
 
-    printf("* SMMU-RT Cortex-R52 Cluster0 core0 *\r\n");
+    printf("* SMMU-RT Cortex-R52 coreid: %d *\r\n", coreid);
 
     R_SMMU_Init(SMMU_RT, is_secure);
     R_SMMU_InvalidateTLB(SMMU_RT, is_secure);
 
-    for (uint8_t i = 0; i < sizeof(streamId)/sizeof(uint32_t); i ++) {
-        smmu_ctrl.stream_id = streamId[i];
+    for (uint8_t i = 0; i < sizeof(streamId[coreid])/sizeof(uint32_t); i ++) {
+        smmu_ctrl.stream_id = streamId[coreid][i];
 
         ret = R_SMMU_Attach(&smmu_ctrl);
         if (ret == 0) {
-            printf("Attach stream id 0x%x result: Passed\r\n", streamId[i]);
+            printf("Attach stream id 0x%x result: Passed\r\n", streamId[coreid][i]);
         } else {
-            printf("Attach stream id 0x%x result: Failed\r\n", streamId[i]);
+            printf("Attach stream id 0x%x result: Failed\r\n", streamId[coreid][i]);
         }
 
         R_SMMU_Map(&smmu_ctrl, 0x00, 0x00, 0x60000000);
@@ -122,10 +131,11 @@ static void prvSMMU_RT_Task( void *pvParameters )
 
     printf("**********************************************\r\n");
 
-    printf("* Test case 5: Disable SMMU bypass mode Cluster0 core0 *\r\n");
+    printf("* Test case 5: Disable SMMU bypass mode *\r\n");
 
     volatile uint32_t *RCTBUBYPSEN = (volatile uint32_t *)0x18B47800;
-    uint32_t smmu_bypass = 0xFFE;
+
+    uint32_t smmu_bypass = ~(1U<<coreid) & MASK ;
     uint32_t old = *RCTBUBYPSEN;
     uint32_t new = (old & ~MASK) | (smmu_bypass & MASK);
     *RCTBUBYPSEN = new;
