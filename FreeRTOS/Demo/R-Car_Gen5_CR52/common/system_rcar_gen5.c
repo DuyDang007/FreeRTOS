@@ -15,6 +15,8 @@
 #include "state-manager/r_state_manager.h"
 #include "memory_map/memory_map.h"
 
+#define CNTCR_ADDR   ((volatile uint32_t *)0x1C000000) // Counter Control Register
+
 extern const unsigned int __bss_start__;
 extern const unsigned int __bss_end__;
 extern const unsigned int _STACK_SIZE;
@@ -183,6 +185,7 @@ void SystemInit(void)
     EnablePMU();
     __libc_init_array();
     portDISABLE_INTERRUPTS();
+    *CNTCR_ADDR = 1;    /* enable system counter */
     Irq_Setup();
 	if (R_StateManager_Init()) {
 		printf("Error: Failed to init State Manager.\r\n");
