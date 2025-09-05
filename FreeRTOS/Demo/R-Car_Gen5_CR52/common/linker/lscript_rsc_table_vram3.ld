@@ -5,5 +5,5 @@ SECTIONS
     . = ALIGN(4);
     KEEP(*(.resource_table))
     __resource_table_end = .;
-} > remote_proc_rsc_table_2_kernel
+} > remote_proc_rsc_table_2
 }

@@ -6,13 +6,9 @@ MEMORY
    vram3_base_addr : ORIGIN = 0x1160000, LENGTH = 0xA00000
    dram_base_addr : ORIGIN = 0x40000000, LENGTH = 0xA00000
 
-   remote_proc_rsc_table_user : ORIGIN = 0x96600000, LENGTH = 0x1000
-   remote_proc_rsc_table_1_user : ORIGIN = 0x96650000, LENGTH = 0x1000
-   remote_proc_rsc_table_2_user : ORIGIN = 0x966a0000, LENGTH = 0x1000
-
-   remote_proc_rsc_table_kernel : ORIGIN = 0x96602000, LENGTH = 0x1000
-   remote_proc_rsc_table_1_kernel : ORIGIN = 0x96652000, LENGTH = 0x1000
-   remote_proc_rsc_table_2_kernel : ORIGIN = 0x966a2000, LENGTH = 0x1000
+   remote_proc_rsc_table : ORIGIN = 0x96600000, LENGTH = 0x1000
+   remote_proc_rsc_table_1 : ORIGIN = 0x96650000, LENGTH = 0x1000
+   remote_proc_rsc_table_2 : ORIGIN = 0x966a0000, LENGTH = 0x1000
 }
 
 ENTRY(_Reset)
