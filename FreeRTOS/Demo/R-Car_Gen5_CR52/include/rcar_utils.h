@@ -135,7 +135,20 @@ void R_UTILS_InvalidateDCacheAll();
  * @return uint32_t Value read from memory.
  */
 uint32_t R_UTILS_ReadMemForDMA(void *addr, uint32_t size);
+
+/**
+ * @brief Get CPU cycles
+ * 
+ * @return uint32_t Return number of CPU cycles elapsed from when the PMU was enabled 
+ *                  until this API is called.
+ */
 uint32_t R_UTILS_GetCPUCycles();
+
+/**
+ * @brief Get CPU ID
+ * 
+ * @return uint32_t Return unique CPU ID based on Cluster ID and Core ID
+ */
 uint32_t R_UTILS_GetCpuID(void);
 
 /**-----------------------------------------------------------**/
