@@ -62,24 +62,34 @@ static inline void pfc_reg_write(uint32_t addr, uint32_t data)
 }
 #endif
 
-static int portInitialized = 0;
+static bool portInitialized = false;
 
 static void outbyte(char c);
 
 static void uart_rcar_pfc_init(void);
 
-void R_SERIAL_PortInit(e_serial_devices_t device)
+int32_t R_SERIAL_PortInit(e_serial_devices_t device)
 {
-	if (portInitialized)
-		return;
+	int ret = 0;
+	if (!portInitialized)
+	{
+		//uart_rcar_pfc_init();
 
-	//uart_rcar_pfc_init();
+		if(console_init(device) == 0)
+		{
+			portInitialized = true;
+		}
+		else
+		{
+			ret = -1;
+		}
+		
+	}
 
-	console_init(device);
-	portInitialized = 1;
+	return ret;
 }
 
-void R_SERIAL_PutString(const unsigned char *buffer, unsigned short length)
+int32_t R_SERIAL_PutString(const unsigned char *buffer, unsigned short length)
 {
 	if (!portInitialized)
 		return;
@@ -91,13 +101,14 @@ void R_SERIAL_PutString(const unsigned char *buffer, unsigned short length)
         console_putc(*buffer);
         buffer++;
 	}
+
+	return 0;
 }
 
 int32_t R_SERIAL_GetChar(unsigned char *recv_char)
 {
     if (recv_char != NULL) {
-        console_getc(recv_char);
-        return 0;
+        return console_getc(recv_char);
     }
 	return -1;
 }
@@ -108,10 +119,10 @@ int32_t R_SERIAL_PutChar(unsigned char send_char)
 	return 0;
 }
 
-void R_SERIAL_Close(void)
+int32_t R_SERIAL_Close(void)
 {
 	/* Not supported */
-	return;
+	return 0;
 }
 
 /* Override std C lib output for printf, fprintf */

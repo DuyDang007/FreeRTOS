@@ -59,8 +59,10 @@ typedef enum e_serial_devices {
  *
  * @param[in]  device - Serial channel.
  *
+ * @retval 0 if successful.
+ * 
  */
-void R_SERIAL_PortInit(e_serial_devices_t device);
+int32_t R_SERIAL_PortInit(e_serial_devices_t device);
 
 /**
  * @brief Send string.
@@ -68,8 +70,10 @@ void R_SERIAL_PortInit(e_serial_devices_t device);
  * @param[in]  buffer - Input string.
  * @param[in]  length - Length string.
  *
+ * @retval 0 if successful.
+ * 
  */
-void R_SERIAL_PutString(const unsigned char * buffer, unsigned short length);
+int32_t R_SERIAL_PutString(const unsigned char * buffer, unsigned short length);
 
 /**
  * @brief Receive char.
@@ -94,8 +98,10 @@ int32_t R_SERIAL_PutChar(unsigned char send_char);
 /**
  * @brief Serial close.
  *
+ *  @retval 0 if successful.
+ * 
  */
-void R_SERIAL_Close();
+int32_t R_SERIAL_Close();
 
 /** @} */ // end of Serial_Module
 

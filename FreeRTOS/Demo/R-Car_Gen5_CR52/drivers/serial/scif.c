@@ -298,7 +298,7 @@ uint32_t console_init(uint32_t port) {
     scif_base = serial_channels_arr[port];
     if (scif_base == (uint32_t)0)
     {
-        return 0;
+        return -1;
     }
 
 	/* Disable Transmit and Receive */
@@ -353,7 +353,7 @@ uint32_t console_init(uint32_t port) {
 
 	uart_rcar_irq_rx_enable();
 
-	return 1;
+	return 0;
 }
 
 static void uart_rcar_poll_out(unsigned char out_char)
@@ -385,15 +385,15 @@ int console_getc(unsigned char *p_char) {
 
 	/* Receive FIFO empty */
 	if (!((uart_rcar_read_16(SCFSR)) & SCFSR_RDF)) {
-		ret = 1;
-		return ret;
+		ret = -1;
 	}
+	else
+	{
+		*p_char = uart_rcar_read_16(SCFRDR);
 
-	*p_char = uart_rcar_read_16(SCFRDR);
-
-	reg_val = uart_rcar_read_16(SCFSR);
-	reg_val &= ~SCFSR_RDF;
-	uart_rcar_write_16(SCFSR, reg_val);
-
+		reg_val = uart_rcar_read_16(SCFSR);
+		reg_val &= ~SCFSR_RDF;
+		uart_rcar_write_16(SCFSR, reg_val);
+	}
 	return ret;
 }
