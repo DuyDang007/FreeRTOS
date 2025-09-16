@@ -132,7 +132,6 @@ set(bsp_source
     ${BSP_DIR}/drivers/dmac/dmac_reg.c
     ${BSP_DIR}/drivers/i2c/r_i2c.c
     ${BSP_DIR}/drivers/i2c/r_i2c_regs.c
-    ${BSP_DIR}/drivers/i2c/r_i2c_api.c
     ${BSP_DIR}/drivers/watchdog/r_swdt.c
     ${BSP_DIR}/drivers/watchdog/r_wwdt.c
     ${BSP_DIR}/drivers/watchdog/r_wwdt_reg.c

@@ -22,7 +22,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
-
+#include "dmac/dmac_common.h"
 /***********************************************************************************************************************
  * Macro definitions
  **********************************************************************************************************************/
@@ -91,8 +91,8 @@ typedef struct st_i2c_master_cfg
     uint32_t               txi_irq;                           ///< Transmit IRQ number.
     uint32_t               tei_irq;                           ///< Transmit end IRQ number.
     uint32_t               eri_irq;                           ///< Error IRQ number.
-    bool 		   dma_single;			      ///< DMA single mode
-    bool 		   dma_cont;			      ///< DMA continuous mode.
+    uint32_t 		   dma_single;			      ///< DMA single mode, set 1 to use.
+    uint32_t 		   dma_cont;			      ///< DMA continuous mode.
 
     /* Transfer API support */
     //transfer_instance_t const * p_transfer_tx;                ///< Transfer instance for I2C transmit. Set to NULL if unused.
@@ -102,6 +102,10 @@ typedef struct st_i2c_master_cfg
     void const * p_context;                                   ///< Pointer control software behavior to the user-provided context.
 
     void const * p_extend;                                    ///< Implementation-specific configuration, including any hardware-specific configuration data.
+
+    uint8_t sys_dmac_unit;       ///< SYS_DMAC2, SYS_DMAC3, etc.
+    uint8_t sys_dmac_channel;        ///< DMAC_CH0, DMAC_CH1, etc.
+    uint32_t sys_dmac_irq_id;   ///< INTID_SYSDMA2_CH0, etc.
 } i2c_master_cfg_t;
 
 /**
@@ -156,6 +160,13 @@ typedef struct st_i2c_instance_ctrl
 
     /* Pointer to context to be passed into callback function */
     void const * p_context;             ///< Pointer to user-provided context data, which cannot be modified.
+    
+    /* Variables below are specific to DMA only */
+    volatile bool dma_write_done;           ///< Write done flag when using DMA.
+    volatile bool dma_read_done;            ///< Read done flag when using DMA.
+    volatile bool dma_final_phase_read;     ///< Last byte read flag for DMA operations.
+    
+    rDmacIrqCfg_t *p_dmac_handle_irq;   ///< DMAC variables.
 } i2c_instance_ctrl_t;
 
 /***********************************************************************************************************************
