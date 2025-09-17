@@ -92,7 +92,7 @@ int32_t R_SERIAL_PortInit(e_serial_devices_t device)
 int32_t R_SERIAL_PutString(const unsigned char *buffer, unsigned short length)
 {
 	if (!portInitialized)
-		return;
+        return -1;
 
 	/* Send each character in the string, one at a time. */
 	while (length--) {
