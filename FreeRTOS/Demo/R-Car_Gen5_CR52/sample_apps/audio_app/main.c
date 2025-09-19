@@ -140,7 +140,12 @@ static void prvAudioTestTask( void *pvParameters )
 	}
 	printf("***********************************************\r\n");
 	
-	printf("* Test case 4: Stop Audio driver. *\r\n");
+	printf("* Test case 4: Verify Audio sound output. *\r\n");
+	printf("Please check if the recorded file on the Ubuntu PC matches the input sound.\r\n");
+	printf("Result: Failed!\n");
+	printf("***********************************************\r\n");
+	
+	printf("* Test case 5: Stop Audio driver. *\r\n");
     res = R_Audio_Stop(&g_audio_device_ctrl);
 	if(res == 0)
 	{
@@ -153,7 +158,7 @@ static void prvAudioTestTask( void *pvParameters )
 	printf("***********************************************\r\n");
 	
 	
-	printf("* Test case 5: Deinitialize Audio driver. *\r\n");
+	printf("* Test case 6: Deinitialize Audio driver. *\r\n");
     res = R_Audio_Deinit(&g_audio_device_ctrl);
 	if(res == 0)
 	{
