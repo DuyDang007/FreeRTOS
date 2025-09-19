@@ -40,6 +40,8 @@
 #include "device_tree_x5h.h"
 #include "smmu/smmu.h"
 #include "ucie/r_ucie.h"
+#include "ucie_concept.h"
+#include "rcar_utils.h"
 
 #define main_ucie_TASK_PRIORITY        (tskIDLE_PRIORITY + 1)
 
@@ -69,8 +71,11 @@ st_ucie_hdma_cfg_t hdma_tbl_wrtest_dt[] = {	// UCIE1 WRCHx1
 const uint32_t TEST_DATA0[8U] = {0x12345678, 0xFEDCBA98, 0xA5A5A5A5, 0x5A5A5A5A,
 						   0x11223344, 0x55667788, 0xAABBCCDD, 0xEEEEFFFF};
 
+const uint32_t TEST_DATA1[8U] = {0x11111111, 0x22222222, 0x66666666, 0x88888888,
+                                 0xBBBBBBBB, 0xCCCCCCCC, 0xEEEEEEEE, 0x55555555};
+
 #define PIO_RC_WRITE_DATA   0xFFCCFFCC
-#define PIO_EP_WRITE_DATA   0xCCFFCCFF
+#define PIO_EP_WRITE_DATA   0x68686868
 
 /*-----------------------------------------------------------*/
 
@@ -115,6 +120,15 @@ void print_test_data(uint64_t src, uint32_t size) {
     }
 }
 
+uint32_t verify_test_data(uint64_t src, const uint32_t *pattern, uint32_t size) {
+    for(uint32_t i = 0; i < size/4; i++) {
+        if (*((volatile uint32_t*)(uintptr_t)src + i) != pattern[i%8]) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
 int main( void )
 {
     /* Configure the hardware ready to run the demo. */
@@ -156,8 +170,8 @@ static void ucie_comm_task(void *pvParameters)
 
     uint32_t ret = 0;
     uint32_t val;
-    uint32_t timeout;
     uint8_t index;
+    *(st_ucie_trigger_sig_t*)UCIE_LOOPCHECK_ADDR = (st_ucie_trigger_sig_t){0};
 
     /* UCIe_chan = 1 - Root-Complex */
     printf("<----- [RC] TC1: UCIE LINKUP ----->\n");
@@ -204,10 +218,104 @@ static void ucie_comm_task(void *pvParameters)
     }
     else {
         printf("Result: PASSED\n");
+
+        /* Send trigger signal to EP */
+        *((st_ucie_trigger_sig_t*)(uintptr_t)hdma_tbl_wrtest_dt[0].mSrcAddr) = (st_ucie_trigger_sig_t) {
+            .addr = hdma_tbl_wrtest_dt[0].mDestAddr,
+            .size = hdma_tbl_wrtest_dt[0].size,
+            .flag = 1,
+        };
+        
+        hdma_tbl_wrtest_dt[0].mDestAddr = UCIE_LOOPCHECK_ADDR;
+        hdma_tbl_wrtest_dt[0].size = sizeof(st_ucie_trigger_sig_t);
+        
+        R_UCIE_HDMA_Start(hdma_tbl_wrtest_dt + 0);
+    }
+
+    printf("<----- [RC] TC 3: VERIFY TRANSFER DATA ----->\n");
+    st_ucie_trigger_sig_t *signal = (st_ucie_trigger_sig_t *)UCIE_LOOPCHECK_ADDR;
+    uint32_t timer_freq = R_UTILS_GetTimerFrequency();
+    uint64_t start = R_UTILS_GetTimerCounter();
+    ret = 1;
+
+    while ((R_UTILS_GetTimerCounter() - start)/timer_freq < 3) {
+        if (signal->flag == 1) {
+            ret = 0;
+            break;
+        }
+    }
+
+    if (!ret) {
+        printf("Data after transfer:\n");
+        print_test_data(signal->addr, signal->size);
+        if (verify_test_data(signal->addr, TEST_DATA1, signal->size)) {
+            printf("Result: FAILED\n");
+        }
+        else {
+            printf("Result: PASSED\n");
+        }
+    }
+    else {
+        printf("Result: FAILED\n");
+    }
+
+    printf("<----- [RC] TC 4: PIO TRANSFER ----->\n");
+    uint64_t ucie1_pa = 0x24000000000;
+    uint32_t ucie1_va = 0x8E600000;
+
+    bool is_secure = true;
+
+    uint32_t streamId[] = {
+        0x000,
+        0xC00,
+    };
+
+    st_smmu_streamid_instance_ctrl_t smmu_ctrl = {
+        .smmu_domain = SMMU_RT,
+        .is_secure  = is_secure,
+    };
+    
+    R_SMMU_Init(SMMU_RT, is_secure);
+
+    for (uint8_t i = 0; i < sizeof(streamId)/sizeof(uint32_t); i ++) {
+        smmu_ctrl.stream_id = streamId[i];
+
+        R_SMMU_Attach(&smmu_ctrl);
+
+        R_SMMU_Map(&smmu_ctrl, 0x00, 0x00, 0x60000000);
+        R_SMMU_Map(&smmu_ctrl, 0xC0000000, 0xC0000000, 0x40000000);
+        R_SMMU_Map(&smmu_ctrl, ucie1_va, ucie1_pa, 0x10000);
+    }
+
+    volatile uint32_t *RCTBUBYPSEN = (volatile uint32_t *)0x18B47800;
+    uint32_t smmu_bypass = 0xFFE;
+    uint32_t old = *RCTBUBYPSEN;
+    uint32_t new = (old & ~MASK) | (smmu_bypass & MASK);
+    *RCTBUBYPSEN = new;
+    R_SMMU_Enable(SMMU_RT, is_secure);
+
+    /* RC Write EP Read */
+    *((volatile uint32_t*)ucie1_va) = PIO_RC_WRITE_DATA;
+
+    /* EP Write RC Read */
+    ret = 1;
+    start = R_UTILS_GetTimerCounter();
+    while ((R_UTILS_GetTimerCounter() - start)/timer_freq < 3) {
+        if(*((volatile uint32_t*)ucie1_va) == PIO_EP_WRITE_DATA) {
+            ret = 0;
+            break;
+        }
+    }
+    
+    printf("Data after transfer: 0x%X\n", *((volatile uint32_t*)ucie1_va));
+    if(ret) {
+        printf("Result: FAILED\n");
+    }
+    else {
+        printf("Result: PASSED\n");
     }
 
     printf("<----- [RC] END TEST ----->\n");
-    
     for(;;) {
         __asm__ volatile("nop");
     }

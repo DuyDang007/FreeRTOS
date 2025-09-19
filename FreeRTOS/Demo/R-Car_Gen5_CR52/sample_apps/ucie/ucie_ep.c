@@ -37,6 +37,8 @@
 #include "ucie/r_ucie.h"
 #include "pfc/r_pfc_api.h"
 #include "device_tree_x5h.h"
+#include "ucie_concept.h"
+#include "rcar_utils.h"
 
 #define main_ucie_TASK_PRIORITY        (tskIDLE_PRIORITY + 1)
 
@@ -55,7 +57,7 @@
 
 #define DBSC01_HDMA_PA(n)       (DRAM_DBSC01_ADDR_PA + (n) * DMA_SIZE_PER_CHAN)
 
-// For RC write EP read test data
+// For EP write RC read test data
 st_ucie_hdma_cfg_t hdma_tbl_wrtest_dt[] = {    // UCIE1 WRCHx1
     /*  ucie_ch     hdma_ch     mSrcAddr            mDestAddr           size                rw */
     {   UCIE_CH1,   HDMA_CH0,   DBSC01_HDMA_PA(0),  DBSC01_HDMA_PA(1),  DMA_SIZE_PER_CHAN,  0,  },
@@ -65,8 +67,11 @@ st_ucie_hdma_cfg_t hdma_tbl_wrtest_dt[] = {    // UCIE1 WRCHx1
 const uint32_t TEST_DATA0[8U] = {0x12345678, 0xFEDCBA98, 0xA5A5A5A5, 0x5A5A5A5A,
                            0x11223344, 0x55667788, 0xAABBCCDD, 0xEEEEFFFF};
 
+const uint32_t TEST_DATA1[8U] = {0x11111111, 0x22222222, 0x66666666, 0x88888888,
+                                 0xBBBBBBBB, 0xCCCCCCCC, 0xEEEEEEEE, 0x55555555};
+
 #define PIO_RC_WRITE_DATA   0xFFCCFFCC
-#define PIO_EP_WRITE_DATA   0xCCFFCCFF
+#define PIO_EP_WRITE_DATA   0x68686868
 
 /*-----------------------------------------------------------*/
 
@@ -79,6 +84,23 @@ static void ucie_comm_task( void *pvParameters );
 
 extern int console_getc(unsigned char *p_char);
 extern uint32_t Ucie_Setup_ep(uint8_t ch);
+extern uint64_t R_UTILS_GetTimerCounter(void);
+
+void create_test_data(uint64_t src, const uint32_t *pattern, uint32_t size) {
+    for (uint32_t i = 0; i < size/32; i++) {
+        *((volatile uint32_t *)(uintptr_t)src + 0) = pattern[0];
+        *((volatile uint32_t *)(uintptr_t)src + 1) = pattern[1];
+        *((volatile uint32_t *)(uintptr_t)src + 2) = pattern[2];
+        *((volatile uint32_t *)(uintptr_t)src + 3) = pattern[3];
+        *((volatile uint32_t *)(uintptr_t)src + 4) = pattern[4];
+        *((volatile uint32_t *)(uintptr_t)src + 5) = pattern[5];
+        *((volatile uint32_t *)(uintptr_t)src + 6) = pattern[6];
+        *((volatile uint32_t *)(uintptr_t)src + 7) = pattern[7];
+
+        src = src + 32;
+    }
+}
+
 
 void print_test_data(uint64_t src, uint32_t size) {
     printf("Start data at addr 0x%llX\n\t", src);
@@ -147,8 +169,9 @@ static void ucie_comm_task(void *pvParameters)
 
     uint32_t ret = 0;
     uint32_t val;
-    uint32_t timeout;
-
+    uint8_t index;
+    *(st_ucie_trigger_sig_t*)UCIE_LOOPCHECK_ADDR = (st_ucie_trigger_sig_t){0};
+    
     /* ucie_chan = 1 - Endpoint */
     printf("<----- [EP] TC1: UCIE LINKUP ----->\n");
     
@@ -165,21 +188,112 @@ static void ucie_comm_task(void *pvParameters)
         printf("Result: PASSED\n");
     }
 
-    printf("<----- [EP] TC 2: VERIFY HDMA TRANSFER DATA ----->\n");
-    
-    timeout = 0x1000000;
-    while (verify_test_data(hdma_tbl_wrtest_dt->mDestAddr, TEST_DATA0, DMA_SIZE_PER_CHAN)) {
-        timeout--;
+    printf("<----- [EP] TC 2: TRANSFER DATA USING HDMA ----->\n");
+    printf("Generate test data\n");
+    create_test_data(hdma_tbl_wrtest_dt->mSrcAddr, TEST_DATA1, hdma_tbl_wrtest_dt->size);
+    print_test_data(hdma_tbl_wrtest_dt->mSrcAddr, hdma_tbl_wrtest_dt->size);
+
+    printf("Start EP HDMA transfer\n");
+
+    index = 0;
+    /* Start All CH Transfer */
+    while (hdma_tbl_wrtest_dt[index].size != 0) {
+        R_UCIE_HDMA_Start(hdma_tbl_wrtest_dt + index);
+        index++;
     }
-    printf("Data after transfer:\n");
-    print_test_data(hdma_tbl_wrtest_dt->mDestAddr, DMA_SIZE_PER_CHAN);
-    
-    if (timeout) {
+
+    index = 0;
+    /* Wait All CH STOP */
+    while (hdma_tbl_wrtest_dt[index].size != 0) {
+        if (R_UCIE_HDMA_WaitStop(hdma_tbl_wrtest_dt + index)) {
+            ret = 1;
+        }
+
+        index++;
+    }
+
+    printf("End EP HDMA transfer\n");
+    if (ret) {
+        printf("Result: FAILED\n");
+    }
+    else {
         printf("Result: PASSED\n");
+
+        /* Send trigger signal to RC */
+        *((st_ucie_trigger_sig_t*)(uintptr_t)hdma_tbl_wrtest_dt[0].mSrcAddr) = (st_ucie_trigger_sig_t) {
+            .addr = hdma_tbl_wrtest_dt[0].mDestAddr,
+            .size = hdma_tbl_wrtest_dt[0].size,
+            .flag = 1,
+        };
+
+        hdma_tbl_wrtest_dt[0].mDestAddr = UCIE_LOOPCHECK_ADDR;
+        hdma_tbl_wrtest_dt[0].size = sizeof(st_ucie_trigger_sig_t);
+
+        R_UCIE_HDMA_Start(hdma_tbl_wrtest_dt + 0);
+    }
+
+    printf("<----- [EP] TC 3: VERIFY TRANSFER DATA ----->\n");
+    st_ucie_trigger_sig_t *signal = (st_ucie_trigger_sig_t *)UCIE_LOOPCHECK_ADDR;
+    uint32_t timer_freq = R_UTILS_GetTimerFrequency();
+    uint64_t start = R_UTILS_GetTimerCounter();
+    ret = 1;
+    
+    while ((R_UTILS_GetTimerCounter() - start)/timer_freq < 3) {
+        if (signal->flag == 1) {
+            ret = 0;
+            break;
+        }           
+    }
+
+    if (!ret) {
+        printf("Data after transfer:\n");
+        print_test_data(signal->addr, signal->size);
+        if (verify_test_data(signal->addr, TEST_DATA0, signal->size)) {
+            printf("Result: FAILED\n");
+        }
+        else {
+            printf("Result: PASSED\n");
+        }
     }
     else {
         printf("Result: FAILED\n");
     }
+
+    printf("<----- [EP] TC 4: PIO TRANSFER ----->\n");
+    uint64_t ucie1_mem = 0x24000000000;
+    uint32_t ucie1_in = 0x9B000000;
+
+    st_ucie_iatu_cfg_t cfg = {
+        .ucie_ch = UCIE_CH1,
+        .rgn = IATU_RGN0,
+        .type = IATU_INBOUND,
+        .mSrcAddr = ucie1_mem,
+        .mDestAddr = ucie1_in,
+        .size = 0x10000
+    };
+
+    R_UCIE_IATU_SetRegion(&cfg);
+    
+    /* RC Write EP Read */
+    ret = 1;
+    start = R_UTILS_GetTimerCounter();
+    while ((R_UTILS_GetTimerCounter() - start)/timer_freq < 3) {
+        if(*((volatile uint32_t*)ucie1_in) == PIO_RC_WRITE_DATA) {
+            ret = 0;
+            break;
+        }
+    }
+    
+    printf("Data after transfer: 0x%X\n", *((volatile uint32_t*)ucie1_in));
+    if(ret) {
+        printf("Result: FAILED\n");
+    }
+    else {
+        printf("Result: PASSED\n");
+    }
+
+    /* EP Write RC Read */
+    *((volatile uint32_t*)ucie1_in) = PIO_EP_WRITE_DATA;
 
     printf("<----- [EP] END TEST ----->\n");
 
