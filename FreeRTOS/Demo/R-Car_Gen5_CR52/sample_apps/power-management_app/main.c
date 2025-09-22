@@ -131,6 +131,7 @@ static int pmClockTest(int clock_id, uint32_t *rate_set)
 	int ret;
 	uint32_t rate[2] = {0};
     int tc_number = 3;
+    bool is_clk_on;
 
     /* Set clock on */
     PM_LOG("**********TC%d %d-1: set clock id %d ON.**********\r\n",
@@ -146,8 +147,26 @@ static int pmClockTest(int clock_id, uint32_t *rate_set)
         PM_LOG("Set clock id %d ON OK!\r\n", clock_id);
     }
 
+    /* Get clock - Expected ON  */
+    PM_LOG("*****TC%d %d-2: get clock id %d (expected ON)*****\r\n",
+            tc_number, clock_id, clock_id);
+    ret = R_StateManager_ClockStatusGet(clock_id, &is_clk_on);
+    if (ret)
+    {
+        PM_LOG("Error: Failed to get clock id %d status.\r\n",
+               clock_id);
+    }
+    else if (is_clk_on)
+    {
+        PM_LOG("Getting clock id %d ON: PASS\r\n", clock_id);
+    }
+    else
+    {
+        PM_LOG("Getting clock id %d ON: FAILED\r\n", clock_id);
+    }
+
 	/* Get clock rate */
-    PM_LOG("**********TC%d %d-2: Get clock rate.**********\r\n",
+    PM_LOG("**********TC%d %d-3: Get clock rate.**********\r\n",
             tc_number, clock_id);
 	ret = R_StateManager_GetClock(clock_id, &rate[0]);
     if (ret)
@@ -162,7 +181,7 @@ static int pmClockTest(int clock_id, uint32_t *rate_set)
 
 #if 0
 	/* Try setting clock rate to 26MHz */
-    PM_LOG("**********TC%d %d-3: Set clock rate.**********\r\n",
+    PM_LOG("**********TC%d %d-4: Set clock rate.**********\r\n",
             tc_number, clock_id);
 	rate[0] = 26000000;
 	ret = R_StateManager_SetClock(clock_id, rate);
@@ -178,7 +197,7 @@ static int pmClockTest(int clock_id, uint32_t *rate_set)
 #endif
 
 	/* Set clock off  */
-    PM_LOG("**********TC%d %d-4: set clock id %d OFF.**********\r\n",
+    PM_LOG("**********TC%d %d-5: set clock id %d OFF.**********\r\n",
             tc_number, clock_id, clock_id);
     if ((X5H_CLOCK_ID_MDLC_VIPN_MSYNC == clock_id) ||
         (X5H_CLOCK_ID_MDLC_VIPS_MSYNC == clock_id) ||
@@ -198,6 +217,24 @@ static int pmClockTest(int clock_id, uint32_t *rate_set)
         {
             PM_LOG("Set clock id %d OFF OK!\r\n", clock_id);
         }
+    }
+
+    /* Get clock - Expected OFF */
+    PM_LOG("*****TC%d %d-6: get clock id %d (expected OFF)****\r\n",
+            tc_number, clock_id, clock_id);
+    ret = R_StateManager_ClockStatusGet(clock_id, &is_clk_on);
+    if (ret)
+    {
+        PM_LOG("Error: Failed to get clock id %d status.\r\n",
+               clock_id);
+    }
+    else if (!is_clk_on)
+    {
+        PM_LOG("Getting clock id %d OFF: PASS\r\n", clock_id);
+    }
+    else
+    {
+        PM_LOG("Getting clock id %d OFF: FAILED\r\n", clock_id);
     }
 
 	return 0;
