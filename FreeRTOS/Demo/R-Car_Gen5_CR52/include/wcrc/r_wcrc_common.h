@@ -51,6 +51,77 @@ typedef enum e_wcrc_unit
 } wcrc_unit_t;
 
 /** 
+ * @brief Superset list of all RT-DMA instance uses with WCRC.
+ */
+typedef enum e_rtdma_inst
+{
+    RTDMA0_CH0  = 0x01,                          ///< RTDMA unit 0 - channel 0
+    RTDMA0_CH1  = 0x02,                          ///< RTDMA unit 0 - channel 1
+    RTDMA0_CH2  = 0x03,                          ///< RTDMA unit 0 - channel 2
+    RTDMA0_CH3  = 0x04,                          ///< RTDMA unit 0 - channel 3
+    RTDMA0_CH4  = 0x05,                          ///< RTDMA unit 0 - channel 4
+    RTDMA0_CH5  = 0x06,                          ///< RTDMA unit 0 - channel 5
+    RTDMA0_CH6  = 0x07,                          ///< RTDMA unit 0 - channel 6
+    RTDMA0_CH7  = 0x08,                          ///< RTDMA unit 0 - channel 7
+    RTDMA0_CH8  = 0x09,                          ///< RTDMA unit 0 - channel 8
+    RTDMA0_CH9  = 0x0a,                          ///< RTDMA unit 0 - channel 9
+    RTDMA0_CH10 = 0x0b,                          ///< RTDMA unit 0 - channel 10
+    RTDMA0_CH11 = 0x0c,                          ///< RTDMA unit 0 - channel 11
+    RTDMA0_CH12 = 0x0d,                          ///< RTDMA unit 0 - channel 12
+    RTDMA0_CH13 = 0x0e,                          ///< RTDMA unit 0 - channel 13
+    RTDMA0_CH14 = 0x0f,                          ///< RTDMA unit 0 - channel 14
+    RTDMA0_CH15 = 0x10,                          ///< RTDMA unit 0 - channel 15
+    RTDMA1_CH0  = 0x11,                          ///< RTDMA unit 1 - channel 0
+    RTDMA1_CH1  = 0x12,                          ///< RTDMA unit 1 - channel 1
+    RTDMA1_CH2  = 0x13,                          ///< RTDMA unit 1 - channel 2
+    RTDMA1_CH3  = 0x14,                          ///< RTDMA unit 1 - channel 3
+    RTDMA1_CH4  = 0x15,                          ///< RTDMA unit 1 - channel 4
+    RTDMA1_CH5  = 0x16,                          ///< RTDMA unit 1 - channel 5
+    RTDMA1_CH6  = 0x17,                          ///< RTDMA unit 1 - channel 6
+    RTDMA1_CH7  = 0x18,                          ///< RTDMA unit 1 - channel 7
+    RTDMA1_CH8  = 0x19,                          ///< RTDMA unit 1 - channel 8
+    RTDMA1_CH9  = 0x1a,                          ///< RTDMA unit 1 - channel 9
+    RTDMA1_CH10 = 0x1b,                          ///< RTDMA unit 1 - channel 10
+    RTDMA1_CH11 = 0x1c,                          ///< RTDMA unit 1 - channel 11
+    RTDMA1_CH12 = 0x1d,                          ///< RTDMA unit 1 - channel 12
+    RTDMA1_CH13 = 0x1e,                          ///< RTDMA unit 1 - channel 13
+    RTDMA1_CH14 = 0x1f,                          ///< RTDMA unit 1 - channel 14
+    RTDMA1_CH15 = 0x20,                          ///< RTDMA unit 1 - channel 15
+    RTDMA2_CH0  = 0x21,                          ///< RTDMA unit 2 - channel 0
+    RTDMA2_CH1  = 0x22,                          ///< RTDMA unit 2 - channel 1
+    RTDMA2_CH2  = 0x23,                          ///< RTDMA unit 2 - channel 2
+    RTDMA2_CH3  = 0x24,                          ///< RTDMA unit 2 - channel 3
+    RTDMA2_CH4  = 0x25,                          ///< RTDMA unit 2 - channel 4
+    RTDMA2_CH5  = 0x26,                          ///< RTDMA unit 2 - channel 5
+    RTDMA2_CH6  = 0x27,                          ///< RTDMA unit 2 - channel 6
+    RTDMA2_CH7  = 0x28,                          ///< RTDMA unit 2 - channel 7
+    RTDMA2_CH8  = 0x29,                          ///< RTDMA unit 2 - channel 8
+    RTDMA2_CH9  = 0x2a,                          ///< RTDMA unit 2 - channel 9
+    RTDMA2_CH10 = 0x2b,                          ///< RTDMA unit 2 - channel 10
+    RTDMA2_CH11 = 0x2c,                          ///< RTDMA unit 2 - channel 11
+    RTDMA2_CH12 = 0x2d,                          ///< RTDMA unit 2 - channel 12
+    RTDMA2_CH13 = 0x2e,                          ///< RTDMA unit 2 - channel 13
+    RTDMA2_CH14 = 0x2f,                          ///< RTDMA unit 2 - channel 14
+    RTDMA2_CH15 = 0x30,                          ///< RTDMA unit 2 - channel 15
+    RTDMA3_CH0  = 0x31,                          ///< RTDMA unit 3 - channel 0
+    RTDMA3_CH1  = 0x32,                          ///< RTDMA unit 3 - channel 1
+    RTDMA3_CH2  = 0x33,                          ///< RTDMA unit 3 - channel 2
+    RTDMA3_CH3  = 0x34,                          ///< RTDMA unit 3 - channel 3
+    RTDMA3_CH4  = 0x35,                          ///< RTDMA unit 3 - channel 4
+    RTDMA3_CH5  = 0x36,                          ///< RTDMA unit 3 - channel 5
+    RTDMA3_CH6  = 0x37,                          ///< RTDMA unit 3 - channel 6
+    RTDMA3_CH7  = 0x38,                          ///< RTDMA unit 3 - channel 7
+    RTDMA3_CH8  = 0x39,                          ///< RTDMA unit 3 - channel 8
+    RTDMA3_CH9  = 0x3a,                          ///< RTDMA unit 3 - channel 9
+    RTDMA3_CH10 = 0x3b,                          ///< RTDMA unit 3 - channel 10
+    RTDMA3_CH11 = 0x3c,                          ///< RTDMA unit 3 - channel 11
+    RTDMA3_CH12 = 0x3d,                          ///< RTDMA unit 3 - channel 12
+    RTDMA3_CH13 = 0x3e,                          ///< RTDMA unit 3 - channel 13
+    RTDMA3_CH14 = 0x3f,                          ///< RTDMA unit 3 - channel 14
+    RTDMA3_CH15 = 0x40,                          ///< RTDMA unit 3 - channel 15
+} rtdma_inst_t;
+
+/** 
  * @brief Enumeration for WCRC modes 
  */
 typedef enum e_wcrc_mode
@@ -157,6 +228,8 @@ typedef struct st_crc_module_cfg
     bool            is_in_exor;                 ///< EXOR ON of input data:  H’FFFF FFFF ^ data_int[31:0].
     bool            is_in_bitswap;              ///< Bit swap of input data.
     byteswap_mode_t in_byteswap;                ///< Byte swap of input data.
+    uint32_t *      p_rtdma_inst;               ///< Pointer to RT-DMA instance.
+    uint8_t         num_rtdma_inst;             ///< Number of RT-DMA instances.
 } crc_module_cfg_t;
 
 /** 
@@ -180,6 +253,8 @@ typedef struct st_kcrc_module_cfg
     bool                is_in_reflect;          ///< Input is flipped bit by bit.
     uint8_t             shift_mode;             ///< MSB shift or LSB shift.
     uint32_t            xor_mask_out;           ///< Value XOR mask for Data output.
+    uint32_t *          p_rtdma_inst;           ///< Pointer to RT-DMA instance.
+    uint8_t             num_rtdma_inst;         ///< Number of RT-DMA instances.
 } kcrc_module_cfg_t;
 
 /** 

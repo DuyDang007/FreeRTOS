@@ -52,6 +52,24 @@ typedef enum e_wcrc_mode_fifo_port
     COMPARING_CRC_PORT_EXPECTED_DATA    = 1,
 } wcrc_mode_fifo_port_t;
 
+typedef enum e_wcrc_fifo_ports_use_rtdma
+{
+    E2E_PORT_DATA_USE_RTDMA_INDEX_0                     = 0,
+    E2E_PORT_RESULT_USE_RTDMA_INDEX_1                   = 1,
+
+    DATA_THROUGH_PORT_DATA_IN_USE_RTDMA_INDEX_0         = 0,
+    DATA_THROUGH_PORT_DATA_OUT_USE_RTDMA_INDEX_1        = 1,
+
+    E2E_DATA_THROUGH_PORT_DATA_IN_USE_RTDMA_INDEX_0     = 0,
+    E2E_DATA_THROUGH_PORT_DATA_OUT_USE_RTDMA_INDEX_1    = 1,
+    E2E_DATA_THROUGH_PORT_RESULT_USE_RTDMA_INDEX_2      = 2,
+
+    REGISTER_ACCESS_PORT_COMMAND_USE_RTDMA_INDEX_0      = 0,
+
+    COMPARING_CRC_PORT_DATA_USE_RTDMA_INDEX_0           = 0,
+    COMPARING_CRC_PORT_EXPECTED_DATA_USE_RTDMA_INDEX_1  = 1,
+} wcrc_fifo_ports_use_rtdma_t;
+
 #define MEM_TO_DEV 1
 #define DEV_TO_MEM 2
 #define NUM_DATA_ALIGN_AXI_BUS  4
@@ -466,7 +484,8 @@ static int wcrcStartE2eCrcMode(wcrc_instance_ctrl_t * const p_instance_ctrl);
 static int wcrcStartDataThrough(wcrc_instance_ctrl_t * const p_instance_ctrl);
 
 static int wcrc_set_rtdma(uint8_t module, wcrc_instance_ctrl_t * const p_instance_ctrl,
-                         void * p_cfg_dma, uint32_t port, uint8_t dma_direction);
+                         void * p_cfg_dma, uint32_t port,
+                         uint8_t dma_direction, wcrc_fifo_ports_use_rtdma_t index);
 
 static int crc_setting(wcrc_unit_t unit, crc_module_cfg_t const * const p_cfg);
 
@@ -654,10 +673,10 @@ static int wcrc_start_e2e(wcrc_instance_ctrl_t * const p_instance_ctrl,
 
     /* DMA TX: E2E_PORT_DATA */
     ret |= wcrc_set_rtdma(module, p_instance_ctrl, p_cfg_dma[E2E_PORT_DATA],
-                         PORT_DATA(module), MEM_TO_DEV);
+                         PORT_DATA(module), MEM_TO_DEV, E2E_PORT_DATA_USE_RTDMA_INDEX_0);
     /* DMA RX: E2E_PORT_RESULT */
     ret |= wcrc_set_rtdma(module, p_instance_ctrl, p_cfg_dma[E2E_PORT_RESULT],
-                         PORT_RES(module), DEV_TO_MEM);
+                         PORT_RES(module), DEV_TO_MEM, E2E_PORT_RESULT_USE_RTDMA_INDEX_1);
 
     /* 4. WCRC setups user context */
     p_usr_temp                          = p_context;
@@ -671,7 +690,7 @@ static int wcrc_start_e2e(wcrc_instance_ctrl_t * const p_instance_ctrl,
     p_usr_context[E2E_PORT_DATA]    = p_instance_ctrl->p_context[module];
     p_usr_context[E2E_PORT_RESULT]  = p_usr_context[E2E_PORT_DATA] + 1;
 
-    //printf_delay("%d: >> 0x%x\n", module, p_usr_context[module]);
+    //printf("%d: >> 0x%x\n", module, p_usr_context[module]);
 
     p_cfg_dma[E2E_PORT_DATA]    = p_instance_ctrl->p_extend[module];
     p_cfg_dma[E2E_PORT_RESULT]  = p_cfg_dma[E2E_PORT_DATA] + 1;
@@ -784,7 +803,7 @@ static int wcrc_start_data_through(wcrc_instance_ctrl_t * const p_instance_ctrl,
     p_usr_context[port_data_input]     = (Context_t *)p_instance_ctrl->p_context[module] + 1;
     p_usr_context[port_data_output]    = (Context_t *)p_instance_ctrl->p_context[module];
 
-    //printf_delay("%d: >> 0x%x\n", module, p_usr_context[module]);
+    //printf("%d: >> 0x%x\n", module, p_usr_context[module]);
 
     p_cfg_dma[port_data_input]     = p_instance_ctrl->p_extend[module];
     p_cfg_dma[port_data_output]    = p_cfg_dma[port_data_input] + 1;
@@ -871,6 +890,43 @@ static int wcrcStartDataThrough(wcrc_instance_ctrl_t * const p_instance_ctrl)
     return ret;
 }
 
+static int wcrc_check_rtdma_config(uint8_t module, wcrc_cfg_t const * const p_cfg,
+                                  uint8_t rtdma_require)
+{
+    uint32_t * p_rtdma_inst;
+    uint8_t num_rtdma_inst;
+    int i;
+
+    if (module == CRC_SUB_MODULE) {
+        p_rtdma_inst    = p_cfg->crc_cfg.p_rtdma_inst;
+        num_rtdma_inst  = p_cfg->crc_cfg.num_rtdma_inst;
+    }
+
+    if (module == KCRC_SUB_MODULE) {
+        p_rtdma_inst    = p_cfg->kcrc_cfg.p_rtdma_inst;
+        num_rtdma_inst  = p_cfg->kcrc_cfg.num_rtdma_inst;
+    }
+
+    if (!p_rtdma_inst) {
+        printf("%s: p_rtdma_inst is NULL\n", __func__);
+        return -1;
+    }
+
+    if (num_rtdma_inst < rtdma_require) {
+        printf("%s: Require %d RTDMA channels\n", rtdma_require, __func__);
+        return -1;
+    }
+
+    for (i = 0; i < rtdma_require; i++) {
+        if (p_rtdma_inst[i] < RTDMA0_CH0 || p_rtdma_inst[i] > RTDMA3_CH15) {
+            printf("%s: p_rtdma_inst[%d] is out of range rtdma_inst_t\n", __func__, i); 
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
 static int wcrc_set_e2e_mode(uint8_t module, wcrc_cfg_t const * const p_cfg)
 {
     int ret = 0;
@@ -887,6 +943,13 @@ static int wcrc_set_e2e_mode(uint8_t module, wcrc_cfg_t const * const p_cfg)
         return ret;
     }
 
+    ret = wcrc_check_rtdma_config(module, p_cfg, E2E_CRC_USE_2_DMA_CHAN);
+    if (ret) {
+        printf("%s: Invalid rtdma_config\n", __func__);
+        ret = -1;
+        return ret;
+    }
+
     //Enable WCRC Stop Interrupt.
     reg_addr = getRegister(reg_type, unit, WCRC_XXXX_INTEN(module));
     reg_val = STOP_DONE_IE;
@@ -896,7 +959,7 @@ static int wcrc_set_e2e_mode(uint8_t module, wcrc_cfg_t const * const p_cfg)
     reg_addr = getRegister(reg_type, unit, WCRC_XXXX_CONV(module));
     reg_val = p_cfg->conv_size[module];
     writel(reg_val, reg_addr);
-    //printf_delay("%d: conv=0x%x\n", module, readl(reg_addr));
+    //printf("%d: conv=0x%x\n", module, readl(reg_addr));
 
     //2. Set initial CRC code value in WCRC_XXXX_INIT_CRC register.
     reg_addr = getRegister(reg_type, unit, WCRC_XXXX_INIT_CRC(module));
@@ -1175,7 +1238,7 @@ static int wcrc_prepare_data_through(uint8_t module, wcrc_instance_ctrl_t * cons
         return -1;
     }
 
-    //printf_delay("%d: B> 0x%x\n", module, p_crc_data->p_output_buffer);
+    //printf("%d: B> 0x%x\n", module, p_crc_data->p_output_buffer);
 
     /* 3. WCRC setups DMA */
     p_instance_ctrl->p_extend[module]    = pvPortMalloc(sizeof(wcrc_cfg_dma_t) * DATA_THROUGH_USE_2_DMA_CHAN);
@@ -1190,10 +1253,10 @@ static int wcrc_prepare_data_through(uint8_t module, wcrc_instance_ctrl_t * cons
 
     /* DMA TX: PORT_DATA */
     ret |= wcrc_set_rtdma(module, p_instance_ctrl, p_cfg_dma[DATA_THROUGH_PORT_DATA_INPUT],
-                         PORT_DATA(module), MEM_TO_DEV);
+                         PORT_DATA(module), MEM_TO_DEV, DATA_THROUGH_PORT_DATA_IN_USE_RTDMA_INDEX_0);
     /* DMA RX: PORT_DATA */
     ret |= wcrc_set_rtdma(module, p_instance_ctrl, p_cfg_dma[DATA_THROUGH_PORT_DATA_OUTPUT],
-                         PORT_DATA(module), DEV_TO_MEM);
+                         PORT_DATA(module), DEV_TO_MEM, DATA_THROUGH_PORT_DATA_OUT_USE_RTDMA_INDEX_1);
     return ret;
 }
 
@@ -1259,82 +1322,6 @@ static int wcrc_get_dma_request_id(wcrc_sub_module_t module,
         dma_req_id = MID_RID_WCRC_RES(module, unit);
 
     return dma_req_id;
-}
-
-static uint32_t dma_ide_chan[64] =
-{
-    0x00,
-    0x01,
-    0x02,
-    0x03,
-    0x04,
-    0x05,
-    0x06,
-    0x07,
-    0x08,
-    0x09,
-    0x0A,
-    0x0B,
-    0x0C,
-    0x0D,
-    0x0F,
-    0x10,
-    0x11,
-    0x12,
-    0x13,
-    0x14,
-    0x15,
-    0x16,
-    0x17,
-    0x18,
-    0x19,
-    0x1A,
-    0x1B,
-    0x1C,
-    0x1D,
-    0x1F,
-    0x20,
-    0x21,
-    0x22,
-    0x23,
-    0x24,
-    0x25,
-    0x26,
-    0x27,
-    0x28,
-    0x29,
-    0x2A,
-    0x2B,
-    0x2C,
-    0x2D,
-    0x2F,
-    0x30,
-    0x31,
-    0x32,
-    0x33,
-    0x34,
-    0x35,
-    0x36,
-    0x37,
-    0x38,
-    0x39,
-    0x3A,
-    0x3B,
-    0x3C,
-    0x3D,
-    0x3F
-};
-
-static int index = -1;
-
-static uint32_t dma_return_ide_chan()
-{
-    if (index > (sizeof(dma_ide_chan)/sizeof(dma_ide_chan[0]) - 1))
-        index = 0;
-    else
-        index = index + 2;
-
-    return dma_ide_chan[index];
 }
 
 static uint32_t get_dma_int_id(uint32_t dma_unit_chan)
@@ -1509,9 +1496,9 @@ static int wcrc_get_dma_transf_unit_size_config(uint8_t transfer_size)
 }
 
 static int wcrc_set_rtdma(uint8_t module, wcrc_instance_ctrl_t * const p_instance_ctrl,
-                         void * p_cfg_dma, uint32_t port, uint8_t dma_direction)
+                         void * p_cfg_dma, uint32_t port,
+                         uint8_t dma_direction, wcrc_fifo_ports_use_rtdma_t index)
 {
-    int ret = 0;
     wcrc_cfg_t const * p_cfg = p_instance_ctrl->p_cfg;
     wcrc_unit_t unit = p_cfg->unit;
     uint32_t each_data_size = 0;
@@ -1526,32 +1513,34 @@ static int wcrc_set_rtdma(uint8_t module, wcrc_instance_ctrl_t * const p_instanc
     crc_output_t * p_data;
     uint8_t dma_tx_unit = 16, dma_rx_unit = 16;
     uint32_t dma_unit_chan;
+    uint32_t * p_rtdma_inst;
+    uint8_t num_rtdma_inst;
 
     if (module != CRC_SUB_MODULE &&
         module != KCRC_SUB_MODULE) {
         printf("%s: Invalid module\n", __func__);
-        ret = -1;
-        return ret;
+        return -1;
     }
-
-    /* Get ide dma channels */
-    dma_unit_chan = dma_return_ide_chan();
 
     /* Get each data size in byte */
     each_data_size = get_width_input(module, p_cfg);
 
+    if (module == CRC_SUB_MODULE) {
+        p_input_cfg     = &p_crc_cfg->input_cfg;
+        p_rtdma_inst    = p_crc_cfg->p_rtdma_inst;
+        num_rtdma_inst  = p_crc_cfg->num_rtdma_inst;
+    } else if (module == KCRC_SUB_MODULE) {
+        p_input_cfg  = &p_kcrc_cfg->input_cfg;
+        p_rtdma_inst = p_kcrc_cfg->p_rtdma_inst;
+        num_rtdma_inst  = p_kcrc_cfg->num_rtdma_inst;
+    }
+
+    if (index > num_rtdma_inst) {
+        printf("%s: Invalid rtdma_inst_index %d\n", __func__, index);
+        return -1;
+    }
+
     if (dma_direction == MEM_TO_DEV) {
-
-        if (module == CRC_SUB_MODULE) {
-            p_input_cfg                     = &p_crc_cfg->input_cfg;
-        } else if (module == KCRC_SUB_MODULE) {
-            p_input_cfg                     = &p_kcrc_cfg->input_cfg;
-        }
-
-        p_wcrc_cfg_dma->irq.Unit            = (0xF0 & dma_unit_chan) >> 4;
-        p_wcrc_cfg_dma->irq.SubCh           = (0x0F & dma_unit_chan);
-        p_wcrc_cfg_dma->irq.irq_channel     = get_dma_int_id(dma_unit_chan);
-
         p_wcrc_cfg_dma->cfg.mSrcAddr        = (uintptr_t)p_input_cfg->p_input_buffer;
         p_wcrc_cfg_dma->cfg.mDestAddr       = port_addr;
         p_wcrc_cfg_dma->cfg.mTransferCount  = (p_input_cfg->num_data) * each_data_size / dma_tx_unit;
@@ -1563,13 +1552,7 @@ static int wcrc_set_rtdma(uint8_t module, wcrc_instance_ctrl_t * const p_instanc
         p_wcrc_cfg_dma->cfg.mSourceRequest  = port_req_id;
         p_wcrc_cfg_dma->cfg.mLowSpeed       = DRV_RTDMAC_SPEED_NORMAL;
         p_wcrc_cfg_dma->cfg.mPrioLevel      = 0;
-
     } else if (dma_direction == DEV_TO_MEM) {
-
-        p_wcrc_cfg_dma->irq.Unit            = (0xF0 & dma_unit_chan) >> 4;
-        p_wcrc_cfg_dma->irq.SubCh           = (0x0F & dma_unit_chan);
-        p_wcrc_cfg_dma->irq.irq_channel     = get_dma_int_id(dma_unit_chan);
-
         p_data = &p_instance_ctrl->crc_data[module];
         p_wcrc_cfg_dma->cfg.mSrcAddr        = port_addr;
         p_wcrc_cfg_dma->cfg.mDestAddr       = (uintptr_t)p_data->p_output_buffer;
@@ -1581,28 +1564,25 @@ static int wcrc_set_rtdma(uint8_t module, wcrc_instance_ctrl_t * const p_instanc
         p_wcrc_cfg_dma->cfg.mSourceRequest  = port_req_id;
         p_wcrc_cfg_dma->cfg.mLowSpeed       = DRV_RTDMAC_SPEED_NORMAL;
         p_wcrc_cfg_dma->cfg.mPrioLevel      = 0;
-
     }
 
-    //printf_delay("%d: Unit  %d\n", module, p_wcrc_cfg_dma->irq.Unit);
-    //printf_delay("%d: Chan  %d\n", module, p_wcrc_cfg_dma->irq.SubCh);
-    //printf_delay("%d: INTID %d\n", module, p_wcrc_cfg_dma->irq.irq_channel);
+    dma_unit_chan                       = p_rtdma_inst[index] - 1;
+    p_wcrc_cfg_dma->irq.Unit            = (0xF0 & dma_unit_chan) >> 4;
+    p_wcrc_cfg_dma->irq.SubCh           = (0x0F & dma_unit_chan);
+    p_wcrc_cfg_dma->irq.irq_channel     = get_dma_int_id(dma_unit_chan);
 
-    //printf_delay("%d: Src 0x%x\n", module, p_wcrc_cfg_dma->cfg.mSrcAddr);
-    //printf_delay("%d: Dst 0x%x\n", module, p_wcrc_cfg_dma->cfg.mDestAddr);
-    //printf_delay("%d: TCR %d\n", module, p_wcrc_cfg_dma->cfg.mTransferCount);
+    //printf("dma_unit_chan %d\n", dma_unit_chan);
+    //printf("%d: Unit  %d\n", module, p_wcrc_cfg_dma->irq.Unit);
+    //printf("%d: Chan  %d\n", module, p_wcrc_cfg_dma->irq.SubCh);
+    //printf("%d: INTID %d\n", module, p_wcrc_cfg_dma->irq.irq_channel);
 
-    return ret;
+    return 0;
 }
 
 static int wcrcCloseSubModule(wcrc_instance_ctrl_t * const p_instance_ctrl,
                              wcrc_sub_module_t module)
 {
     void * p_buf;
-
-    //p_buf = p_instance_ctrl->crc_data[module].p_output_buffer;
-    //wcrcRemoveBuffer(p_buf);
-    //p_instance_ctrl->crc_data[module].p_output_buffer  = NULL;
 
     if (p_instance_ctrl->p_cfg->mode != INDEPENDENT_CRC_MODE)
     {
@@ -1625,8 +1605,9 @@ int wcrcClose(wcrc_instance_ctrl_t * const p_instance_ctrl)
         wcrcCloseSubModule(p_instance_ctrl, CRC_SUB_MODULE);
         wcrcCloseSubModule(p_instance_ctrl, KCRC_SUB_MODULE);
     }
-    else if (sub_module == CRC_SUB_MODULE || sub_module == KCRC_SUB_MODULE)
+    else if (sub_module == CRC_SUB_MODULE || sub_module == KCRC_SUB_MODULE) {
         wcrcCloseSubModule(p_instance_ctrl, sub_module);
+    }
     else
     {
         printf("%s: Invalid module\n", __func__);

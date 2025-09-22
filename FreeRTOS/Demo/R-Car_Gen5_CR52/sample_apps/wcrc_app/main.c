@@ -69,6 +69,9 @@ static uint32_t kcrc_input[4]   = {0x12345678, 0x12345678, 0x12345678, 0x1234567
 static uint32_t crc_input2[16];
 static uint32_t kcrc_input2[16];
 
+static uint32_t rtdma_inst[4]  = {RTDMA1_CH0, RTDMA2_CH2, RTDMA0_CH4, RTDMA1_CH6};
+static uint32_t rtdma_inst2[4] = {RTDMA0_CH0, RTDMA1_CH4, RTDMA1_CH8, RTDMA2_CH6};
+
 /**** Config CRC Independent mode ****/
 wcrc_cfg_t  g_wcrc_cfg0 =
 {
@@ -141,7 +144,9 @@ wcrc_cfg_t  g_wcrc_cfg1 =
         .out_byteswap   = BYTE_SWAP_00,
         .is_in_exor     = false,
         .is_in_bitswap  = false,
-        .in_byteswap    = BYTE_SWAP_00
+        .in_byteswap    = BYTE_SWAP_00,
+        .p_rtdma_inst   = &rtdma_inst[0],
+        .num_rtdma_inst = 2
     },
 
     .kcrc_cfg   =
@@ -159,7 +164,9 @@ wcrc_cfg_t  g_wcrc_cfg1 =
         .is_out_reflect = true,
         .is_in_reflect  = true,
         .shift_mode     = MSB_SHIFT, 
-        .xor_mask_out   = 0xFFFFFFFF
+        .xor_mask_out   = 0xFFFFFFFF,
+        .p_rtdma_inst   = &rtdma_inst[2],
+        .num_rtdma_inst = 2
     }
 };
 
@@ -190,7 +197,9 @@ wcrc_cfg_t  g_wcrc_cfg3 =
         .out_byteswap   = BYTE_SWAP_00,
         .is_in_exor     = false,
         .is_in_bitswap  = false,
-        .in_byteswap    = BYTE_SWAP_00
+        .in_byteswap    = BYTE_SWAP_00,
+        .p_rtdma_inst   = &rtdma_inst2[0],
+        .num_rtdma_inst = 2
     },
 
     .kcrc_cfg   =
@@ -208,7 +217,9 @@ wcrc_cfg_t  g_wcrc_cfg3 =
         .is_out_reflect = false,
         .is_in_reflect  = false,
         .shift_mode     = MSB_SHIFT, 
-        .xor_mask_out   = 0xFFFFFFFF
+        .xor_mask_out   = 0xFFFFFFFF,
+        .p_rtdma_inst   = &rtdma_inst2[2],
+        .num_rtdma_inst = 2
     }
 };
 
@@ -360,16 +371,12 @@ static void prvCRCTask( void *pvParameters )
     ret = R_CRC_Get_Generated_Value(&g_wcrc_inst_ctrl_indepe);
     printf("\nR_CRC_Get_Generated_Value: ret = %d\n", ret);
 
-    ret = R_CRC_Close(&g_wcrc_inst_ctrl_indepe);
-    printf("\nR_CRC_Close: ret = %d\n", ret);
-
     printf("\n********** TC2: E2E CRC Mode **********\n");
     ret = R_CRC_Open(&g_wcrc_inst_ctrl_e2e, &g_wcrc_cfg1);
     printf("R_CRC_Open: ret = %d\n", ret);
 
     /* CRC buffer address */
     region = R_UTILS_GetMemoryRegionInfo(OSAL, 0);
-    //crc_buf = region.base_address + 0x1000;
     crc_buf = region.base_address + 0x200;
 
     /* KCRC buffer address */
@@ -400,9 +407,6 @@ static void prvCRCTask( void *pvParameters )
 
     ret = R_CRC_Get_Generated_Value(&g_wcrc_inst_ctrl_e2e);
     printf("\nR_CRC_Get_Generated_Value: ret = %d\n", ret);
-
-    ret = R_CRC_Close(&g_wcrc_inst_ctrl_e2e);
-    printf("\nR_CRC_Close: ret = %d\n", ret);
 
     printf("\n********** TC3: E2E CRC Mode **********\n");
     ret = R_CRC_Open(&g_wcrc_inst_ctrl_e2e_3, &g_wcrc_cfg3);
@@ -439,6 +443,12 @@ static void prvCRCTask( void *pvParameters )
 
     ret = R_CRC_Get_Generated_Value(&g_wcrc_inst_ctrl_e2e_3);
     printf("\nR_CRC_Get_Generated_Value: ret = %d\n", ret);
+
+    ret = R_CRC_Close(&g_wcrc_inst_ctrl_indepe);
+    printf("\nR_CRC_Close: ret = %d\n", ret);
+
+    ret = R_CRC_Close(&g_wcrc_inst_ctrl_e2e);
+    printf("\nR_CRC_Close: ret = %d\n", ret);
 
     ret = R_CRC_Close(&g_wcrc_inst_ctrl_e2e_3);
     printf("\nR_CRC_Close: ret = %d\n", ret);
