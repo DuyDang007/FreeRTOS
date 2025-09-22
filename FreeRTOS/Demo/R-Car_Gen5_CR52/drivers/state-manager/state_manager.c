@@ -431,6 +431,25 @@ int R_StateManager_ClockOn(int clock_id)
 	return 0;
 }
 
+int R_StateManager_ClockStatusGet(int clock_id, bool *status)
+{
+	struct scmi_clock_config_get clk_cfg_get = {0};
+    uint32_t flags = 0; /* Currently unused */
+	int ret;
+
+	VALIDATE_ID(clock_id, max_clockdomain_num);
+
+	ret = scmi_clock_config_get(clock_id, flags, &clk_cfg_get);
+	if (ret) {
+		SCMI_LOG_ERR("Failed to get clock ID %d status (%d)\r\n", clock_id, ret);
+		return ret;
+	}
+
+    *status = (clk_cfg_get.config & 0x1) ? true : false;
+
+	return 0;
+}
+
 int R_StateManager_ResetAssert(int domain_id)
 {
 	struct scmi_reset_domain_request_config rst_cfg = {0};

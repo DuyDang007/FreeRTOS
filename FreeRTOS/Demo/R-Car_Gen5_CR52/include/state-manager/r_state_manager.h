@@ -9,6 +9,8 @@
 #ifndef _R_STATE_MANAGER_H_
 #define _R_STATE_MANAGER_H_
 
+#include <stdbool.h>
+
 /**
  * @defgroup State_Manager Module
  * @{
@@ -135,6 +137,16 @@ int R_StateManager_ClockOff(int clock_id);
  * @return 0 if all went fine, else return appropriate error.
  */
 int R_StateManager_ClockOn(int clock_id);
+
+/**
+ * @brief This function gets current clock status
+ *
+ * @param[in]  clock_id Clock ID
+ * @param[out] status pointer to status
+ *
+ * @return 0 if all went fine, else return appropriate error.
+ */
+int R_StateManager_ClockStatusGet(int clock_id, bool *status);
 
 /**
  * @brief This function asserts domain id
