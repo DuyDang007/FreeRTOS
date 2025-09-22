@@ -38,6 +38,11 @@ struct scmi_clock_parent_config {
 	uint32_t parent_id;
 };
 
+struct scmi_clock_config_get_param {
+	uint32_t clk_id;
+	uint32_t flags;
+};
+
 int scmi_clock_version_get(uint32_t *version)
 {
 	struct scmi_protocol *proto = &SCMI_PROTOCOL_NAME(SCMI_PROTOCOL_CLOCK);
@@ -224,6 +229,47 @@ int scmi_clock_parent_set(uint32_t clk_id, uint32_t parent_id)
 
 	if (status != SCMI_SUCCESS) {
 		return scmi_status_to_errno(status);
+	}
+
+	return 0;
+}
+
+int scmi_clock_config_get(int clock_id, uint32_t flags,
+                          struct scmi_clock_config_get *cfg)
+{
+	struct scmi_protocol *proto = &SCMI_PROTOCOL_NAME(SCMI_PROTOCOL_CLOCK);
+	struct scmi_message msg, reply;
+	int status, ret;
+    struct scmi_clock_config_get_param params = {
+       .clk_id = clock_id,
+       .flags = flags
+    };
+
+	/* sanity checks */
+	if (!proto || !cfg) {
+		return -EINVAL;
+	}
+
+	if (proto->id != SCMI_PROTOCOL_CLOCK) {
+		return -EINVAL;
+	}
+
+	msg.hdr = SCMI_MESSAGE_HDR_MAKE(SCMI_CLK_MSG_CLOCK_CONFIG_GET,
+					SCMI_COMMAND, proto->id, 0x0);
+	msg.len = sizeof(params);
+	msg.content = &params;
+
+	reply.hdr = msg.hdr;
+	reply.len = sizeof(struct scmi_clock_config_get);
+	reply.content = cfg;
+
+	ret = scmi_send_message(proto, &msg, &reply);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (cfg->status != SCMI_SUCCESS) {
+		return scmi_status_to_errno(cfg->status);
 	}
 
 	return 0;

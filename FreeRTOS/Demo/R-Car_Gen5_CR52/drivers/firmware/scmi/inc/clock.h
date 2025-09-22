@@ -29,6 +29,19 @@
 #define SCMI_CLK_RATE_SET_FLAGS_ROUNDS_AUTO          BIT(3)
 
 /**
+ * @struct scmi_clock_config_get
+ *
+ * @brief Describes the parameters for the CLOCK_CONFIG_GET
+ * command
+ */
+struct scmi_clock_config_get {
+	int32_t status;
+	uint32_t attributes;
+    uint32_t config;
+	uint32_t extended_cfg_val;
+};
+
+/**
  * @struct scmi_clock_config
  *
  * @brief Describes the parameters for the CLOCK_CONFIG_SET
@@ -95,6 +108,20 @@ int scmi_clock_version_get(uint32_t *version);
  * @retval negative errno if failure
  */
 int scmi_clock_protocol_attributes(uint32_t *attributes);
+
+/**
+ * @brief Send the CLOCK_CONFIG_GET command and get its reply
+ *
+ * @param clock_id ID of the clock for which the query is done
+ * @param flags Bits[7:0] OEM specified config type
+ * @param cfg pointer to structure containing configuration
+ * to be retrieved
+ *
+ * @retval 0 if successful
+ * @retval negative errno if failure
+ */
+int scmi_clock_config_get(int clock_id, uint32_t flags,
+                          struct scmi_clock_config_get *cfg);
 
 /**
  * @brief Send the CLOCK_CONFIG_SET command and get its reply
