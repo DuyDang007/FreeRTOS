@@ -210,10 +210,11 @@ typedef union u_regRDMCHCR {
         uint32_t    DSE:        1;   /* R/(W)* Descriptor Stage End */
         uint32_t    TS23:       2;   /* R/W    DMA Transfer Size */
         uint32_t    DPB:        1;   /* R/W    Descriptor Start */
-        uint32_t    reserve_3:  2;   /* R      Reserved */
+        uint32_t    reserve_3:  1;   /* R      Reserved */
         uint32_t    RPT0:       1;   /* R/W    Descriptor Setting Update(RPT[0]) */
         uint32_t    RPT1:       1;   /* R/W    Descriptor Setting Update(RPT[1]) */
         uint32_t    RPT2:       1;   /* R/W    Descriptor Setting Update(RPT[2]) */
+        uint32_t    RPT3:       1;   /* R/W    Descriptor Setting Update(RPT[2]) */
         uint32_t    DPM:        2;   /* R/W    Operating Mode of Descriptor Memory */
         uint32_t    CAIE:       1;   /* R/W    Channel Address Error Interrupt Enable */
         uint32_t    CAE:        1;   /* R/(W)* Channel Address Error Flag */

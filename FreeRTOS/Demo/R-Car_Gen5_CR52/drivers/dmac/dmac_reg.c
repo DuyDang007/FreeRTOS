@@ -423,9 +423,10 @@ void R_RTDMAC_Update_RDMCHCR(uint8_t dev, uint8_t ch, rDmacCfg_t *cfg, rDmacDesc
 
     if (DRV_DMAC_DMA_NO_DESCRIPTOR != cfg->mDMAMode)
     {
-        rRDMCHCR.bit.RPT2 = descCfg->mDescUpdate.mSrcAddrUpdate;
-        rRDMCHCR.bit.RPT1 = descCfg->mDescUpdate.mDestAddrUpdate;
-        rRDMCHCR.bit.RPT0 = descCfg->mDescUpdate.mTransCountUpdate;
+        rRDMCHCR.bit.RPT3 = descCfg->mDescUpdate.mSrcAddrUpdate;
+        rRDMCHCR.bit.RPT2 = descCfg->mDescUpdate.mDestAddrUpdate;
+        rRDMCHCR.bit.RPT1 = descCfg->mDescUpdate.mTransCountUpdate;
+        rRDMCHCR.bit.RPT0 = descCfg->mDescUpdate.mCHCRUpdate;
         rRDMCHCR.bit.DPB = descCfg->mDescRead1st;
         rRDMCHCR.bit.DSIE = descCfg->mStateEndEnable;
     }
