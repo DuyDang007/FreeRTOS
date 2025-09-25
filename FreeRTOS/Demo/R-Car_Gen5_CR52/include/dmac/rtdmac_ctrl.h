@@ -5,8 +5,8 @@
  *
  */
 
-#ifndef _RDMAC_CTRL_H_
-#define _RDMAC_CTRL_H_
+#ifndef _RTDMAC_CTRL_H_
+#define _RTDMAC_CTRL_H_
 
 /**
  * @defgroup RTDMAC_Module RT-DMAC Module
@@ -67,4 +67,4 @@ uint16_t R_RTDMAC_RcarCallBackSet(dmac_ctrl_t * const p_ctrl, void ( *p_callback
 
 /** @} */ // end of RTDMAC_Module
 
-#endif  /* _RDMAC_CTRL_H_ */
+#endif  /* _RTDMAC_CTRL_H_ */

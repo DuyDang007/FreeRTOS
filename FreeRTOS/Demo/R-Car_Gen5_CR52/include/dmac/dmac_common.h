@@ -5,16 +5,16 @@
  *
  */
 
-#ifndef RTDMAC_COMMON_H
-#define RTDMAC_COMMON_H
+#ifndef _RDMAC_COMMON_H_
+#define _RDMAC_COMMON_H_
 
 /**
-*  @defgroup      RTDMAC_Module Configuration Module of RT-DMAC Module
+*  @defgroup      RDMAC_Module Configuration Module of RDMAC Module
 *  @{
-*  @brief         This module provides functions to configure and control RT-DMAC communication.
+*  @brief         This module provides functions to configure and control RDMAC communication.
 *
-*  The RT-DMAC module allows for the configuration and control of RT-DMAC communication.
-*  It provides struct,enum to configure RT-DMAC.
+*  The RDMAC module allows for the configuration and control of RDMAC communication.
+*  It provides struct,enum to configure RDMAC.
 */
 
 #include <stdbool.h>

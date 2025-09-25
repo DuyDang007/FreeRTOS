@@ -8,8 +8,8 @@
 #include "dmac/dmac_common.h"
 #include "interrupts.h"
 
-#ifndef _RDMAC_REG_H_
-#define _RDMAC_REG_H_
+#ifndef _RDMAC_CTRL_COMMON_H_
+#define _RDMAC_CTRL_COMMON_H_
 
  /**
  *  @brief          DMA intialize
@@ -57,4 +57,4 @@ uint16_t R_DMAC_RcarDmacStop(DMAC_t dev, uint8_t ch);
  */
 uint16_t R_DMAC_RcarCallBackSet(dmac_ctrl_t *const p_ctrl, void ( *p_callback)(void *), void * const p_context);
 
-#endif  /* _RDMAC_REG_H_ */
+#endif  /* _RDMAC_CTRL_COMMON_H_ */
