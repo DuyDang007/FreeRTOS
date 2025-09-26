@@ -262,17 +262,17 @@ typedef struct st_rDmacIrqCfg {
 } rDmacIrqCfg_t;
 
 /**
- * @struct st_rDmacDescMemCfg
- * @brief DMA Descriptor Memory Configuration:
- * This struct is used to allocate and define memory for DMA descriptors.
- * The structure is 16-byte aligned to meet the hardware requirements
- * of the DMA descriptor.
+ *  @struct     st_rDmacDescMemCfg
+ *  @brief      DMA Descriptor Memory Configuration:
+ *  @details    This struct is used to allocate and define memory for DMA descriptors.
+ *              The structure is 16-byte aligned to meet the hardware requirements
+ *              of the DMA descriptor.
  */
 typedef struct st_rDmacDescMemCfg {
-        uint32_t SAR;   //  Source Address 
-        uint32_t DAR;   //  Destination Address 
-        uint32_t TCR;   //  Transfer Count 
-        uint32_t CHCR;  //  Channel Control Register
+        uint32_t SAR;   /**< Source Address */
+        uint32_t DAR;   /**< Destination Address */
+        uint32_t TCR;   /**< Transfer Count */
+        uint32_t CHCR;  /**< Channel Control Register */
 } __attribute__((aligned(16))) rDmacDescMemCfg_t;
 
 /** @} */ // end of RTDMAC_Module
