@@ -26,6 +26,7 @@
 #define RST_DM0_BASE	0xC1320000
 
 #define RST_KCPROT_DIS	0xA5A5A501
+#define RST_KCPROT_EN	0xA5A5A500
 #define RST_WDTRSTCR	0x0420
 #define RST_RESKCPROT0	0x04F0
 #define SWDT_RSTMSK	(1 << 1)
@@ -38,10 +39,6 @@
 			DIV_ROUND_UP((d) * OSCCLK, clk_divs[(cks)])
 
 static const unsigned int clk_divs[] = { 1, 4, 16, 32, 64, 128, 1024, 4096 };
-
-#define printf_delay(fmt, ...)      \
-	vTaskDelay(1);             \
-printf(fmt, ##__VA_ARGS__);         \
 
 uint8_t R_SWDT_Init(uint8_t timeout_sec);
 uint8_t R_SWDT_Ping(uint8_t timeout_new_sec);
@@ -80,14 +77,31 @@ uint8_t R_SWDT_Init(uint8_t timeout_sec) {
 	uint8_t ret;
 	int clock_id;
 
-	clock_id = X5H_CLOCK_ID_MDLC_SWDT0;
+	clock_id = X5H_CLOCK_ID_MDLC_WDT0;
 	ret = R_StateManager_ClockOn(clock_id);
 	if (ret)
 		printf("Error: Failed to set clock id %d ON.\r\n", clock_id);
 
+	clock_id = X5H_CLOCK_ID_MDLC_SWDT0;
+	ret = R_StateManager_ResetAssert(clock_id);
+	if (ret)
+		printf("Error: Failed to reset clock id %d.\r\n", clock_id);
+	ret = R_StateManager_ResetDeassert(clock_id);
+	if (ret)
+		printf("Error: Failed to DeassertReset clock id %d.\r\n", clock_id);
+
+	clock_id = X5H_CLOCK_ID_MDLC_SWDT1;
+	ret = R_StateManager_ResetAssert(clock_id);
+	if (ret)
+		printf("Error: Failed to reset clock id %d ON.\r\n", clock_id);
+	ret = R_StateManager_ResetDeassert(clock_id);
+	if (ret)
+		printf("Error: Failed to DeassertReset clock id %d.\r\n", clock_id);
+
 	/* for SWDT */
 	r_swdt_write(SWDT_BASE + SWTCSRA, (0xA5A5A5 << 8) | (r_swdt_read(SWDT_BASE + SWTCSRA) & ~SWTCSRA_TME));
 	r_swdt_wait_cycles(2);
+
 	r_swdt_write(SWDT_BASE + SWTCNT, 0x5A5A0000); //reset counter
 	r_swdt_write(SWDT_BASE + SWTCSRA, (0xA5A5A5 << 8) | (r_swdt_read(SWDT_BASE + SWTCSRA) & ~SWTCSRA_WOVF));
 	r_swdt_write(SWDT_BASE + SWTCSRB, (0xA5A5A5 << 8) | 0);
@@ -111,6 +125,8 @@ uint8_t R_SWDT_Init(uint8_t timeout_sec) {
 
 	/* Enable Generating internal reset when SWDT overflow */
 	r_swdt_write(RST_DM0_BASE + RST_WDTRSTCR, r_rst_read(RST_DM0_BASE + RST_WDTRSTCR) & ~SWDT_RSTMSK);
+	r_swdt_write(RST_DM0_BASE + RST_RESKCPROT0, RST_KCPROT_EN);
+
 	r_swdt_write(SWDT_BASE + SWTCNT, (0x5A5A << 16) | (65536 - MUL_BY_CLKS_PER_SEC(cks, timeout_sec)));
 
 	return 0;
