@@ -11,6 +11,7 @@
 #include "watchdog/r_swdt_api.h"
 #include "state-manager/r_clock_domain_id.h"
 #include "state-manager/r_state_manager.h"
+#include "state-manager/r_reset_domain_id.h"
 
 #define SWDT_BASE	0x1C050000
 #define SWTCNT		0x0
@@ -75,28 +76,22 @@ static void r_swdt_wait_cycles(uint8_t cycles) {
 uint8_t R_SWDT_Init(uint8_t timeout_sec) {
 	uint16_t clks_per_sec;
 	uint8_t ret;
-	int clock_id;
+	int clock_id, reset_id;
 
-	clock_id = X5H_CLOCK_ID_MDLC_WDT0;
+	reset_id = X5H_CLOCK_ID_MDLC_WDT0;
 	ret = R_StateManager_ClockOn(clock_id);
 	if (ret)
 		printf("Error: Failed to set clock id %d ON.\r\n", clock_id);
 
-	clock_id = X5H_CLOCK_ID_MDLC_SWDT0;
-	ret = R_StateManager_ResetAssert(clock_id);
+	reset_id = X5H_RESET_DOMAIN_ID_SWDT0;
+	ret = R_StateManager_Reset(reset_id);
 	if (ret)
 		printf("Error: Failed to reset clock id %d.\r\n", clock_id);
-	ret = R_StateManager_ResetDeassert(clock_id);
-	if (ret)
-		printf("Error: Failed to DeassertReset clock id %d.\r\n", clock_id);
 
-	clock_id = X5H_CLOCK_ID_MDLC_SWDT1;
-	ret = R_StateManager_ResetAssert(clock_id);
+	reset_id = X5H_RESET_DOMAIN_ID_SWDT1;
+	ret = R_StateManager_Reset(reset_id);
 	if (ret)
 		printf("Error: Failed to reset clock id %d ON.\r\n", clock_id);
-	ret = R_StateManager_ResetDeassert(clock_id);
-	if (ret)
-		printf("Error: Failed to DeassertReset clock id %d.\r\n", clock_id);
 
 	/* for SWDT */
 	r_swdt_write(SWDT_BASE + SWTCSRA, (0xA5A5A5 << 8) | (r_swdt_read(SWDT_BASE + SWTCSRA) & ~SWTCSRA_TME));
