@@ -69,7 +69,7 @@ static uint32_t kcrc_input[4]   = {0x12345678, 0x12345678, 0x12345678, 0x1234567
 static uint32_t crc_input2[16];
 static uint32_t kcrc_input2[16];
 
-static uint32_t rtdma_inst[4]  = {RTDMA1_CH0, RTDMA2_CH2, RTDMA0_CH4, RTDMA1_CH6};
+static uint32_t rtdma_inst[4]  = {RTDMA2_CH4, RTDMA2_CH2, RTDMA0_CH4, RTDMA1_CH6};
 static uint32_t rtdma_inst2[4] = {RTDMA0_CH0, RTDMA1_CH4, RTDMA1_CH8, RTDMA2_CH6};
 
 /**** Config CRC Independent mode ****/
@@ -295,14 +295,7 @@ static void WcrcRequestClockOn(void)
     {
         ret = R_StateManager_ClockOn(clock_id[idx]);
         if (ret)
-        {
-            printf("Error: Failed to set clock id %d ON.\r\n",
-                    clock_id[idx]);
-        }
-        else
-        {
-            printf("Set clock id %d ON OK!\r\n", clock_id[idx]);
-        }
+            printf("Error: Failed to set clock id %d ON.\r\n", clock_id[idx]);
     }
 }
 
@@ -334,8 +327,8 @@ static void prvCRCTask( void *pvParameters )
 
     ret = R_RTDMAC_RcarDmacCtrlInit(RT_DMAC0,
                                     DRV_RTDMAC_PRIO_FIX);
-    ret = R_RTDMAC_RcarDmacCtrlInit(RT_DMAC1,
-                                    DRV_RTDMAC_PRIO_FIX);
+    //ret = R_RTDMAC_RcarDmacCtrlInit(RT_DMAC1,
+    //                                DRV_RTDMAC_PRIO_FIX);
     ret = R_RTDMAC_RcarDmacCtrlInit(RT_DMAC2,
                                     DRV_RTDMAC_PRIO_FIX);
     ret = R_RTDMAC_RcarDmacCtrlInit(RT_DMAC3,
