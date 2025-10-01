@@ -326,7 +326,8 @@ void Irq_RegWrite(uint32_t addr, uint32_t val)
 int Irq_MergeSetup(unsigned int id)
 {
 	int t_id;
-	uint32_t val;
+	uint32_t val, current_val = 0;
+    uint32_t timeout = 1000;
 
 	t_id = Irq_GetTableId(id);
 	if (t_id < 0)
@@ -335,6 +336,14 @@ int Irq_MergeSetup(unsigned int id)
 	val = Irq_RegRead(r8a78000_irq_table[t_id].mask_reg);
 	val &= ~r8a78000_irq_table[t_id].mask_val;
 	Irq_RegWrite(r8a78000_irq_table[t_id].mask_reg, val);
+
+    // Check whether the register is reflected setting value.
+    while (timeout-- && (current_val != val)) {
+        current_val = Irq_RegRead(r8a78000_irq_table[t_id].mask_reg);
+    }
+
+    if (timeout == 0)
+        printf("Merge interrupt: Setup fail");
 
 	return 0;
 }
