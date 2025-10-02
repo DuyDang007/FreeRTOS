@@ -547,7 +547,7 @@ void R_RTDMAC_Update_RDMCHCRB(uint8_t dev, uint8_t ch, rDmacCfg_t *cfg, rDmacDes
     rRDMCHCRB.bit.SLM = cfg->mLowSpeed;
     rRDMCHCRB.bit.PRI = cfg->mPrioLevel;
     if (DRV_DMAC_DMA_NO_DESCRIPTOR != cfg->mDMAMode) {
-        rRDMCHCRB.bit.DCNT = descCfg->mDescCount;
+        rRDMCHCRB.bit.DCNT = descCfg->mDescCount - 1;
     }
     R_RTDMAC_WriteReg32(dev, ch, RDMCHCRB, rRDMCHCRB.INT);
 }
