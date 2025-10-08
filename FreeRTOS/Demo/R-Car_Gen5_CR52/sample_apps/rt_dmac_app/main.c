@@ -49,6 +49,7 @@
 
 void dmacUserCallback(void *data);
 void dmacUserCallback1(void *data);
+void dmacUserCallback2(void *data);
 
 /*-----------------------------------------------------------*/
 
@@ -134,16 +135,30 @@ rDmacCfg_t cfg2 =
     .mPrioLevel = 1
 };
 
+rDmacDescMemCfg_t desc_mem2[] = {
+    {.SAR = 0x65000000, .DAR = 0x75000000, .TCR = 4, .CHCR = 0},
+    {       0x65000000,        0x75100000,        4,         0},
+    {       0x65000000,        0x75200000,        4,         0},
+    {       0x65000000,        0x75300000,        4,         0},
+};
+
 /* Define configure the DMA descriptor */
 rDmacDescCfg_t descCfg2 =
 {
-    .mDescBaseAddr = 0x189E7200, // Descriptor base address
-    .mDescUpdate = {0},          // No descriptor update
+    .mDescBaseAddr = (uintptr_t)desc_mem2,      // Descriptor base address
+    .mDescUpdate = {                            // Descriptor update
+        .mCHCRUpdate = false,
+        .mDestAddrUpdate = true,
+        .mSrcAddrUpdate = true,
+        .mTransCountUpdate = true,
+    },
     .mDescRead1st = true,        // Read descriptor first
-    .mStateEndEnable = true,     // Trigger state end
-    .mDescCount = 2,             // Descriptor count
+    .mStateEndEnable = false,    // No trigger state end
+    .mDescCount = 4,             // Descriptor count
     .mDescIndex = 0              // Descriptor index
 };
+
+#define REPEAT_NUMBER   4
 
 /*-----------------------------------------------------------*/
 
@@ -161,6 +176,13 @@ rDmacIrqCfg_t rDmacIrqHandler_t_irq1 =
     .irq_channel = INTID_RTDMA2_CH2,
 };
 
+rDmacIrqCfg_t rDmacIrqHandler_t_irq2 =
+{
+    .Unit = RT_DMAC0,
+    .SubCh = DMAC_CH0,
+    .irq_channel = INTID_RTDMA0_CH0,
+};
+
 /*-----------------------------------------------------------*/
 
 int main(void)
@@ -170,7 +192,7 @@ int main(void)
 
     xSemaphore = xSemaphoreCreateBinary();
 
-    xTaskCreate(prvDMACTask, "DMACTask", configMINIMAL_STACK_SIZE, NULL, main_DMAC_TASK_PRIORITY, NULL);
+    xTaskCreate(prvDMACTask, "RTDMACTask", configMINIMAL_STACK_SIZE, NULL, main_DMAC_TASK_PRIORITY, NULL);
     /* Start the tasks and timer running. */
     vTaskStartScheduler();
     for ( ;; )
@@ -206,6 +228,11 @@ static void prvDMACTask(void *pvParameters)
     Context_t usr_context1 =
     {
 		.ctx = &rDmacIrqHandler_t_irq1,
+    };
+
+    Context_t usr_context2 =
+    {
+        .ctx = &rDmacIrqHandler_t_irq2,
     };
 
     /* Get memory region first */
@@ -318,7 +345,66 @@ static void prvDMACTask(void *pvParameters)
 
     R_RTDMAC_RcarDmacStop(rDmacIrqHandler_t_irq1.Unit, rDmacIrqHandler_t_irq1.SubCh);
     printf("**********************************************************\r\n");
+    printf("***TC3: RT-DMAC mem-to-mem transfer in Descriptor Repeat mode***\r\n");
+    /* Device Driver Part */
+    R_RTDMAC_RcarDmacCtrlInit(rDmacIrqHandler_t_irq2.Unit, DRV_RTDMAC_PRIO_FIX);
 
+    for (int i = 0; i < descCfg2.mDescCount; i++)
+    {
+        for(int j = 0; j < desc_mem2[i].TCR; j++)
+        {
+            *(volatile uint32_t *)(desc_mem2[i].DAR + j*4) = 0x33333333;
+            *(volatile uint32_t *)(desc_mem2[i].SAR + j*4) = 0x11111111;
+            printf("Before dma: Value src desc %d at %x : 0x%x \n", i, (desc_mem2[i].SAR + j*4), *(volatile uint32_t *)(desc_mem2[i].SAR + j*4));
+            printf("Before dma: Value dst desc %d at %x : 0x%x \n", i, (desc_mem2[i].DAR + j*4), *(volatile uint32_t *)(desc_mem2[i].DAR + j*4));
+        }
+    }
+
+    ret = R_RTDMAC_RcarCallBackSet(&rDmacIrqHandler_t_irq2, dmacUserCallback2, &usr_context2);
+    if (ret)
+        printf("CallbackSet Failed: ret = %d\n", ret);
+
+    dmaStatus =R_RTDMAC_RcarDmacExec(rDmacIrqHandler_t_irq2.Unit, rDmacIrqHandler_t_irq2.SubCh, &cfg2, &descCfg2);
+
+    // Check DMA execution status
+    if (dmaStatus != 0)
+        printf("DMA execution failed with status: %d\n", dmaStatus);
+
+    if(xSemaphoreTake(xSemaphore, portMAX_DELAY) == pdTRUE)
+    {
+
+    }
+
+    total_transfer_size = 4;
+    uint32_t descadd;
+    printf("Verify destination data\n");
+    ret = 0;
+    for (int  repeat = 0; repeat < REPEAT_NUMBER; repeat++)
+    {
+        for(int i = 0; i < descCfg2.mDescCount ; i++)
+        {
+            for(int j = 0; j < desc_mem2[i].TCR ; j++)
+            {
+                destData = R_UTILS_ReadMemForDMA((void *)(desc_mem2[i].DAR + j*4), total_transfer_size);
+                printf("After dma: Value dst desc %d at %x : 0x%x \n", i, (volatile uint32_t *)(desc_mem2[i].DAR + j*4), destData);
+                if(destData != (*(volatile uint32_t*)(desc_mem2[i].SAR + j*4)))
+                {
+                    ret = -1;
+                }
+            }
+        }
+    }
+
+    if(ret == 0)
+    {
+        printf("TC3 Result: Passed\n");
+    }
+    else
+    {
+        printf("TC3 Result: Failed\n");
+    }
+
+    printf("*************************************************************\r\n");
     for (;;)
     {
     }
@@ -338,6 +424,20 @@ void dmacUserCallback1(void *data)
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
     xSemaphoreGiveFromISR(xSemaphore, &xHigherPriorityTaskWoken);
     portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+}
+
+void dmacUserCallback2(void *data) {
+    rDmacIrqCfg_t * instance_ctrl = (rDmacIrqCfg_t *) data;
+    static uint32_t repeat = REPEAT_NUMBER;
+
+    if(repeat == 0)
+    {
+        R_RTDMAC_RcarDmacStop(rDmacIrqHandler_t_irq2.Unit, rDmacIrqHandler_t_irq2.SubCh);
+        BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+        xSemaphoreGiveFromISR(xSemaphore, &xHigherPriorityTaskWoken);
+        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+    }
+    repeat -= 1;
 }
 
 /*-----------------------------------------------------------*/
