@@ -259,6 +259,7 @@ typedef struct st_rDmacIrqCfg {
     uint8_t             Unit;      /*!< Unit number */
     uint8_t             SubCh;     /*!< Sub-channel number */
     uint16_t            irq_channel; /*!< IRQ channel */
+    rDmacCfg_t          *p_dma_cfg;
 } rDmacIrqCfg_t;
 
 /**
