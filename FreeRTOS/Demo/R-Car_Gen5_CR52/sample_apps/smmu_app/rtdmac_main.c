@@ -166,7 +166,7 @@ static void prvDMACTask( void *pvParameters )
         printf("Result: Failed\r\n");
     }
 
-    R_SMMU_Map(&smmu_ctrl, cfg0.mSrcAddr, cfg0.mSrcAddr + SOURCE_OFFSET_MAPPING, 0x5006000);
+    R_SMMU_Map(&smmu_ctrl, cfg0.mSrcAddr, cfg0.mSrcAddr + SOURCE_OFFSET_MAPPING, 0x5006000, ATTR_DEVICE_NGNRNE_EL1_RW_EL0_RW);
 
     printf("**********************************************\r\n");
 

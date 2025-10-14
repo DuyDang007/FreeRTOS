@@ -102,7 +102,7 @@ static void prvSMMU_RT_Task( void *pvParameters )
 
     st_smmu_streamid_instance_ctrl_t smmu_ctrl = {
         .smmu_domain = SMMU_RT,
-	.is_secure = is_secure,
+	    .is_secure = is_secure,
     };
 
     printf("**********************************************\r\n");
@@ -122,11 +122,12 @@ static void prvSMMU_RT_Task( void *pvParameters )
             printf("Attach stream id 0x%x result: Failed\r\n", streamId[coreid][i]);
         }
 
-        R_SMMU_Map(&smmu_ctrl, 0x00, 0x00, 0x60000000);
-        R_SMMU_Map(&smmu_ctrl, 0xC0000000, 0xC0000000, 0x40000000);
-        R_SMMU_Map(&smmu_ctrl, 0x80000000, 0x1840000000, 0x1000000);
-        R_SMMU_Map(&smmu_ctrl, 0x70000000, 0x90000000, 0x1000000);
-        R_SMMU_Map(&smmu_ctrl, 0x90000000, 0x90000000, 0x1000000);
+        R_SMMU_Map(&smmu_ctrl, 0x00, 0x00, 0x60000000, ATTR_DEVICE_NGNRNE_EL1_RW_EL0_RW);
+        R_SMMU_Map(&smmu_ctrl, 0xC0000000, 0xC0000000, 0x40000000, ATTR_DEVICE_NGNRNE_EL1_RW_EL0_RW);
+        R_SMMU_Map(&smmu_ctrl, 0x80000000, 0x1840000000, 0x1000000, ATTR_DEVICE_NGNRNE_EL1_RW_EL0_RW);
+        R_SMMU_Map(&smmu_ctrl, 0x70000000, 0x90000000, 0x1000000, ATTR_DEVICE_NGNRNE_EL1_RW_EL0_RW);
+        R_SMMU_Map(&smmu_ctrl, 0x90000000, 0x90000000, 0x1000000, ATTR_DEVICE_NGNRNE_EL1_RW_EL0_RW);
+        R_SMMU_Map(&smmu_ctrl, 0xA0000000, 0xA0000000, 0x1000000, ATTR_DEVICE_NGNRNE_EL1_RO_EL0_RO);
     }
 
     printf("**********************************************\r\n");
@@ -166,6 +167,11 @@ static void prvSMMU_RT_Task( void *pvParameters )
         printf("Result: Failed\r\n");
     }
 
+    printf("**********************************************\r\n");
+
+    printf("* Test case 7: Test Read only permission *\r\n");
+    *(uint32_t *)0xA0000000 = 0xBEFFBEFF;
+    printf("Result: Failed\r\n");
     printf("**********************************************\r\n");
 
     for(;;);

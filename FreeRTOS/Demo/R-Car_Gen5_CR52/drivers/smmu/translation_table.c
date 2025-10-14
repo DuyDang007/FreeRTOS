@@ -18,6 +18,7 @@
 #define ENTRY_TABLE_MASK    MAX_TABLE_SIZE - 1
 #define ENTRY_ADDR_MASK     0xFFFFFFFFF << 12
 #define PAGE_MASK           0xFFF
+#define PAGE_ATTR_MASK      (~(ENTRY_ADDR_MASK))
 
 static int get_entry_type(uint64_t *entry)
 {
@@ -72,14 +73,14 @@ static void Assign_Entry_Table(uint64_t *entry, uint64_t *table)
     *entry = (unsigned long)table | ENTRY_TYPE_TABLE;
 }
 
-static void Map_Region(uint64_t *ttb, struct st_mm_region *region_map)
+static e_smmu_map_fault_code_t Map_Region(uint64_t *ttb, struct st_mm_region *region_map)
 {
     uint16_t entry_idx;
     uint64_t *table;
     uint64_t virt_addr = region_map->virt_addr;
     uint64_t phys_addr = region_map->phys_addr;
     uint64_t mem_size  = region_map->mem_size;
-    uint64_t mem_attrs = region_map->mem_attrs | ENTRY_TYPE_BLOCK | BLOCK_ATTR_AF;
+    uint64_t mem_attrs = (region_map->mem_attrs & PAGE_ATTR_MASK) | ENTRY_TYPE_BLOCK;
     uint64_t mem_block;
     uint8_t tbl_level;
     uint64_t *new_table;
@@ -93,6 +94,10 @@ static void Map_Region(uint64_t *ttb, struct st_mm_region *region_map)
         if (get_entry_type(table + entry_idx) == ENTRY_TYPE_FAULT)
         {
             new_table = Allocate_Table();
+            if (new_table == NULL) {
+                return MAP_ERR_NULL;
+            }
+
             Assign_Entry_Table(table, new_table);
         }
 
@@ -113,6 +118,10 @@ static void Map_Region(uint64_t *ttb, struct st_mm_region *region_map)
                 }
                 else
                 {
+                    if (get_entry_type(table + entry_idx) == ENTRY_TYPE_TABLE) {
+                        return MAP_ERR_DUPLICATE;
+                    }
+
                     *(table + entry_idx) = phys_addr | mem_attrs;
                 }
 
@@ -130,46 +139,55 @@ static void Map_Region(uint64_t *ttb, struct st_mm_region *region_map)
             else if (get_entry_type(table + entry_idx) == ENTRY_TYPE_FAULT)
             {
                 new_table = Allocate_Table();
+                if (new_table == NULL) {
+                    return MAP_ERR_NULL;
+                }
                 Assign_Entry_Table(table + entry_idx, new_table);
             }
             else if (get_entry_type(table + entry_idx) == ENTRY_TYPE_BLOCK)
             {
                 /* Not support this case */
-                printf("Cannot unmap a larger block to map a smaller block\n");
-                return;
+                // ERROR: Cannot unmap a larger block to map a smaller block
+                return MAP_ERR_DUPLICATE;
             }
 
             tbl_level++;
             table = (uint64_t *)(uintptr_t)(*(table + entry_idx) & ENTRY_ADDR_MASK);
         }
     }
+
+    return MAP_SUCCESS;
 }
 
-uint64_t *CreateTranslationTable(uint64_t *ttb, uint64_t va, uint64_t pa, uint64_t size)
+e_smmu_map_fault_code_t CreateTranslationTable(uint64_t **ttb, st_mm_region_t region_mem)
 {
-    uint64_t *Table = ttb;
+    e_smmu_map_fault_code_t ret;
+    uint64_t *Table = *ttb;
 
-    if ((va & PAGE_MASK) || (pa & PAGE_MASK) || (size & PAGE_MASK))
+    if ((region_mem.virt_addr & PAGE_MASK) || (region_mem.phys_addr & PAGE_MASK))
     {
-        printf("Cannot map! va, pa and size must be aligned with 4KB\n");
-        return Table;
+        ret = MAP_ERR_INVALID_ADDR;
+        return ret;
+    }
+
+    if (region_mem.mem_size & PAGE_MASK) {
+        ret = MAP_ERR_INVALID_SIZE;
+        return ret;
     }
 
     if (Table == NULL)
     {
         Table = Allocate_Table();
+        if (Table == NULL) {
+            ret = MAP_ERR_NULL;
+            return ret;
+        }
+        *ttb = Table;
     }
 
-    st_mm_region_t region_mem = {
-        .virt_addr = va,
-        .phys_addr = pa,
-        .mem_size = size,
-        .mem_attrs = 0x441,
-        };
+    ret = Map_Region(Table, &region_mem);
 
-    Map_Region(Table, &region_mem);
-
-    return Table;
+    return ret;
 }
 
 void freeMemoryRegion(uint64_t *ttb, uint64_t va, uint64_t pa, uint64_t size)

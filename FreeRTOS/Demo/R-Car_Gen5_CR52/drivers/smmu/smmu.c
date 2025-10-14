@@ -268,7 +268,9 @@ void R_SMMU_Detach(st_smmu_streamid_instance_ctrl_t *p_ctrl) {
     __DSB();
 }
 
-void R_SMMU_Map(st_smmu_streamid_instance_ctrl_t *p_ctrl, uint64_t va, uint64_t pa, uint32_t size) {
+e_smmu_map_fault_code_t R_SMMU_Map(st_smmu_streamid_instance_ctrl_t *p_ctrl,
+                        uint64_t va, uint64_t pa, uint64_t size, uint64_t attr) {
+    e_smmu_map_fault_code_t ret;
     volatile st_smmu_strtab_t *smmu_strtab ;
     volatile st_smmu_strtab_cfg_t *smmu_strtab_cfg ;
     uint32_t base;
@@ -281,12 +283,14 @@ void R_SMMU_Map(st_smmu_streamid_instance_ctrl_t *p_ctrl, uint64_t va, uint64_t 
     uint8_t split;
     uint8_t log2size;
     uint32_t stream_id;
+    st_mm_region_t region_mem;
 
     if (!p_ctrl)
     {
-        return; // Invalid input, return immediately
+        ret = MAP_ERR_NULL;
+        return ret; // Invalid input, return immediately
     }
-    
+
     base = smmu_base_addresses[p_ctrl->smmu_domain];
     if(p_ctrl->is_secure) {
         base += SMMU_SECURE_REGION_OFFSET;
@@ -304,14 +308,18 @@ void R_SMMU_Map(st_smmu_streamid_instance_ctrl_t *p_ctrl, uint64_t va, uint64_t 
     l2ste_tbl = (st_smmu_ste_t*)(uintptr_t)((l1ste_tbl + l1ste_idx)->l2tbl_base << 6);
     cd_tbl = (st_smmu_cd_t*)(uintptr_t)((l2ste_tbl + l2ste_idx)->s1cdptr << 6);
 
+    region_mem = (st_mm_region_t){va, pa, size, attr};
+
     ttb0 = (uint64_t*)(uintptr_t)(cd_tbl->ttb0_base << 4);
-    ttb0 = CreateTranslationTable(ttb0, va, pa, size);
+    ret = CreateTranslationTable(&ttb0, region_mem);
     cd_tbl->ttb0_base = ((uint64_t)(uintptr_t)ttb0) >> 4;
     
     __DSB();
+
+    return ret;
 }
 
-void R_SMMU_Unmap(st_smmu_streamid_instance_ctrl_t *p_ctrl, uint64_t va, uint64_t pa, uint32_t size) {
+void R_SMMU_Unmap(st_smmu_streamid_instance_ctrl_t *p_ctrl, uint64_t va, uint64_t pa, uint64_t size) {
     volatile st_smmu_strtab_t *smmu_strtab ;
     volatile st_smmu_strtab_cfg_t *smmu_strtab_cfg ;
     uint32_t base;
@@ -598,6 +606,7 @@ static st_smmu_cd_t* smmu_init_cd_table(st_smmu_streamid_instance_ctrl_t *p_ctrl
     cd_tbl->aa64 = CTXDESC_CD_AA64;
     cd_tbl->ars = (CTXDESC_CD_A << 2 | CTXDESC_CD_R << 1);
     cd_tbl->had0 = CTXDESC_CD_HAD0_DIS;
+    cd_tbl->mair0 = MAIR0_ATTR;
 
     l2ste_ptr->s1cdptr = (uintptr_t)cd_tbl >> 6;
 

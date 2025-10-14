@@ -59,11 +59,28 @@ typedef enum e_smmu_domain {
 /**
  * @brief Enum representing the enable/disable state of the SMMU.
  */
-typedef enum
+typedef enum e_smmu_en
 {
     DISABLE = 0, /**< SMMU is disabled */
     ENABLE = 1   /**< SMMU is enabled */
 } e_smmu_en_t;
+
+/**
+ * @brief Block memory attributes.
+ */
+#define ATTR_DEVICE_NGNRNE_EL1_RW_EL0_RW        (0ULL << 2) | (1ULL << 6) | (1ULL << 10)
+#define ATTR_DEVICE_NGNRNE_EL1_RO_EL0_RO        (0ULL << 2) | (3ULL << 6) | (1ULL << 10)
+
+/**
+ * @brief Enum of fault codes returned by SMMU memory mapping operations.
+ */
+typedef enum e_smmu_map_fault_code {
+    MAP_SUCCESS,            /** SUCCESS */
+    MAP_ERR_INVALID_ADDR,   /** ERROR. VA, PA must be aligned with 4KB. */
+    MAP_ERR_INVALID_SIZE,   /** ERROR. Size must be aligned with 4KB. */
+    MAP_ERR_DUPLICATE,      /** ERROR. Duplicate VA map region. */
+    MAP_ERR_NULL            /** ERROR. Provide NULL param/No HEAP space. */
+} e_smmu_map_fault_code_t;
 
 /**
  * @brief Structure representing a command sent to the SMMU.
@@ -71,7 +88,6 @@ typedef enum
  * This structure contains the command opcode and specific command parameters
  * depending on the operation to be performed.
  */
-
 #pragma pack(1)
 typedef struct st_smmu_cmd {
     uint64_t opcode : 8; /**< [7:0] Command opcode */
@@ -210,8 +226,12 @@ void R_SMMU_Detach(st_smmu_streamid_instance_ctrl_t *p_ctrl);
  * @param[in] va Virtual address to map.
  * @param[in] pa Physical address to map.
  * @param[in] size Size of the memory region to map.
+ * @param[in] attr Block attributes.
+ *
+ * @return e_smmu_map_fault_code_t
  */
-void R_SMMU_Map(st_smmu_streamid_instance_ctrl_t *p_ctrl, uint64_t va, uint64_t pa, uint32_t size);
+e_smmu_map_fault_code_t R_SMMU_Map(st_smmu_streamid_instance_ctrl_t *p_ctrl,
+                        uint64_t va, uint64_t pa, uint64_t size, uint64_t attr);
 
 /**
  * @brief Unmaps a previously mapped virtual address (VA) from a physical address (PA).
@@ -223,7 +243,7 @@ void R_SMMU_Map(st_smmu_streamid_instance_ctrl_t *p_ctrl, uint64_t va, uint64_t 
  * @param[in] pa Physical address to unmap.
  * @param[in] size Size of the memory region to unmap.
  */
-void R_SMMU_Unmap(st_smmu_streamid_instance_ctrl_t *p_ctrl, uint64_t va, uint64_t pa, uint32_t size);
+void R_SMMU_Unmap(st_smmu_streamid_instance_ctrl_t *p_ctrl, uint64_t va, uint64_t pa, uint64_t size);
 
 /**
  * @brief Reads and processes events from the Event Queue (EVTQ).

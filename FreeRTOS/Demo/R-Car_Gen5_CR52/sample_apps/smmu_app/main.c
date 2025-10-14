@@ -165,7 +165,7 @@ static void prvSMMUTask( void *pvParameters )
         printf("Result: Failed\r\n");
     }
 
-    R_SMMU_Map(&smmu_ctrl, cfg.mSrcAddr, cfg.mSrcAddr + SOURCE_OFFSET_MAPPING, 0x5006000);
+    R_SMMU_Map(&smmu_ctrl, cfg.mSrcAddr, cfg.mSrcAddr + SOURCE_OFFSET_MAPPING, 0x5006000, ATTR_DEVICE_NGNRNE_EL1_RW_EL0_RW);
 
     printf("**********************************************\r\n");
 
@@ -193,7 +193,7 @@ static void prvSMMUTask( void *pvParameters )
         .ctx = &rDmacIrqHandler_t_irq,
     };
 
-    printf("* Test case 4: Test transaction data *\r\n");
+    printf("* Test case 5: Test transaction data *\r\n");
     printf("Before DMA: pa dst address: 0x%lx, dst data: 0x%lx\n",pa_dst_ptr, *(volatile uint32_t *)pa_dst_ptr);
     ret = R_SYSDMAC_RcarCallBackSet(&rDmacIrqHandler_t_irq, dmacUserCallback, &usr_context);
 
