@@ -282,9 +282,9 @@ static void ucie_comm_task(void *pvParameters)
 
         R_SMMU_Attach(&smmu_ctrl);
 
-        R_SMMU_Map(&smmu_ctrl, 0x00, 0x00, 0x60000000);
-        R_SMMU_Map(&smmu_ctrl, 0xC0000000, 0xC0000000, 0x40000000);
-        R_SMMU_Map(&smmu_ctrl, ucie1_va, ucie1_pa, 0x10000);
+        R_SMMU_Map(&smmu_ctrl, 0x00, 0x00, 0x60000000, ATTR_DEVICE_NGNRNE_EL1_RW_EL0_RW);
+        R_SMMU_Map(&smmu_ctrl, 0xC0000000, 0xC0000000, 0x40000000, ATTR_DEVICE_NGNRNE_EL1_RW_EL0_RW);
+        R_SMMU_Map(&smmu_ctrl, ucie1_va, ucie1_pa, 0x10000, ATTR_DEVICE_NGNRNE_EL1_RW_EL0_RW);
     }
 
     volatile uint32_t *RCTBUBYPSEN = (volatile uint32_t *)0x18B47800;
