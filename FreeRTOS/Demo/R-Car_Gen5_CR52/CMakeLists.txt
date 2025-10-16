@@ -82,6 +82,7 @@ add_compile_options(
     -DCACHE=${CACHE}
     ${global_definition}
     -D${UCIE_VER}=1
+    -ffile-prefix-map=${FREERTOS_DIR}/=
 )
 
 add_link_options(
