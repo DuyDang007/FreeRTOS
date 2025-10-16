@@ -277,6 +277,14 @@
 /***********************************************************************************************************************
  * Typedef definitions
  **********************************************************************************************************************/
+/**
+ * @brief Typedef for the IRQ type.
+ */
+typedef enum e_irq_type
+{
+    TNT_TYPE_LEVEL_SENSITIVE = 0x0,
+    TNT_TYPE_EDGE_TRIGGERED  = 0x2,
+} r_irq_type;
 
 /**
  * @brief Typedef for the IRQ handler function pointer.
@@ -405,6 +413,16 @@ int Irq_MergeSetup(unsigned int id);
  * @retval -1 The IRQ ID is not a merged interrupt.
  */
 int Irq_GetMergeStatReg(unsigned int id);
+
+/**
+ * @brief Sets the type of the specified IRQ.
+ *
+ * @param id The ID of the IRQ.
+ * @param priority The type to be set.Bit 0: Reserved (0 - N-N model, 1 - 1-N model for some GIC before v1)
+ *                                    Bit 1: 0 - level sensitive, 1 - edge triggered
+ * @retval 0 on success.
+ */
+int Irq_SetIntType(unsigned int id, r_irq_type type);
 
 /** @} */ // end of Interrupt_Controller
 

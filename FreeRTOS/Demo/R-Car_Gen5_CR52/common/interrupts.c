@@ -359,6 +359,11 @@ int Irq_GetMergeStatReg(unsigned int id)
 	return Irq_RegRead(r8a78000_irq_table[t_id].status_reg);
 }
 
+int Irq_SetIntType(unsigned int id, r_irq_type type)
+{
+    return R_GIC_SetIntType(id, 0, type);
+}
+
 static uint8_t Irq_GetCpuId(void)
 {
         uint32_t mpidr = __get_MPIDR();
