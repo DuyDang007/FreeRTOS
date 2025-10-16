@@ -151,6 +151,9 @@ set(bsp_source
     ${BSP_DIR}/drivers/audio/ssi.c
     ${BSP_DIR}/drivers/audio/rcar_audio_api.c
     ${BSP_DIR}/drivers/audio/rcar_audio.c
+    ${BSP_DIR}/drivers/taud/r_taud.c
+    ${BSP_DIR}/drivers/taud/r_taud_reg.c
+    ${BSP_DIR}/drivers/taud/r_taud_api.c
     
 )
 
@@ -200,6 +203,7 @@ target_include_directories(freertos_bsp
         $<BUILD_INTERFACE:${BSP_DIR}/drivers/firmware>
         $<BUILD_INTERFACE:${BSP_DIR}/drivers/smmu>
         $<BUILD_INTERFACE:${BSP_DIR}/drivers/wcrc>
+        $<BUILD_INTERFACE:${BSP_DIR}/drivers/taud>
         # POSIX
         $<BUILD_INTERFACE:${BSP_DIR}/common/POSIX_portable>
         $<BUILD_INTERFACE:${POSIX_DIR}/include>
@@ -340,6 +344,7 @@ add_subdirectory(sample_apps/wcrc_app)
 add_subdirectory(sample_apps/utils_app)
 add_subdirectory(sample_apps/audio_app)
 add_subdirectory(sample_apps/ucie)
+add_subdirectory(sample_apps/taud_app)
 if(ENABLE_OPENAMP)
     add_subdirectory(sample_apps/rpmsg_sample)
 endif()
