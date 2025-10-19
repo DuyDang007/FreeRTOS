@@ -301,8 +301,6 @@ void R_RTDMAC_Update_RDMOR(uint8_t dev, rDmacPriorityMode_t mode)
 
     Value = rDmacPriorityMode_Table[mode];
     rRDMOR.INT = R_RTDMAC_UnitReadReg16(dev, RDMOR);
-    if(rRDMOR.INT & (DRV_RTDMAC_REG_RDMOR_AE | DRV_RTDMAC_REG_RDMOR_DME) != DRV_RTDMAC_REG_RDMOR_DME)
-	    printf_delay("DMAOR initialization failed.\n");
 
     rRDMOR.bit.PR = Value;
     rRDMOR.bit.DME = DRV_RTDMAC_RDMOR_DME_ENABLE;
