@@ -48,6 +48,7 @@
 void dmacUserCallback(void *data);
 void dmacUserCallback1(void *data);
 void dmacUserCallback2(void *data);
+void dmacUserCallback3(void *data);
 
 /*-----------------------------------------------------------*/
 
@@ -56,7 +57,7 @@ void dmacUserCallback2(void *data);
  */
 static void prvSetupHardware( void );
 
-static void prvDMACTask( void *pvParameters );
+static void prvSYSDMACTask( void *pvParameters );
 
 SemaphoreHandle_t xSemaphore = NULL;
 
@@ -158,6 +159,90 @@ rDmacDescCfg_t descCfg2 =
 
 #define REPEAT_NUMBER           4
 
+/*------------------------- Configure mem-to-mem with Descriptor Read-out mode ----------------------------------*/
+
+/* Define configure DMA Controller */
+rDmacCfg_t cfg3 =
+{
+    .mSrcAddr = 0,
+    .mDestAddr = 0,
+    .mTransferCount = 4,                          // Transfer count
+    .mDMAMode = DRV_DMAC_DMA_DESC_READOUT,       // Infinite Reapeat descriptor mode
+    .mSrcAddrMode = DRV_RTDMAC_ADDR_FIXED,        // Source address fixed
+    .mDestAddrMode = DRV_RTDMAC_ADDR_INCREMENTED, // Destination address increment
+    .mTransferUnit = DRV_RTDMAC_TRANS_UNIT_4BYTE, // Transfer unit 4 bytes
+    .mResource = DRV_RTDMAC_MEMORY,               // DMA resource
+    .mLowSpeed = DRV_RTDMAC_SPEED_NORMAL,
+    .mPrioLevel = 1
+};
+
+rDmacDescMemCfg_t desc_mem3[] = {
+    {.SAR = 0x66000000, .DAR = 0x70000000, .TCR = 4, .CHCR = 0},
+    {       0x66000000,        0x70100000,        4,         0},
+    {       0x66000000,        0x70200000,        4,         0},
+    {       0x66000000,        0x70300000,        4,         0},
+    {       0x66000000,        0x70400000,        4,         0},
+    {       0x66000000,        0x70500000,        4,         0},
+    {       0x66000000,        0x70600000,        4,         0},
+    {       0x66000000,        0x70700000,        4,         0x30000004},
+};
+
+/* Define configure the DMA descriptor */
+rDmacDescCfg_t desccfg3 =
+{
+    .mDescBaseAddr = (uintptr_t)desc_mem3,      // Descriptor base address
+    .mDescUpdate = {                            // Descriptor update
+        .mCHCRUpdate = false,
+        .mDestAddrUpdate = true,
+        .mSrcAddrUpdate = true,
+        .mTransCountUpdate = true,
+    },
+    .mDescRead1st = true,        // Read descriptor first
+    .mStateEndEnable = true,     // Trigger state end
+    .mDescCount = 8,             // Descriptor count
+    .mDescIndex = 2              // Descriptor index
+};
+
+/*------------------------- Configure mem-to-mem with Descriptor Infinite Repeat mode ----------------------------------*/
+
+/* Define configure DMA Controller */
+rDmacCfg_t cfg4 =
+{
+    .mSrcAddr = 0,
+    .mDestAddr = 0,
+    .mTransferCount = 4,                          // Transfer count
+    .mDMAMode = DRV_DMAC_DMA_DESC_INFINITE,       // Infinite Reapeat descriptor mode
+    .mSrcAddrMode = DRV_RTDMAC_ADDR_FIXED,        // Source address fixed
+    .mDestAddrMode = DRV_RTDMAC_ADDR_INCREMENTED, // Destination address increment
+    .mTransferUnit = DRV_RTDMAC_TRANS_UNIT_4BYTE, // Transfer unit 4 bytes
+    .mResource = DRV_RTDMAC_MEMORY,               // DMA resource
+    .mLowSpeed = DRV_RTDMAC_SPEED_NORMAL,
+    .mPrioLevel = 1
+};
+
+rDmacDescMemCfg_t desc_mem4[] = {
+    {.SAR = 0x66000000, .DAR = 0x70000000, .TCR = 4, .CHCR = 0},
+    {       0x66000000,        0x70100000,        4,         0},
+    {       0x66000000,        0x70200000,        4,         0},
+    {       0x66000000,        0x70300000,        4,         0},
+};
+
+/* Define configure the DMA descriptor */
+rDmacDescCfg_t desccfg4 =
+{
+    .mDescBaseAddr = (uintptr_t)desc_mem4,      // Descriptor base address
+    .mDescUpdate = {                            // Descriptor update
+        .mCHCRUpdate = false,
+        .mDestAddrUpdate = true,
+        .mSrcAddrUpdate = true,
+        .mTransCountUpdate = true,
+    },
+    .mDescRead1st = true,        // Read descriptor first
+    .mStateEndEnable = false,    // No trigger state end
+    .mDescCount = 4,             // Descriptor count
+    .mDescIndex = 0              // Descriptor index
+};
+
 /*-----------------------------------------------------------*/
 
 rDmacIrqCfg_t rDmacIrqHandler_t_irq =
@@ -181,6 +266,13 @@ rDmacIrqCfg_t rDmacIrqHandler_t_irq2 =
     .irq_channel = INTID_SYSDMA1_CH1,
 };
 
+rDmacIrqCfg_t rDmacIrqHandler_t_irq3 =
+{
+    .Unit = SYS_DMAC0,
+    .SubCh = DMAC_CH0,
+    .irq_channel = INTID_SYSDMA0_CH0,
+};
+
 /*-----------------------------------------------------------*/
 
 int main( void )
@@ -189,7 +281,7 @@ int main( void )
         prvSetupHardware();
 
         xSemaphore = xSemaphoreCreateBinary();
-        xTaskCreate( prvDMACTask, "DMACTask", configMINIMAL_STACK_SIZE, NULL, main_DMAC_TASK_PRIORITY, NULL );
+        xTaskCreate( prvSYSDMACTask, "SYSDMACTask", configMINIMAL_STACK_SIZE, NULL, main_DMAC_TASK_PRIORITY, NULL );
         /* Start the tasks and timer running. */
         vTaskStartScheduler();
         for( ;; )
@@ -202,16 +294,15 @@ int main( void )
 
 static void prvSetupHardware( void )
 {
-        /* Ensure no interrupts execute while the scheduler is in an inconsistent
-        state.  Interrupts are automatically enabled when the scheduler is
-        started. */
-        portDISABLE_INTERRUPTS();
-
-        Irq_Setup();
+    /* Ensure no interrupts execute while the scheduler is in an inconsistent
+    state.  Interrupts are automatically enabled when the scheduler is
+    started. */
+    portDISABLE_INTERRUPTS();
+    Irq_Setup();
     (void)pfcInitModules(getModuleConfigs());
 }
 
-static void prvDMACTask( void *pvParameters )
+static void prvSYSDMACTask( void *pvParameters )
 {
     /* Remove compiler warning about unused parameter. */
     ( void ) pvParameters;
@@ -232,6 +323,11 @@ static void prvDMACTask( void *pvParameters )
         .ctx = &rDmacIrqHandler_t_irq2,
     };
 
+    Context_t usr_context3 =
+    {
+        .ctx = &rDmacIrqHandler_t_irq3,
+    };
+
     /* Get memory region first */
     st_memory_t region = R_UTILS_GetMemoryRegionInfo(OSAL, 0);
     cfg0.mSrcAddr = region.base_address;
@@ -246,7 +342,7 @@ static void prvDMACTask( void *pvParameters )
     }
 
     printf("**********************************************************\r\n");
-    printf("*  TC1: SYS-DMAC mem-to-mem transfer in Normal mode       *\r\n");
+    printf("***TC1: SYS-DMAC mem-to-mem transfer in Normal mode***\r\n");
     /* Device Driver Part */
     R_SYSDMAC_RcarDmacCtrlInit( rDmacIrqHandler_t_irq.Unit, DRV_RTDMAC_PRIO_FIX);
 
@@ -287,7 +383,7 @@ static void prvDMACTask( void *pvParameters )
 
 
     printf("*************************************************************\r\n");
-    printf("*TC2: SYS-DMAC mem-to-mem transfer in Descriptor Normal mode*\r\n");
+    printf("***TC2: SYS-DMAC mem-to-mem transfer in Descriptor Normal mode***\r\n");
     /* Device Driver Part */
     R_SYSDMAC_RcarDmacCtrlInit(rDmacIrqHandler_t_irq1.Unit, DRV_RTDMAC_PRIO_FIX);
 
@@ -345,8 +441,7 @@ static void prvDMACTask( void *pvParameters )
 
     R_SYSDMAC_RcarDmacStop(rDmacIrqHandler_t_irq1.Unit, rDmacIrqHandler_t_irq1.SubCh);
     printf("*************************************************************\r\n");
-
-    printf("*TC3: SYS-DMAC mem-to-mem transfer in Descriptor Repeat mode*\r\n");
+    printf("***TC3: SYS-DMAC mem-to-mem transfer in Descriptor Repeat mode***\r\n");
     /* Device Driver Part */
     R_SYSDMAC_RcarDmacCtrlInit(rDmacIrqHandler_t_irq2.Unit, DRV_RTDMAC_PRIO_FIX);
 
@@ -391,8 +486,6 @@ static void prvDMACTask( void *pvParameters )
         }
     }
     
-    
-
     if(ret == 0)
     {
         printf("TC3 Result: Passed\n");
@@ -404,6 +497,116 @@ static void prvDMACTask( void *pvParameters )
 
     R_SYSDMAC_RcarDmacStop(rDmacIrqHandler_t_irq2.Unit, rDmacIrqHandler_t_irq2.SubCh);
 
+    printf("*************************************************************\r\n");
+
+    printf("***TC4: SYS-DMAC mem-to-mem transfer in Descriptor Read-out mode***\r\n");
+    /* Device Driver Part */
+    R_SYSDMAC_RcarDmacCtrlInit(rDmacIrqHandler_t_irq3.Unit, DRV_RTDMAC_PRIO_FIX);
+
+    for (int i = 0; i < desccfg3.mDescCount; i++)
+    {
+        for(int j = 0; j < desc_mem3[i].TCR; j++)
+        {
+            *(volatile uint32_t *)(desc_mem3[i].DAR + j*4) = 0x33333333;
+            *(volatile uint32_t *)(desc_mem3[i].SAR + j*4) = 0x99999999;
+            printf("Before dma: Value src desc %d at %x : 0x%x \n", i, (desc_mem3[i].SAR + j*4), *(volatile uint32_t *)(desc_mem3[i].SAR + j*4));
+            printf("Before dma: Value dst desc %d at %x : 0x%x \n", i, (desc_mem3[i].DAR + j*4), *(volatile uint32_t *)(desc_mem3[i].DAR + j*4));
+        }
+    }
+
+    ret = R_SYSDMAC_RcarCallBackSet(&rDmacIrqHandler_t_irq3, dmacUserCallback3, &usr_context3);
+    if (ret)
+        printf("CallbackSet Failed: ret = %d\n", ret);
+
+    dmaStatus = R_SYSDMAC_RcarDmacExec(rDmacIrqHandler_t_irq3.Unit, rDmacIrqHandler_t_irq3.SubCh, &cfg3, &desccfg3);
+
+    // Check DMA execution status
+    if (dmaStatus != 0)
+        printf("DMA execution failed with status: %d\n", dmaStatus);
+
+    if(xSemaphoreTake(xSemaphore, portMAX_DELAY) == pdTRUE)
+    {
+
+    }
+
+    total_transfer_size = 4;
+    printf("Verify destination data!\n");
+    ret = 0;
+    for(int i = 0; i < desccfg3.mDescCount ; i++)
+    {
+        for(int j = 0; j < desc_mem3[i].TCR ; j++)
+        {
+            destData = R_UTILS_ReadMemForDMA((void *)(desc_mem3[i].DAR + j*4), total_transfer_size);
+            printf("After dma: Value dst desc %d at %x : 0x%x \n", i, (volatile uint32_t *)(desc_mem3[i].DAR + j*4), destData);
+            if(destData != (*(volatile uint32_t*)(desc_mem3[i].SAR + j*4)))
+            {
+                ret = -1;
+            }
+        }
+    }
+
+    if(ret == 0)
+    {
+        printf("TC4 Result: Passed\n");
+    }
+    else
+    {
+        printf("TC4 Result: Failed\n");
+    }
+
+    R_SYSDMAC_RcarDmacStop(rDmacIrqHandler_t_irq3.Unit, rDmacIrqHandler_t_irq3.SubCh);
+
+    printf("*************************************************************\r\n");
+    printf("***TC5: SYS-DMAC mem-to-mem transfer in Descriptor Infinite Repeat mode***\r\n");
+    /* Device Driver Part */
+
+    for (int i = 0; i < desccfg4.mDescCount; i++)
+    {
+        for(int j = 0; j < desc_mem4[i].TCR; j++)
+        {
+            *(volatile uint32_t *)(desc_mem4[i].DAR + j*4) = 0x22222222;
+            *(volatile uint32_t *)(desc_mem4[i].SAR + j*4) = 0x88888888;
+            printf("Before dma: Value src desc %d at %x : 0x%x \n", i, (desc_mem4[i].SAR + j*4), *(volatile uint32_t *)(desc_mem4[i].SAR + j*4));
+            printf("Before dma: Value dst desc %d at %x : 0x%x \n", i, (desc_mem4[i].DAR + j*4), *(volatile uint32_t *)(desc_mem4[i].DAR + j*4));
+        }
+    }
+
+    dmaStatus =R_SYSDMAC_RcarDmacExec(SYS_DMAC0, DMAC_CH1, &cfg4, &desccfg4);
+
+    // Check DMA execution status
+    if (dmaStatus != 0)
+        printf("DMA execution failed with status: %d\n", dmaStatus);
+
+    vTaskDelay(10000);
+
+    total_transfer_size = 4;
+    printf("Verify destination data!\n");
+    ret = 0;
+    for (int repeat = 0; repeat < 10; repeat++)
+    {
+        for(int i = 0; i < desccfg4.mDescCount ; i++)
+        {
+            for(int j = 0; j < desc_mem4[i].TCR ; j++)
+            {
+                destData = R_UTILS_ReadMemForDMA((void *)(desc_mem4[i].DAR + j*4), total_transfer_size);
+                printf("After dma: Value dst desc %d at %x : 0x%x \n", i, (volatile uint32_t *)(desc_mem4[i].DAR + j*4), destData);
+                if(destData != (*(volatile uint32_t*)(desc_mem4[i].SAR + j*4)))
+                {
+                    ret = -1;
+                }
+            }
+        }
+    }
+
+    if(ret == 0)
+    {
+        printf("TC5 Result: Passed\n");
+    }
+    else
+    {
+        printf("TC5 Result: Failed\n");
+    }
+    R_SYSDMAC_RcarDmacStop(SYS_DMAC0, DMAC_CH1);
     printf("*************************************************************\r\n");
 
     for( ;; )
@@ -442,6 +645,26 @@ void dmacUserCallback2(void *data) {
     }
     repeat -= 1;
     
+}
+
+void dmacUserCallback3(void *data) {
+    rDmacIrqCfg_t * instance_ctrl = (rDmacIrqCfg_t *) data;
+
+    if(desccfg3.mDescIndex == 2)
+    {
+        desccfg3.mDescIndex = 6;
+        BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+        xSemaphoreGiveFromISR(xSemaphore, &xHigherPriorityTaskWoken);
+        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+    }
+    else if (desccfg3.mDescIndex == 6)
+    {
+        desccfg3.mDescIndex = 1;
+        desccfg3.mDescUpdate.mCHCRUpdate = true;
+        BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+        xSemaphoreGiveFromISR(xSemaphore, &xHigherPriorityTaskWoken);
+        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+    }
 }
 
 /*-----------------------------------------------------------*/
