@@ -41,6 +41,8 @@
 	vTaskDelay(1);		    \
 printf(fmt, ##__VA_ARGS__);         \
 
+#define SWDT_SWTCSRA_REG   (*(volatile uint32_t *)0x1C050004U)
+
 /*-----------------------------------------------------------*/
 
 /*
@@ -88,6 +90,20 @@ static void prvSWDTTask( void *pvParameters )
 	uint8_t ping_rate = 5;
 	uint8_t ping_count = 3;
 
+	int timeout = 3000; // 3s
+
+	printf("Watting swdt idle...\n");
+
+	while (SWDT_SWTCSRA_REG & (1U << 7))
+	{
+		vTaskDelay(1);
+		timeout--;
+		if (timeout <= 0)
+		{
+			printf("Timeout the SWDT busy\n");
+		}
+		
+	}
 
 	printf("\n=== TC1: Init Watchdog Timer ===\n");
 	if (R_SWDT_Init(init_timeout) == 0) {
@@ -118,6 +134,7 @@ static void prvSWDTTask( void *pvParameters )
 
 	for( ;; )
 	{
+		vTaskDelay(1);
 	}
 }
 
