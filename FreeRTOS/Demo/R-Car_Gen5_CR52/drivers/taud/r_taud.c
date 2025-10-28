@@ -49,7 +49,7 @@ static unsigned int taud_get_irq_id(uint8_t unit, uint8_t channel);
 /***********************************************************************************************************************
  * Functions
  **********************************************************************************************************************/
-e_taud_err_t R_TAU_PWM_Open (r_taud_ctrl_t * const p_ctrl, st_taud_cfg_t const * const p_cfg)
+e_taud_err_t R_TAUD_PWM_Open (r_taud_ctrl_t * const p_ctrl, st_taud_cfg_t const * const p_cfg)
 {
     st_taud_instance_ctrl_t *p_instance_ctrl = (st_taud_instance_ctrl_t *) p_ctrl;
     e_taud_err_t err = TAUD_SUCCESS;
@@ -91,7 +91,7 @@ e_taud_err_t R_TAU_PWM_Open (r_taud_ctrl_t * const p_ctrl, st_taud_cfg_t const *
     return err;
 }
 
-e_taud_err_t R_TAU_PWM_Start(r_taud_ctrl_t * const p_ctrl)
+e_taud_err_t R_TAUD_PWM_Start(r_taud_ctrl_t * const p_ctrl)
 {
     st_taud_instance_ctrl_t * p_instance_ctrl = (st_taud_instance_ctrl_t *) p_ctrl;
     e_taud_err_t err = TAUD_SUCCESS;
@@ -101,7 +101,7 @@ e_taud_err_t R_TAU_PWM_Start(r_taud_ctrl_t * const p_ctrl)
     return err;
 }
 
-e_taud_err_t R_TAU_PWM_Stop(r_taud_ctrl_t * const p_ctrl)
+e_taud_err_t R_TAUD_PWM_Stop(r_taud_ctrl_t * const p_ctrl)
 {
     st_taud_instance_ctrl_t * p_instance_ctrl = (st_taud_instance_ctrl_t *) p_ctrl;
     e_taud_err_t err = TAUD_SUCCESS;
@@ -111,7 +111,7 @@ e_taud_err_t R_TAU_PWM_Stop(r_taud_ctrl_t * const p_ctrl)
     return err;
 }
 
-e_taud_err_t R_TAU_PWM_UpdateDuty(r_taud_ctrl_t * const p_ctrl, e_taud_ch_t ch, uint32_t duty)
+e_taud_err_t R_TAUD_PWM_UpdateDuty(r_taud_ctrl_t * const p_ctrl, e_taud_ch_t ch, uint32_t duty)
 {
     st_taud_instance_ctrl_t * p_instance_ctrl = (st_taud_instance_ctrl_t *) p_ctrl;
     e_taud_err_t err = TAUD_SUCCESS;
@@ -134,7 +134,7 @@ e_taud_err_t R_TAU_PWM_UpdateDuty(r_taud_ctrl_t * const p_ctrl, e_taud_ch_t ch, 
     return err;
 }
 
-e_taud_err_t R_TAU_PWM_UpdateFreq(r_taud_ctrl_t * const p_ctrl, uint32_t freq_hz)
+e_taud_err_t R_TAUD_PWM_UpdateFreq(r_taud_ctrl_t * const p_ctrl, uint32_t freq_hz)
 {
     st_taud_instance_ctrl_t * p_instance_ctrl = (st_taud_instance_ctrl_t *) p_ctrl;
     e_taud_err_t err = TAUD_SUCCESS;
@@ -148,7 +148,7 @@ e_taud_err_t R_TAU_PWM_UpdateFreq(r_taud_ctrl_t * const p_ctrl, uint32_t freq_hz
     return err;
 }
 
-e_taud_err_t R_TAU_PWM_CallbackSet(r_taud_ctrl_t * const p_ctrl,
+e_taud_err_t R_TAUD_PWM_CallbackSet(r_taud_ctrl_t * const p_ctrl,
                                 e_taud_ch_t ch,
                                 st_taud_irq_Cfg_t irg_cfg)
 {
@@ -159,7 +159,7 @@ e_taud_err_t R_TAU_PWM_CallbackSet(r_taud_ctrl_t * const p_ctrl,
     return err;
 }
 
-e_taud_err_t R_TAU_PWM_Close(r_taud_ctrl_t * const p_ctrl)
+e_taud_err_t R_TAUD_PWM_Close(r_taud_ctrl_t * const p_ctrl)
 {
     st_taud_instance_ctrl_t * p_instance_ctrl = (st_taud_instance_ctrl_t *) p_ctrl;
     e_taud_err_t err = TAUD_SUCCESS;

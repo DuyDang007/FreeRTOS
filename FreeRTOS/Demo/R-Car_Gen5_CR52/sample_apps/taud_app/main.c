@@ -113,7 +113,7 @@ static void prvTaudPwmTask( void *pvParameters )
         },
     };
 
-    ret = R_TAU_PWM_Open(&g_taud_device_ctr0, &g_taud_cfg);
+    ret = R_TAUD_PWM_Open(&g_taud_device_ctr0, &g_taud_cfg);
     if(ret != TAUD_SUCCESS)
     {
         printf("TC1: Open: Failed: %d\n", ret);
@@ -125,7 +125,7 @@ static void prvTaudPwmTask( void *pvParameters )
 
     vTaskDelay(3000);
 
-    ret = R_TAU_PWM_Start(&g_taud_device_ctr0);
+    ret = R_TAUD_PWM_Start(&g_taud_device_ctr0);
     if(ret != TAUD_SUCCESS)
     {
         printf("TC2: Start: Failed\n");
@@ -137,14 +137,14 @@ static void prvTaudPwmTask( void *pvParameters )
 
     vTaskDelay(3000);
 
-    R_TAU_PWM_UpdateFreq(&g_taud_device_ctr0, 2);
-    R_TAU_PWM_UpdateDuty(&g_taud_device_ctr0, 1, 10);
-    R_TAU_PWM_UpdateDuty(&g_taud_device_ctr0, 2, 20);
-    R_TAU_PWM_UpdateDuty(&g_taud_device_ctr0, 3, 50);
+    R_TAUD_PWM_UpdateFreq(&g_taud_device_ctr0, 2);
+    R_TAUD_PWM_UpdateDuty(&g_taud_device_ctr0, 1, 10);
+    R_TAUD_PWM_UpdateDuty(&g_taud_device_ctr0, 2, 20);
+    R_TAUD_PWM_UpdateDuty(&g_taud_device_ctr0, 3, 50);
 
     vTaskDelay(3000);
 
-    ret = R_TAU_PWM_Stop(&g_taud_device_ctr0);
+    ret = R_TAUD_PWM_Stop(&g_taud_device_ctr0);
     if(ret != TAUD_SUCCESS)
     {
         printf("TC3: Stop: Failed\n");
