@@ -490,6 +490,7 @@ static uint32_t RCar_I2C_Write(i2c_instance_ctrl_t * p_instance_ctrl, uint8_t * 
         p_instance_ctrl->loaded = DMA_BUFFER_START_OFFSET;
         /* Set Master Control register (MDBS=1, MIE=1, ESG=1) */
         R_I2C_PRV_RegWrite32(i2c_base_addr + R_I2C_ICMCR, 0x89);
+        return 0;
     }
 
     else
@@ -618,6 +619,7 @@ static uint32_t RCar_I2C_ReadRegMap(i2c_instance_ctrl_t * p_instance_ctrl, uint3
         }
         /* Set Master Control register (MDBS=1, MIE=1, ESG=1) */
         R_I2C_PRV_RegWrite32(i2c_base_addr + R_I2C_ICMCR, 0x89);
+        return 0;
     }
 
     else
