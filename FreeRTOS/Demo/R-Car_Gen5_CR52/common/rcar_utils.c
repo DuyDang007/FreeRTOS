@@ -125,8 +125,8 @@ uint32_t R_UTILS_ReadMemForDMA(void *addr, uint32_t size)
     return *(volatile uint32_t *)addr;
 }
 
-uint32_t R_UTILS_GetCPUCycles(void) {
-    uint32_t value;
-    __asm__ volatile ("mrc p15, 0, %0, c9, c13, 0" : "=r"(value));  // PMCCNTR
+uint64_t R_UTILS_GetCPUCycles(void) {
+    uint64_t value;
+    __get_CP64(15, 0, value, 9);  // PMCCNTR
     return value;
 }

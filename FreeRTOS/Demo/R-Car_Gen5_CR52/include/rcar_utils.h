@@ -146,10 +146,10 @@ uint32_t R_UTILS_ReadMemForDMA(void *addr, uint32_t size);
 /**
  * @brief Get CPU cycles
  * 
- * @return uint32_t Return number of CPU cycles elapsed from when the PMU was enabled 
+ * @return uint64_t Return number of CPU cycles elapsed from when the PMU was enabled 
  *                  until this API is called.
  */
-uint32_t R_UTILS_GetCPUCycles();
+uint64_t R_UTILS_GetCPUCycles();
 
 /**
  * @brief Get CPU ID
