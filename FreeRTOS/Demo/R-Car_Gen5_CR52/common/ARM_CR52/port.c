@@ -38,6 +38,7 @@
 #define __FPU_PRESENT 1
 #include "cmsis_rcar_gen5.h"
 #include "drivers/gic/gic.h"
+#include "rcar_utils.h"
 
 #define BSP_ATTRIBUTE_STACKLESS           __attribute__((naked))
 #define BSP_TARGET_ARM                    __attribute__((target("arm")))
@@ -167,6 +168,18 @@
  #define portTASK_RETURN_ADDRESS                  configTASK_RETURN_ADDRESS
 #else
  #define portTASK_RETURN_ADDRESS                  prvTaskExitError
+#endif
+
+#if configGENERATE_RUN_TIME_STATS == 1
+volatile static uint64_t kernel_start = 0;
+
+void portConfig_Timer_For_Run_Time_Starts(void) {
+    kernel_start = R_UTILS_GetCPUCycles();
+}
+
+unsigned long long portGet_Run_Time_Counter_Value(void) {
+    return R_UTILS_GetCPUCycles() - kernel_start;
+}
 #endif
 
 #define SYS_MODE                                  0x1f

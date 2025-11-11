@@ -236,6 +236,16 @@ void assert_func(const char *file, int line, const char *func);
 #define configUSE_APPLICATION_TASK_TAG 1
 #endif 
 
+#if configGENERATE_RUN_TIME_STATS == 1
+#define configRUN_TIME_COUNTER_TYPE unsigned long long
+
+void portConfig_Timer_For_Run_Time_Starts(void);
+#define portCONFIGURE_TIMER_FOR_RUN_TIME_STATS()    portConfig_Timer_For_Run_Time_Starts()
+
+unsigned long long portGet_Run_Time_Counter_Value(void);
+#define portGET_RUN_TIME_COUNTER_VALUE()    portGet_Run_Time_Counter_Value()
+#endif
+
 // macro is point to a not symbol macro in file portmacro.h -> i can't set it to correct answer 
 // this macro need for SUPPORT_POSIX when build
 #define portFORCE_INLINE
