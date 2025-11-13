@@ -8,6 +8,7 @@
 #include "stdio.h"
 #include "pfc/r_pfc_api.h"
 #include "device_tree_x5h.h"
+#include "board.h"
 
 #define LIBRARY_LOG_LEVEL 0
 
@@ -677,9 +678,11 @@ int pfcInitModule(st_module_config_t module)
 
 int pfcInitModules(st_module_config_t* module_list)
 {
+#if (BOARD == X5H_RFS2)
+    ( void ) module_list;
+#else
     int module_indx = 0, ret = 0;
     st_module_config_t module;
-    //const int * p_drv_grp;
 
     for (module_indx = 0;; module_indx++)
     {
@@ -698,6 +701,7 @@ int pfcInitModules(st_module_config_t* module_list)
             return -1;
         }
     }
+#endif
 
     return 0;
 }

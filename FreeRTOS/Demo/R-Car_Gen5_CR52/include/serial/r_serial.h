@@ -26,7 +26,7 @@
  * Macro definitions
  **********************************************************************************************************************/
 #ifndef UART_ID
-#if (BOARD == X5H_IRONHIDE)
+#if (BOARD == X5H_IRONHIDE || BOARD == X5H_RFS2)
 #define UART_ID SCIF1
 #else
 #define UART_ID HSCIF0

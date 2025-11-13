@@ -42,7 +42,7 @@
 #define __GIC_PRESENT           1
 
 //#define GIC_DISTRIBUTOR_BASE	0xF0000000U
-#if (BOARD == X5H_VDK || BOARD == X5H_IRONHIDE)
+#if (BOARD == X5H_VDK || BOARD == X5H_IRONHIDE || BOARD == X5H_RFS2)
     #define CR52_GICD_ADDR          ((void *)0xF0000000U)
     #define CR52_GICR_ADDR          ((void *)0xF0100000U)
 #else

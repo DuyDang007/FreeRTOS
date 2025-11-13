@@ -31,11 +31,15 @@ if(NOT DEFINED RAM_REGION)
     set(RAM_REGION 1)
 endif()
 set(LDFILE ${BSP_DIR}/common/linker/lscript_sram.ld)
-if(BOARD STREQUAL "x5h_vdk" OR BOARD STREQUAL "x5h_ironhide")
-    if (BOARD STREQUAL "x5h_vdk")
+if(BOARD STREQUAL "x5h_vdk" OR BOARD STREQUAL "x5h_ironhide" OR BOARD STREQUAL "x5h_rfs2")
+    if(BOARD STREQUAL "x5h_vdk")
         set(BOARD_ID 1)
-    else()
+    elseif(BOARD STREQUAL "x5h_ironhide")
         set(BOARD_ID 3)
+    elseif(BOARD STREQUAL "x5h_rfs2")
+        set(BOARD_ID 4)
+    else()
+        message(FATAL_ERROR "Invalid BOARD: ${BOARD}.")
     endif()
     list(FIND ALLOWED_RAM_REGION "${RAM_REGION}" INDEX)
     if(INDEX GREATER -1)
@@ -70,6 +74,7 @@ set(global_definition
 
 
 message(STATUS "board: ${BOARD}")
+message(STATUS "BOARD_ID: ${BOARD_ID}")
 
 ### Set common build flags
 set(CACHE 1 CACHE BOOL "Enable cache for CPU CR52")

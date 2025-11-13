@@ -18,7 +18,7 @@
 
 #include "pfc/r_pfc_api.h"
 
-#if (BOARD == X5H_VDK || BOARD == X5H_IRONHIDE)
+#if (BOARD == X5H_VDK || BOARD == X5H_IRONHIDE || BOARD == X5H_RFS2)
 /* PFC (Pin Function Controller) */
 #define RCAR_PFC_GPSR1  0xC0800840u       /* R/W 32 GPIO/Peripheral_Function Select register PortGroup 1 */
 #define RCAR_PFC_GPSR1_SCIF_ENABLE  0x0001F000u  /* bit16:HRX0, bit15:HSCK0, bit14:HRTS0#, bit13:HCTS0#, bit12:HTX0 */
@@ -177,7 +177,7 @@ static void outbyte(char c)
 	console_putc(c);
 }
 
-#if (BOARD == X5H_VDK || BOARD == X5H_IRONHIDE)
+#if (BOARD == X5H_VDK || BOARD == X5H_IRONHIDE || BOARD == X5H_RFS2)
 static void uart_rcar_pfc_init(void)
 {
 	uint32_t drv_data;

@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include "portmacro.h"
 #include "interrupts.h"
+#include "board.h"
 #include "cmsis_rcar_gen5.h"
 #include "mpu.h"
 #include "state-manager/r_state_manager.h"
@@ -187,10 +188,10 @@ void SystemInit(void)
     portDISABLE_INTERRUPTS();
     *CNTCR_ADDR = 1;    /* enable system counter */
     Irq_Setup();
-	if (R_StateManager_Init()) {
-		printf("Error: Failed to init State Manager.\r\n");
-		return;
-	}
+    if (R_StateManager_Init()) {
+        printf("Error: Failed to init State Manager.\r\n");
+        return;
+    }
 }
 
 void assert_func(const char *file, int line, const char *func)
