@@ -58,7 +58,7 @@ else()
     set(BOARD_ID 2)
 endif()
 
-if (BOARD STREQUAL "x5h_ironhide")
+if (BOARD STREQUAL "x5h_ironhide" OR BOARD STREQUAL "x5h_rfs2")
     set(UCIE_VER "RCAR_UCIE_V100")
 elseif(BOARD STREQUAL "ai-acc")
     set(UCIE_VER "RCAR_UCIE_V102")
