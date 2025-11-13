@@ -277,7 +277,7 @@ rDmacIrqCfg_t rDmacIrqHandler_t_irq3 =
 
 /*-----------------------------------------------------------*/
 
-int main(void)
+int main( void )
 {
     /* Configure the hardware ready to run the demo. */
     prvSetupHardware();
@@ -309,8 +309,8 @@ static void prvSetupHardware(void)
 static void prvDMACTask(void *pvParameters)
 {
     /* Remove compiler warning about unused parameter. */
-    (void)pvParameters;
-    int ret, i;
+    ( void ) pvParameters;
+    int ret;
 
     Context_t usr_context =
     {
@@ -363,13 +363,10 @@ static void prvDMACTask(void *pvParameters)
 
     int dmaStatus = R_RTDMAC_RcarDmacExec(rDmacIrqHandler_t_irq.Unit, rDmacIrqHandler_t_irq.SubCh, &cfg0, NULL);
 
-    for (i = 0; i < 10000; i++)
+    // Wait DMA to transfer data.
+    if (xSemaphoreTake(xSemaphore, portMAX_DELAY) == pdTRUE)
     {
     }
-
-    // Check DMA execution status
-    if (dmaStatus != 0)
-        printf("DMA execution failed with status: %d\n", dmaStatus);
 
     // Verify destination data
     uint32_t total_transfer_size = 4;
@@ -616,13 +613,14 @@ static void prvDMACTask(void *pvParameters)
 
 /*-----------------------------------------------------------*/
 
-void dmacUserCallback(void *data)
-{
-    rDmacIrqCfg_t *instance_ctrl = (rDmacIrqCfg_t *)data;
+void dmacUserCallback(void *data) {
+	rDmacIrqCfg_t * instance_ctrl = (rDmacIrqCfg_t *) data;
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    xSemaphoreGiveFromISR(xSemaphore, &xHigherPriorityTaskWoken);
+    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 
-void dmacUserCallback1(void *data)
-{
+void dmacUserCallback1(void *data) {
     rDmacIrqCfg_t *instance_ctrl = (rDmacIrqCfg_t *)data;
 
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
