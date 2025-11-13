@@ -306,7 +306,7 @@ static void prvSYSDMACTask( void *pvParameters )
 {
     /* Remove compiler warning about unused parameter. */
     ( void ) pvParameters;
-    int ret,i;
+    int ret;
 
     Context_t usr_context =
     {
@@ -358,12 +358,11 @@ static void prvSYSDMACTask( void *pvParameters )
 
     int dmaStatus =R_SYSDMAC_RcarDmacExec(rDmacIrqHandler_t_irq.Unit, rDmacIrqHandler_t_irq.SubCh, &cfg0, NULL);
 
-    for (i=0; i<10000; i++)
-	{}
+    // Wait DMA to transfer data.
+    if(xSemaphoreTake(xSemaphore, portMAX_DELAY) == pdTRUE)
+    {
 
-    // Check DMA execution status
-    if (dmaStatus != 0)
-        printf("DMA execution failed with status: %d\n", dmaStatus);
+    }
 
     // Verify destination data
     uint32_t total_transfer_size = 4;
@@ -618,6 +617,9 @@ static void prvSYSDMACTask( void *pvParameters )
 
 void dmacUserCallback(void *data) {
 	rDmacIrqCfg_t * instance_ctrl = (rDmacIrqCfg_t *) data;
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    xSemaphoreGiveFromISR(xSemaphore, &xHigherPriorityTaskWoken);
+    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 
 void dmacUserCallback1(void *data) {
