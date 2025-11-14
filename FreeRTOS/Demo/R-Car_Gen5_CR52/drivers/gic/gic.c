@@ -544,16 +544,14 @@ uint32_t R_GIC_SetIntPriority(uint32_t ID, uint32_t rd, uint8_t priority) {
 
     if (ID < 32)
     {
-        if (rd > gic_max_rd)
-            return 1;
-        uint32_t mask = 0x1F << (3 + (ID % 4) * 8); // The corresponding GICR_IPRIORITYRn number, n, is given by n = m DIV 4, where m=0 to 31. Byte offset 0 refers to register bits[7:3]
-        gic_rdist[rd].sgi_ppi.GICR_IPRIORITYR[ID / 4] = (gic_rdist[rd].sgi_ppi.GICR_IPRIORITYR[ID / 4] & ~mask)
-                                                        | ((uint32_t)(priority & 0x1F) << (3 + (ID % 4) * 8));
+      if (rd > gic_max_rd)
+         return 1;
+
+      gic_rdist[rd].sgi_ppi.GICR_IPRIORITYR[ID] = priority;
     }
-    
     else if (ID < 1020)
     {
-        gic_dist->GICD_IPRIORITYR[ID] = (priority & 0x1F) << 3; 
+      gic_dist->GICD_IPRIORITYR[ID] = priority;
     }
 
     return 0;
