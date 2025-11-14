@@ -304,6 +304,11 @@
 #define INTID_TAUD1_CH15                0x03B6
 
 /**
+ * @brief Interrupt IDs of ECM
+ */
+#define INTID_ECMERR_MERGE              0x0326
+
+/**
  * @defgroup Interrupt_Controller Interrupt Controller
  * @{
  * @brief This module provides functions and structures for managing interrupts.
