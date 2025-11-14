@@ -79,3 +79,29 @@ __attribute__((weak)) void LDR_LOG(e_log_level_t log_level, const char* module_n
 
     fprintf(stdout, "[%s] [%s]: %s", log_str[log_level], module_name, buf);
 }
+
+__attribute__((weak)) void vApplicationMallocFailedHook( void )
+{
+    /* Weak function  */
+    /* if want to use this function redefine this function */
+    printf("%s\n", __func__);
+    for(;;);
+}
+
+typedef void* TaskHandle_t;
+__attribute__((weak)) void vApplicationStackOverflowHook(TaskHandle_t xTask,
+                                                            char *pcTaskName)
+{
+    /* Weak function  */
+    /* if want to use this function redefine this function */
+    ( void ) pcTaskName;
+    ( void ) xTask;
+    printf("%s\n", __func__);
+    for(;;);
+}
+
+__attribute__((weak)) void vApplicationAssertHook(void *arg)
+{
+    /* Weak function  */
+    /* if want to use this function redefine this function */
+}
