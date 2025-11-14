@@ -794,7 +794,7 @@ typedef struct
         uint32_t RESERVED6[31];
   __IOM uint32_t GICR_ICACTIVER0;            /*!< Offset: 0x0380 (R/W)  Interrupt Clear-Active Register 0 */
         uint32_t RESERVED7[31];
-  __IOM uint32_t GICR_IPRIORITYR[8];         /*!< Offset: 0x0400 (R/W)  Interrupt Priority Registers 0 - 7 */
+  __IOM uint8_t GICR_IPRIORITYR[32];         /*!< Offset: 0x0400 (R/W)  Interrupt Priority Registers 0 - 7 */
         uint32_t RESERVED8[504];
   __IM  uint32_t GICR_ICFGR0;                /*!< Offset: 0x0C00 (R/ )  Interrupt Configuration Register 0 */
   __IOM uint32_t GICR_ICFGR1;                /*!< Offset: 0x0C04 (R/W)  Interrupt Configuration Register 1 */
