@@ -78,20 +78,20 @@ uint8_t R_SWDT_Init(uint8_t timeout_sec) {
 	uint8_t ret;
 	int clock_id, reset_id;
 
-	reset_id = X5H_CLOCK_ID_MDLC_WDT0;
+	clock_id = X5H_CLOCK_ID_MDLC_WDT0;
 	ret = R_StateManager_ClockOn(clock_id);
 	if (ret)
-		printf("Error: Failed to set clock id %d ON.\r\n", clock_id);
+		printf("Error: Failed to turn clock ID %d ON.\r\n", clock_id);
 
 	reset_id = X5H_RESET_DOMAIN_ID_SWDT0;
 	ret = R_StateManager_Reset(reset_id);
 	if (ret)
-		printf("Error: Failed to reset clock id %d.\r\n", clock_id);
+		printf("Error: Failed to reset id %d.\r\n", reset_id);
 
 	reset_id = X5H_RESET_DOMAIN_ID_SWDT1;
 	ret = R_StateManager_Reset(reset_id);
 	if (ret)
-		printf("Error: Failed to reset clock id %d ON.\r\n", clock_id);
+		printf("Error: Failed to reset id %d ON.\r\n", reset_id);
 
 	/* for SWDT */
 	r_swdt_write(SWDT_BASE + SWTCSRA, (0xA5A5A5 << 8) | (r_swdt_read(SWDT_BASE + SWTCSRA) & ~SWTCSRA_TME));
