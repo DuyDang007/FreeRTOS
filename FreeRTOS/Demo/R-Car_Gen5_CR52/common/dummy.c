@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <errno.h>
+#include <stdarg.h>
 
 //Dummy for these function when using newlib
 __attribute__((weak)) int _open(int fd)
@@ -64,4 +65,17 @@ __attribute__((weak)) void vApplicationTickHook( void )
 {
     /* Weak function  */
     /* if want to use this function redefine this function */
+}
+
+typedef uint8_t e_log_level_t;
+__attribute__((weak)) void LDR_LOG(e_log_level_t log_level, const char* module_name, const char* fmt, ...) {
+    const char *log_str[] = {"INFO", "DEBUG", "WARN", "ERROR", "FATAL"};
+    char buf[512];
+
+    va_list args;
+    va_start(args, fmt);
+    vsnprintf(buf, sizeof(buf), fmt, args);
+    va_end(args);
+
+    fprintf(stdout, "[%s] [%s]: %s", log_str[log_level], module_name, buf);
 }
