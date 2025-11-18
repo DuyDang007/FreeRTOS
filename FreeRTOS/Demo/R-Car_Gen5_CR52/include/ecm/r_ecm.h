@@ -8,6 +8,17 @@
 #ifndef R_ECM_H
 #define R_ECM_H
 
+/**
+* @defgroup      ECM_Module Error Control Module (ECM)
+* @{
+* @brief         This module provides APIs to configure and manage the ECM hardware.
+*
+* The ECM (Error Control Module) provides mechanisms for detecting, counting,
+* notifying, and handling hardware errors across multiple subsystems.
+* This module offers enums, structures, and functions to configure error
+* detection, pin/reset outputs, interrupt notification, and pseudo error insertion.
+*/
+
 /***********************************************************************************************************************
  * Includes
  **********************************************************************************************************************/
@@ -126,5 +137,6 @@ uint8_t R_ECM_CheckErrorStatus(e_ecm_error_id_t id);
  * @retval 0  Operation successful.
  */
 uint8_t R_ECM_PusedoError(e_ecm_error_id_t id);
+/** @} */ // end
 
 #endif /* R_ECM_H */
