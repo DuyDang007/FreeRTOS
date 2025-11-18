@@ -105,52 +105,6 @@ static void prvWWDTTask( void *pvParameters )
 		printf(".");
 	}
 
-	/****/
-
-	printf("=== Test Case 2: WWDT20, 273ms, 75% window OPEN ===\r\n");
-	R_WWDT_Init(R_WWDT20, WINDOW_75P, 273, false, ERM_RESET_MODE);
-
-	printf("R_WWDT_Init: done\r\n");
-	err = R_WWDT_Refresh(R_WWDT20);
-
-	// After (150 * 100) ms, the system will reset
-	printf("\n[INFO]: After 15s, the system will reset\n");
-	for (int i = 0; i < 150; i++)
-	{
-		// Need to remove this function in actual situation
-		// Choose a value that refresh the WDT in remaining of 75% OPEN window
-		vTaskDelay(100);
-
-		// Refresh before the counter underflows to prevent Reset
-		err = R_WWDT_Refresh(R_WWDT20);
-		if (err != 0) break;
-	}
-
-	/****/
-
-	printf_delay("=== Test Case 3: WWDT20, 68ms, 50% window ===\r\n");
-	R_WWDT_Init(R_WWDT20, WINDOW_50P, 68, false, ERM_RESET_MODE);
-	printf_delay("R_WWDT_Init: done\r\n");
-
-	err = R_WWDT_Refresh(R_WWDT20);
-	for (int i = 0; i < 500; i++) {
-		vTaskDelay(60);  // simulate moderate workload
-		err = R_WWDT_Refresh(R_WWDT20);
-		if (err != 0) break;
-	}
-
-	printf_delay("=== Test Case 4: WWDT20, 136ms, 25% window ===\r\n");
-	R_WWDT_Init(R_WWDT20, WINDOW_25P, 136, false, ERM_RESET_MODE);
-	printf_delay("R_WWDT_Init: done\r\n");
-
-	err = R_WWDT_Refresh(R_WWDT20);
-	printf("\n[INFO]: After 12s, the system will reset\n");
-	for (int i = 0; i < 100; i++) {
-		vTaskDelay(120);  // adjust so refresh stays in allowed window
-		err = R_WWDT_Refresh(R_WWDT20);
-		if (err != 0) break;
-	}
-
 	printf_delay("----------- PROGRAM END ----------- \r\n");
 	for( ;; )
 	{
