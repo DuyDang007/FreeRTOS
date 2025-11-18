@@ -44,6 +44,7 @@ CMake options for the project:
 - `-DENABLE_OPENAMP=1`: Enable libmetal, OpenAMP build
 - `-DBOARD`: Choose platform to build:
   - `x5h_vdk`: For X5H on VDK
+  - `x5h_rfs2`: For X5H on RFS2
   - `x5h_ironhide`: For X5H Ironhide board
   - `ai-acc`: For AI Accelerator
 
