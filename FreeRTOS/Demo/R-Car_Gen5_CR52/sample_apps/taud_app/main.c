@@ -33,12 +33,14 @@
 
 #include "interrupts.h"
 #include "stdio.h"
-#define main_HelloWorld_TASK_PRIORITY        ( tskIDLE_PRIORITY + 1 )
 
 #include "pfc/r_pfc_api.h"
 #include "device_tree_x5h.h"
 #include "rcar_utils.h"
 #include "taud/r_taud.h"
+
+#define main_taud_app_TASK_PRIORITY        ( tskIDLE_PRIORITY + 1 )
+#define TAUD_APP_SIZE (configMINIMAL_STACK_SIZE * 2)
 /*-----------------------------------------------------------*/
 
 /*
@@ -60,7 +62,7 @@ int main( void )
 	prvSetupHardware();
     
     
-    xTaskCreate( prvTaudPwmTask, "TaudPwm", configMINIMAL_STACK_SIZE, NULL, main_HelloWorld_TASK_PRIORITY, NULL );
+    xTaskCreate( prvTaudPwmTask, "TaudPwm", TAUD_APP_SIZE, NULL, main_taud_app_TASK_PRIORITY, NULL );
     /* Start the tasks and timer running. */
     vTaskStartScheduler();
     for( ;; )
@@ -123,7 +125,7 @@ static void prvTaudPwmTask( void *pvParameters )
         printf("TC1: Open: Passed\n");
     }
 
-    vTaskDelay(3000);
+    vTaskDelay(1000);
 
     ret = R_TAUD_PWM_Start(&g_taud_device_ctr0);
     if(ret != TAUD_SUCCESS)
@@ -135,14 +137,14 @@ static void prvTaudPwmTask( void *pvParameters )
         printf("TC2: Start: Passed\n");
     }
 
-    vTaskDelay(3000);
+    vTaskDelay(1000);
 
     R_TAUD_PWM_UpdateFreq(&g_taud_device_ctr0, 2);
     R_TAUD_PWM_UpdateDuty(&g_taud_device_ctr0, 1, 10);
     R_TAUD_PWM_UpdateDuty(&g_taud_device_ctr0, 2, 20);
     R_TAUD_PWM_UpdateDuty(&g_taud_device_ctr0, 3, 50);
 
-    vTaskDelay(3000);
+    vTaskDelay(1000);
 
     ret = R_TAUD_PWM_Stop(&g_taud_device_ctr0);
     if(ret != TAUD_SUCCESS)
@@ -163,13 +165,11 @@ static void prvTaudPwmTask( void *pvParameters )
 static void taud_end_cycle(void * p_context)
 {
     st_taud_pwm_cfg_t *p_pwm = (st_taud_pwm_cfg_t *)p_context;
-    printf("channel: %d\nfreq_hz: %d\n", p_pwm->master_ch, p_pwm->freq_hz);
 }
 
 static void taud_end_duty(void * p_context)
 {
     st_taud_slave_ch_cfg_t * p_slave = (st_taud_slave_ch_cfg_t *)p_context;
-    printf("channel: %d\nduty: %d\n", p_slave->ch, p_slave->duty);
 }
 
 /*-----------------------------------------------------------*/
