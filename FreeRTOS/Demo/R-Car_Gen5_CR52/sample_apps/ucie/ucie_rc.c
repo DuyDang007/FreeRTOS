@@ -44,6 +44,7 @@
 #include "rcar_utils.h"
 
 #define main_ucie_TASK_PRIORITY        (tskIDLE_PRIORITY + 1)
+#define UCIE_RC_SIZE (configMINIMAL_STACK_SIZE * 2)
 
 /* Memory size macros */
 #define SIZE_64MB           (0x4000000)
@@ -134,7 +135,7 @@ int main( void )
     /* Configure the hardware ready to run the demo. */
     prvSetupHardware();
 
-    xTaskCreate(ucie_comm_task, "UCIe", configMINIMAL_STACK_SIZE, NULL, main_ucie_TASK_PRIORITY, NULL );
+    xTaskCreate(ucie_comm_task, "UCIe", UCIE_RC_SIZE, NULL, main_ucie_TASK_PRIORITY, NULL );
 
     /* Start the tasks and timer running. */
     vTaskStartScheduler();
