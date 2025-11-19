@@ -18,7 +18,7 @@
 #if (BOARD == X5H_VDK || BOARD == X5H_IRONHIDE || BOARD == X5H_RFS2)
 #define UART_BAUDRATE 115200
 #else
-#define UART_BAUDRATE 3000000
+#define UART_BAUDRATE 115200
 #endif
 #endif
 

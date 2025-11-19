@@ -18,7 +18,7 @@
 
 #if (BOARD == X5H_IRONHIDE)
 #define GENERIC_TIMER_CLK     1066666666UL
-#elif (BOARD == X5H_VDK || BOARD == X5H_RFS2)
+#elif (BOARD == X5H_VDK || BOARD == X5H_RFS2 || BOARD == AI_ACC)
 #define GENERIC_TIMER_CLK     25000000UL
 #else
 /* The timer count up 16 counts with 66.667MHz clock.

@@ -24,18 +24,20 @@ if(NOT DEFINED BOARD)
     set(BOARD "x5h_vdk")
 endif()
 
-set(ALLOWED_RAM_REGION "1;2;3;4")
+set(ALLOWED_RAM_REGION "1;2;3;4;5")
 if(NOT DEFINED RAM_REGION)
     set(RAM_REGION 1)
 endif()
 set(LDFILE ${BSP_DIR}/common/linker/lscript_sram.ld)
-if(BOARD STREQUAL "x5h_vdk" OR BOARD STREQUAL "x5h_ironhide" OR BOARD STREQUAL "x5h_rfs2")
+if(BOARD STREQUAL "x5h_vdk" OR BOARD STREQUAL "x5h_ironhide" OR BOARD STREQUAL "x5h_rfs2" OR BOARD STREQUAL "ai_acc")
     if(BOARD STREQUAL "x5h_vdk")
         set(BOARD_ID 1)
     elseif(BOARD STREQUAL "x5h_ironhide")
         set(BOARD_ID 3)
     elseif(BOARD STREQUAL "x5h_rfs2")
         set(BOARD_ID 4)
+    elseif(BOARD STREQUAL "ai_acc")
+        set(BOARD_ID 2)
     else()
         message(FATAL_ERROR "Invalid BOARD: ${BOARD}.")
     endif()
@@ -43,7 +45,11 @@ if(BOARD STREQUAL "x5h_vdk" OR BOARD STREQUAL "x5h_ironhide" OR BOARD STREQUAL "
     if(INDEX GREATER -1)
         message(STATUS "RAM REGION ${RAM_REGION} is using now.")
         if(RAM_REGION EQUAL 4)
+            message(STATUS "DRAM REGION is using now.")
             set(LDFILE ${BSP_DIR}/common/linker/lscript_dram.ld)
+        elseif(RAM_REGION EQUAL 5)
+            message(STATUS "DRAM REGION is using now.")
+            set(LDFILE ${BSP_DIR}/common/linker/lscript_dram2.ld)
         else()
             set(LDFILE ${BSP_DIR}/common/linker/lscript_vram${RAM_REGION}.ld)
         endif()
@@ -58,7 +64,7 @@ endif()
 
 if (BOARD STREQUAL "x5h_ironhide" OR BOARD STREQUAL "x5h_rfs2")
     set(UCIE_VER "RCAR_UCIE_V100")
-elseif(BOARD STREQUAL "ai-acc")
+elseif(BOARD STREQUAL "ai_acc")
     set(UCIE_VER "RCAR_UCIE_V102")
 else()
     set(UCIE_VER "NONE")
@@ -104,6 +110,11 @@ file(GLOB SCMI_SRC_LIST
     ${BSP_DIR}/drivers/firmware/scmi/src/*.c
     )
 
+file(GLOB UCIE_SRC_LIST
+    ${BSP_DIR}/drivers/ucie/uciedrv.c
+	${BSP_DIR}/drivers/ucie/ucie_vdk/*.c
+    )
+
 set(bsp_source
     ${BSP_DIR}/common/boot.S
     ${BSP_DIR}/common/asm_vectors.S
@@ -135,10 +146,7 @@ set(bsp_source
     ${BSP_DIR}/drivers/watchdog/r_wwdt_reg.c
     ${BSP_DIR}/common/ARM_CR52/port.c
     ${BSP_DIR}/common/rcar_utils.c
-    ${BSP_DIR}/drivers/ucie/uciedrv.c
-    ${BSP_DIR}/drivers/ucie/ucie_vdk/ucie_ep.c
-    ${BSP_DIR}/drivers/ucie/ucie_vdk/ucie_host.c
-    ${BSP_DIR}/drivers/ucie/ucie_vdk/ucie_controller.c
+
     ${BSP_DIR}/drivers/iommu/virtio_mmu.c
     ${SCMI_SRC_LIST}
     ${BSP_DIR}/drivers/state-manager/state_manager.c
@@ -153,8 +161,14 @@ set(bsp_source
     ${BSP_DIR}/drivers/taud/r_taud_reg.c
     ${BSP_DIR}/drivers/taud/r_taud_api.c
     ${BSP_DIR}/drivers/ecm/r_ecm.c
-    
 )
+
+# To do: Remove after adding UCIe build support for AI ACC.
+if(BOARD STREQUAL "x5h_ironhide" OR BOARD STREQUAL "x5h_rfs2")
+    list(APPEND bsp_source
+        ${UCIE_SRC_LIST}
+    )
+endif()
 
 if(ENABLE_OPENAMP)
     list(APPEND bsp_source
@@ -322,20 +336,28 @@ add_subdirectory(sample_apps/sys_dmac_app)
 add_subdirectory(sample_apps/rt_dmac_app)
 add_subdirectory(sample_apps/swdt_app)
 add_subdirectory(sample_apps/wwdt_app)
-add_subdirectory(sample_apps/cxl_app)
 add_subdirectory(sample_apps/viommufe_app)
 add_subdirectory(sample_apps/smmu_app)
 add_subdirectory(sample_apps/power-management_app)
 add_subdirectory(sample_apps/wcrc_app)
 add_subdirectory(sample_apps/utils_app)
-add_subdirectory(sample_apps/audio_app)
-add_subdirectory(sample_apps/ucie)
 add_subdirectory(sample_apps/taud_app)
 add_subdirectory(sample_apps/ecm_app)
 add_subdirectory(sample_apps/dummy_app)
+
 if(ENABLE_OPENAMP)
     add_subdirectory(sample_apps/rpmsg_sample)
     add_subdirectory(sample_apps/smmu_virtio_backend_sample)
+endif()
+
+# To do: Remove after adding UCIe build support for AI ACC.
+if(BOARD STREQUAL "x5h_ironhide" OR BOARD STREQUAL "x5h_rfs2")
+    add_subdirectory(sample_apps/cxl_app)
+    add_subdirectory(sample_apps/ucie)
+endif()
+
+if(NOT BOARD STREQUAL "ai_acc")
+    add_subdirectory(sample_apps/audio_app)
 endif()
 
 # TODO: Delete application makefile

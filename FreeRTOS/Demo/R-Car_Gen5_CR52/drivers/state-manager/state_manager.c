@@ -86,7 +86,7 @@ static void system_notification(void *data)
 	}
 }
 
-#if (BOARD == X5H_RFS2)
+#if (BOARD == X5H_RFS2 || BOARD == AI_ACC)
 int R_StateManager_Init(void)
 {
     return 0;

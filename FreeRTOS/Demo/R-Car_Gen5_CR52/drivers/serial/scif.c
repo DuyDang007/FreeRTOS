@@ -282,8 +282,8 @@ uint32_t console_init(uint32_t port) {
     };
 #else
     const uint32_t serial_channels_arr[] = {
-        0x0,
-        0x0,
+        0x38000000, // SCIF0
+        0x38004000, // SCIF1
         0x0,
         0x0,
         0x0,

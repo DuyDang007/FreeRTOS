@@ -678,7 +678,7 @@ int pfcInitModule(st_module_config_t module)
 
 int pfcInitModules(st_module_config_t* module_list)
 {
-#if (BOARD == X5H_RFS2)
+#if (BOARD == X5H_RFS2 || BOARD == AI_ACC)
     ( void ) module_list;
 #else
     int module_indx = 0, ret = 0;
