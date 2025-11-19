@@ -62,6 +62,16 @@ else()
     set(BOARD_ID 2)
 endif()
 
+# =======================================
+# UART_ID configuration
+# =======================================
+if(DEFINED UART_ID)
+    message(STATUS "UART_ID is defined as: ${UART_ID}")
+    add_compile_definitions(UART_ID=${UART_ID})
+else()
+    message(STATUS "UART_ID not defined in build options. Using default from header.")
+endif()
+
 if (BOARD STREQUAL "x5h_ironhide" OR BOARD STREQUAL "x5h_rfs2")
     set(UCIE_VER "RCAR_UCIE_V100")
 elseif(BOARD STREQUAL "ai_acc")
