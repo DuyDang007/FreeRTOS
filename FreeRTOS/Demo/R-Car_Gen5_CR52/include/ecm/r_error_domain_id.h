@@ -10,6 +10,13 @@
 #define _R_ERROR_ID_H_
 
 /**
+ * @defgroup Error_Domain_ID Error Domain ID
+ * @{
+ * @brief This module provides typedef of Error Domain ID.
+ *
+ */
+
+/**
  * @brief X5H Error Domain ID.
  */
 typedef enum {
@@ -69,5 +76,7 @@ typedef enum {
     WWDT19_DETECTS_ERROR_RES_IS_OUTPUT = 732,
     WWDT20_DETECTS_ERROR_RES_IS_OUTPUT = 733,
 } e_ecm_error_id_t;
+
+/** @} */ // end
 
 #endif /* _R_ERROR_ID_H_ */
