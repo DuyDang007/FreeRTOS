@@ -37,6 +37,7 @@ static uint32_t ECM_GetErrorID(void);
  **********************************************************************************************************************/
 uint8_t R_ECM_SetInterruptCallback(IrqErrorHandlerFn irq_handler)
 {
+    uint8_t result = 0;
     /* Set Handler for Irq */
     Irq_SetupEntry(INTID_ECMERR_MERGE, ECM_RcarInterruptHandler,(Context_t*) irq_handler);
 
@@ -46,7 +47,7 @@ uint8_t R_ECM_SetInterruptCallback(IrqErrorHandlerFn irq_handler)
     /* Enable Irq */
     Irq_Enable(INTID_ECMERR_MERGE);
 
-    
+    return result;
 }
 
 uint8_t R_ECM_SetDetection(e_ecm_error_id_t id, int8_t isEnable)

@@ -120,7 +120,7 @@ static void prvEcmTask( void *pvParameters )
     }
     
     printf("TC2: R_ECM_SetInterruptCallback\n");
-    R_ECM_SetInterruptCallback(IrqErrorHandler);
+    ret = R_ECM_SetInterruptCallback(IrqErrorHandler);
     if (ret)
     {
         printf("Result: Failed\n");
