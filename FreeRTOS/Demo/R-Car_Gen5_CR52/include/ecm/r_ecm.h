@@ -136,7 +136,7 @@ uint8_t R_ECM_CheckErrorStatus(e_ecm_error_id_t id);
  *
  * @retval 0  Operation successful.
  */
-uint8_t R_ECM_PusedoError(e_ecm_error_id_t id);
+uint8_t R_ECM_PseudoError(e_ecm_error_id_t id);
 /** @} */ // end
 
 #endif /* R_ECM_H */

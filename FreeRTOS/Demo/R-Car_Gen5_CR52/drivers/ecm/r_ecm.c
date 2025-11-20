@@ -268,7 +268,7 @@ uint8_t R_ECM_CheckErrorStatus(e_ecm_error_id_t id)
     return result;
 }
 
-uint8_t R_ECM_PusedoError(e_ecm_error_id_t id)
+uint8_t R_ECM_PseudoError(e_ecm_error_id_t id)
 {
     uint32_t ecm_reg_num = (uint32_t)id / 32;
     uint32_t ecm_reg_bit = (uint32_t)id % 32;
