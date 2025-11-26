@@ -112,6 +112,12 @@ int R_StateManager_SysPowerOff(void)
 
 int R_StateManager_Power_Get(int domain_id, e_power_state_t *state)
 {
+    /*
+     * Due to no SCP support for RFS2 environment,
+     * also all modules are ON by default, the return
+     * value is set to POWER_ON.
+     */
+    *state = POWER_ON;
     return 0;
 }
 
