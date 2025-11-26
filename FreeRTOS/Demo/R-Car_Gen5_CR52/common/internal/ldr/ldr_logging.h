@@ -28,6 +28,7 @@ typedef enum e_log_level {
  * @param fmt Format string describing the log message.
  * @param ... Additional arguments for the format string.
  */
-void LDR_LOG(e_log_level_t log_level, const char* module_name, const char* fmt, ...);
+void LDR_FRTOS_BSP_LOG_HANDLER(e_log_level_t log_level, const char* module_name,
+                                                            const char* fmt, ...);
 
 #endif /* LDR_LOGGING_H */

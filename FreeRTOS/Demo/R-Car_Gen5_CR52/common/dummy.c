@@ -68,7 +68,9 @@ __attribute__((weak)) void vApplicationTickHook( void )
 }
 
 typedef uint8_t e_log_level_t;
-__attribute__((weak)) void LDR_LOG(e_log_level_t log_level, const char* module_name, const char* fmt, ...) {
+__attribute__((weak)) void LDR_FRTOS_BSP_LOG_HANDLER(e_log_level_t log_level,
+                                  const char* module_name, const char* fmt, ...)
+{
     const char *log_str[] = {"INFO", "DEBUG", "WARN", "ERROR", "FATAL"};
     char buf[512];
 
