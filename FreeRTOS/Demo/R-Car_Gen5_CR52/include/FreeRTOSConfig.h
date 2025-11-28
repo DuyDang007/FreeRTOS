@@ -89,7 +89,7 @@
 #define configUSE_ALTERNATIVE_API (0U)
 #endif
 #ifndef configCHECK_FOR_STACK_OVERFLOW
-#define configCHECK_FOR_STACK_OVERFLOW (2)
+#define configCHECK_FOR_STACK_OVERFLOW (1)
 #endif
 #ifndef configQUEUE_REGISTRY_SIZE
 #define configQUEUE_REGISTRY_SIZE (10)
