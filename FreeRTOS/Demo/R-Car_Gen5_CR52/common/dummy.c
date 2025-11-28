@@ -96,10 +96,9 @@ __attribute__((weak)) void vApplicationStackOverflowHook(TaskHandle_t xTask,
 {
     /* Weak function  */
     /* if want to use this function redefine this function */
-    ( void ) pcTaskName;
     ( void ) xTask;
     printf("%s\n", __func__);
-    for(;;);
+    printf("Task name: %s\n", pcTaskName);
 }
 
 __attribute__((weak)) void vApplicationAssertHook(void *arg)
