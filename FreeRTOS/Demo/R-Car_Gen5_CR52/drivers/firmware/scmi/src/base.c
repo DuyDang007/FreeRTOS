@@ -45,7 +45,7 @@ struct scmi_msg_resp_base_discover_impl_version {
 struct scmi_msg_resp_base_discover_list_proto {
     int32_t  status;
     uint32_t num_protocols;
-	uint8_t protocols[4];
+	uint8_t protocols[8];
 };
 
 struct scmi_msg_resp_base_discover_agent {
