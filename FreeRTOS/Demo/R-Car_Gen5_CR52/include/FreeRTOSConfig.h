@@ -128,7 +128,7 @@
 #define configAPPLICATION_ALLOCATED_HEAP (0)
 #endif
 #ifndef configGENERATE_RUN_TIME_STATS
-#define configGENERATE_RUN_TIME_STATS (0)
+#define configGENERATE_RUN_TIME_STATS (1)
 #endif
 #ifndef configUSE_CO_ROUTINES
 #define configUSE_CO_ROUTINES (0)
