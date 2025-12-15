@@ -20,6 +20,8 @@
 #include "state-manager/r_clock_domain_id.h"
 #include "state-manager/r_reset_domain_id.h"
 
+#include "FreeRTOS.h"
+
 #define VALIDATE_ID(id, max) \
     do { \
         if ((id) >= max) { \
@@ -237,6 +239,8 @@ int R_StateManager_Init(void)
 /* Show SCMI Protocols' information */
 int R_StateManager_SCMI_Info_Show(void)
 {
+    /* This function only displays logs, and since the default level is ERROR, SCMI_LOG_ERR must be used to print. */
+    
 	int ret;
 	uint32_t version = 0U;
 
@@ -244,84 +248,90 @@ int R_StateManager_SCMI_Info_Show(void)
 		uint8_t num_protocols = 0, num_agents = 0;
 		ret = scmi_base_attributes_get(&num_protocols, &num_agents);
 		if (ret) {
-			SCMI_LOG_INFO("Error: Failed to get scmi base protocol attributes.\r\n");
+			SCMI_LOG_ERR("Error: Failed to get scmi base protocol attributes.\r\n");
 			return ret;
 		}
-		SCMI_LOG_INFO("SCMI base protocol num protos: %d, num agents: %d",
+		SCMI_LOG_ERR("SCMI base protocol num protos: %d, num agents: %d",
 				num_protocols, num_agents);
 	}
 	{
 		uint8_t vendor_id[16];
 		ret = scmi_base_vendorid_get(false, vendor_id);
 		if (ret) {
-			SCMI_LOG_INFO("Error: Failed to get scmi base protocol vendor id.\r\n");
+			SCMI_LOG_ERR("Error: Failed to get scmi base protocol vendor id.\r\n");
 			return ret;
 		}
-		SCMI_LOG_INFO("SCMI base protocol vendor id: %s", vendor_id);
+		SCMI_LOG_ERR("SCMI base protocol vendor id: %s", vendor_id);
 
 		memset(vendor_id, 0, 16);
 		ret = scmi_base_vendorid_get(true, vendor_id);
 		if (ret) {
-			SCMI_LOG_INFO("Error: Failed to get scmi base protocol sub vendor id.\r\n");
+			SCMI_LOG_ERR("Error: Failed to get scmi base protocol sub vendor id.\r\n");
 			return ret;
 		}
-		SCMI_LOG_INFO("SCMI base protocol sub vendor id: %s", vendor_id);
+		SCMI_LOG_ERR("SCMI base protocol sub vendor id: %s", vendor_id);
 	}
 	{
 		uint32_t impl_version = 0;
 		ret = scmi_base_implementation_version_get(&impl_version);
 		if (ret) {
-			SCMI_LOG_INFO("Error: Failed to get scmi base protocol impl version.\r\n");
+			SCMI_LOG_ERR("Error: Failed to get scmi base protocol impl version.\r\n");
 			return ret;
 		}
-		SCMI_LOG_INFO("SCMI base protocol impl_version: 0x%08x", impl_version);
+		SCMI_LOG_ERR("SCMI base protocol impl_version: 0x%08x", impl_version);
 	}
 	{
 		uint32_t num_protocols;
-		uint8_t protocols[4];
+		uint8_t *protocols = NULL;
 		int i;
-		ret = scmi_base_discover_list_protocols(&num_protocols, protocols);
+		ret = scmi_base_discover_list_protocols(&num_protocols, &protocols);
 		if (ret) {
-			SCMI_LOG_INFO("Error: Failed to get scmi base protocol list protos.\r\n");
+			SCMI_LOG_ERR("Error: Failed to get scmi base protocol list protos.\r\n");
 			return ret;
 		}
-		SCMI_LOG_INFO("SCMI base protocol num_protocols: %d", num_protocols);
+		SCMI_LOG_ERR("SCMI base protocol num_protocols: %d", num_protocols);
 		for (i = 0; i < num_protocols; ++i)
-			SCMI_LOG_INFO("protocols[%d] = %d", i, protocols[i]);
+			SCMI_LOG_ERR("protocols[%d] = %d", i, protocols[i]);
+
+        if (protocols != NULL)
+        {
+            vPortFree(protocols);
+            protocols = NULL;
+        }
 	}
 	{
 		uint32_t agent_id = 0;
 		uint8_t name[16];
 		ret = scmi_base_discover_agent_get(0xFFFFFFFFU, &agent_id, name);
 		if (ret) {
-			SCMI_LOG_INFO("Error: Failed to get scmi base protocol agent get.\r\n");
+			SCMI_LOG_ERR("Error: Failed to get scmi base protocol agent get.\r\n");
 			return ret;
 		}
-		SCMI_LOG_INFO("SCMI base protocol agent_id: %d, name: %s\r\n", agent_id, name);
+		SCMI_LOG_ERR("SCMI base protocol agent_id: %d, name: %s\r\n", agent_id, name);
 	}
 	{
 		ret = scmi_system_version_get(&version);
 		if (ret) {
-			SCMI_LOG_INFO("Error: Failed to get scmi system protocol version.\r\n");
+			SCMI_LOG_ERR("Error: Failed to get scmi system protocol version.\r\n");
 			return ret;
 		}
-		SCMI_LOG_INFO("SCMI system protocol version=0x%x", version);
+		SCMI_LOG_ERR("SCMI system protocol version=0x%x", version);
 	}
 	{
 		ret = scmi_power_version_get(&version);
 		if (ret) {
-			SCMI_LOG_INFO("Error: Failed to get scmi power domain protocol version.\r\n");
+			SCMI_LOG_ERR("Error: Failed to get scmi power domain protocol version.\r\n");
 			return ret;
 		}
-		SCMI_LOG_INFO("SCMI PD protocol version=0x%x", version);
+		SCMI_LOG_ERR("SCMI PD protocol version=0x%x", version);
 	}
 	{
 		ret = scmi_clock_version_get(&version);
 		if (ret) {
-			SCMI_LOG_INFO("Error: Failed to get scmi clock protocol version.\r\n");
+			SCMI_LOG_ERR("Error: Failed to get scmi clock protocol version.\r\n");
 			return ret;
 		}
-		SCMI_LOG_INFO("SCMI clock protocol version=0x%x", version);
+		SCMI_LOG_ERR("SCMI clock protocol version=0x%x", version);
 	}
 
 	return 0;

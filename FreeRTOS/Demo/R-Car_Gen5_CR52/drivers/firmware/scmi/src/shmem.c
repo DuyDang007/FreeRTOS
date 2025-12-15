@@ -92,13 +92,15 @@ int scmi_shmem_read_message(const struct scmi_dev *shmem,
 		return -EINVAL;
 	}
 
-	/* mismatch between expected reply size and actual size? */
-	if (msg->len != (layout->len - sizeof(layout->msg_hdr))) {
-		SCMI_LOG_ERR("bad message len. Expected 0x%x, got 0x%x",
+	/* reply buffer is smaller than the actual payload size? */
+	if (msg->len < (layout->len - sizeof(layout->msg_hdr))) {
+		SCMI_LOG_ERR("reply buffer too small. Provided 0x%x, required 0x%x",
 			msg->len,
 			(uint32_t)(layout->len - sizeof(layout->msg_hdr)));
 		return -EINVAL;
 	}
+
+	msg->len = (uint32_t)(layout->len - sizeof(layout->msg_hdr));
 
 	/* header match? */
 	if (layout->msg_hdr != msg->hdr) {
@@ -114,6 +116,7 @@ int scmi_shmem_read_message(const struct scmi_dev *shmem,
 
 	return 0;
 }
+
 
 int scmi_shmem_write_message(const struct scmi_dev *shmem,
 							 struct scmi_message *msg,

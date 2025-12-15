@@ -9,6 +9,10 @@
 #include "scmi/inc/protocol.h"
 #include "scmi/inc/util.h"
 #include "scmi/inc/base.h"
+#include <stdlib.h>
+#include "rcar_utils.h"
+
+#include "FreeRTOS.h"
 
 SCMI_PROTOCOL_DEFINE_NODEV(SCMI_PROTOCOL_BASE, NULL);
 
@@ -45,7 +49,7 @@ struct scmi_msg_resp_base_discover_impl_version {
 struct scmi_msg_resp_base_discover_list_proto {
     int32_t  status;
     uint32_t num_protocols;
-	uint8_t protocols[8];
+	uint8_t protocols[SCMI_BASE_DISCOVER_MAX_PROTOCOLS];
 };
 
 struct scmi_msg_resp_base_discover_agent {
@@ -221,13 +225,15 @@ int scmi_base_implementation_version_get(uint32_t *impl_version)
 }
 
 int scmi_base_discover_list_protocols(uint32_t *num_protocols,
-                                      uint8_t *protocols)
+                                      uint8_t **protocols)
 {
 	struct scmi_protocol *proto = &SCMI_PROTOCOL_NAME(SCMI_PROTOCOL_BASE);
 	struct scmi_msg_resp_base_discover_list_proto reply_buffer;
 	struct scmi_message msg, reply;
 	int ret;
 	uint32_t skip = 0;
+
+    uint8_t *buf, total_protocols, num_agents;
 
 	/* sanity checks */
 	if (!num_protocols || !protocols) {
@@ -238,6 +244,17 @@ int scmi_base_discover_list_protocols(uint32_t *num_protocols,
 		return -EINVAL;
 	}
 
+    /* Query total number of protocols */
+    ret = scmi_base_attributes_get(&total_protocols, &num_agents);
+    if (ret)
+        return ret;
+
+    /* Buffer to store flattened protocols */
+    buf = pvPortMalloc(total_protocols);
+    if (buf) {
+        memset(buf, 0, total_protocols);
+    }
+
 	msg.hdr = SCMI_MESSAGE_HDR_MAKE(BASE_DISCOVER_LIST_PROTOCOLS,
 									SCMI_COMMAND, proto->id, 0x0);
 	msg.len = sizeof(skip);
@@ -247,19 +264,33 @@ int scmi_base_discover_list_protocols(uint32_t *num_protocols,
 	reply.len = sizeof(reply_buffer);
 	reply.content = &reply_buffer;
 
-	ret = scmi_send_message(proto, &msg, &reply);
-	if (ret < 0) {
-		return ret;
-	}
+    do {
+        ret = scmi_send_message(proto, &msg, &reply);
+        if (ret < 0)
+            goto cleanup;
 
-	if (reply_buffer.status != SCMI_SUCCESS) {
-		return scmi_status_to_errno(reply_buffer.status);
-	}
-	
-	*num_protocols = reply_buffer.num_protocols;
-	memcpy(protocols, reply_buffer.protocols, 4);
+        if (reply_buffer.status != SCMI_SUCCESS) {
+            ret = scmi_status_to_errno(reply_buffer.status);
+            goto cleanup;
+        }
 
-	return 0;
+        for (uint32_t i = 0; i < reply_buffer.num_protocols; i++) {
+            buf[skip] = reply_buffer.protocols[i];
+            skip++;
+        }
+    } while (skip < total_protocols);
+
+    *protocols = buf;
+
+    *num_protocols = skip;
+
+    return 0;
+
+cleanup:
+    if (buf) {
+        vPortFree(buf);
+    }
+    return ret;
 }
 
 int scmi_base_discover_agent_get(uint32_t request_agent_id,

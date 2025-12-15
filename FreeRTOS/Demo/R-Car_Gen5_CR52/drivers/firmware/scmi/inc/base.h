@@ -71,7 +71,7 @@ int scmi_base_implementation_version_get(uint32_t *impl_version);
  * @return 0 if all went fine, else return appropriate error. 
  */
 int scmi_base_discover_list_protocols(uint32_t *num_protocols,
-                                      uint8_t *protocols);
+                                      uint8_t **protocols);
 
 /**
  * @brief scmi_base_discover_agent_get() - discover the name of an agent 
