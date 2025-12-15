@@ -229,66 +229,69 @@ int scmi_base_discover_list_protocols(uint32_t *num_protocols,
 {
 	struct scmi_protocol *proto = &SCMI_PROTOCOL_NAME(SCMI_PROTOCOL_BASE);
 	struct scmi_msg_resp_base_discover_list_proto reply_buffer;
-	struct scmi_message msg, reply;
+    struct scmi_message msg;
+    struct scmi_message reply;
 	int ret;
 	uint32_t skip = 0;
 
     uint8_t *buf, total_protocols, num_agents;
+    int stop = 0;
 
 	/* sanity checks */
-	if (!num_protocols || !protocols) {
-		return -EINVAL;
-	}
-
-	if (proto->id != SCMI_PROTOCOL_BASE) {
-		return -EINVAL;
-	}
-
-    /* Query total number of protocols */
-    ret = scmi_base_attributes_get(&total_protocols, &num_agents);
-    if (ret)
-        return ret;
-
-    /* Buffer to store flattened protocols */
-    buf = pvPortMalloc(total_protocols);
-    if (buf) {
-        memset(buf, 0, total_protocols);
+    if ((num_protocols == NULL) || (protocols == NULL)) {
+        ret = -EINVAL;
     }
+    else if (proto->id != SCMI_PROTOCOL_BASE) {
+        ret = -EINVAL;
+    }
+    else {
+        ret = scmi_base_attributes_get(&total_protocols, &num_agents);
+        if (ret == 0) {
+            buf = pvPortMalloc(total_protocols);
+            if (buf == NULL) {
+                ret = -ENOMEM;
+            } else {
+                uint8_t *mem_ret = memset(buf, 0, total_protocols);
+                if (mem_ret == NULL) {
+                    vPortFree(buf);
+                    ret = -EFAULT;
+                } else {
+                    msg.hdr     = SCMI_MESSAGE_HDR_MAKE(BASE_DISCOVER_LIST_PROTOCOLS,
+                                                        SCMI_COMMAND, proto->id, 0x0);
+                    msg.len     = sizeof(skip);
+                    msg.content = &skip;
 
-	msg.hdr = SCMI_MESSAGE_HDR_MAKE(BASE_DISCOVER_LIST_PROTOCOLS,
-									SCMI_COMMAND, proto->id, 0x0);
-	msg.len = sizeof(skip);
-	msg.content = &skip;
+                    reply.hdr     = msg.hdr;
+                    reply.len     = sizeof(reply_buffer);
+                    reply.content = &reply_buffer;
 
-	reply.hdr = msg.hdr;
-	reply.len = sizeof(reply_buffer);
-	reply.content = &reply_buffer;
+                    while ((skip < total_protocols) && (stop == 0)) {
 
-    do {
-        ret = scmi_send_message(proto, &msg, &reply);
-        if (ret < 0)
-            goto cleanup;
+                        ret = scmi_send_message(proto, &msg, &reply);
+                        if (ret != 0) {
+                            stop = 1;
+                        }
 
-        if (reply_buffer.status != SCMI_SUCCESS) {
-            ret = scmi_status_to_errno(reply_buffer.status);
-            goto cleanup;
+                        if (reply_buffer.status != SCMI_SUCCESS) {
+                            ret = scmi_status_to_errno(reply_buffer.status);
+                            stop = 1;
+                        }
+
+                        for (uint32_t i = 0U; i < reply_buffer.num_protocols; i++) {
+                            buf[skip] = reply_buffer.protocols[i];
+                            skip++;
+                        }
+                    }
+
+                    if (ret == 0) {
+                        *protocols = buf;
+                        *num_protocols = skip;
+                    } else {
+                        vPortFree(buf);
+                    }
+                }
+            }
         }
-
-        for (uint32_t i = 0; i < reply_buffer.num_protocols; i++) {
-            buf[skip] = reply_buffer.protocols[i];
-            skip++;
-        }
-    } while (skip < total_protocols);
-
-    *protocols = buf;
-
-    *num_protocols = skip;
-
-    return 0;
-
-cleanup:
-    if (buf) {
-        vPortFree(buf);
     }
     return ret;
 }
