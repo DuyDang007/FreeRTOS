@@ -347,12 +347,12 @@ typedef enum e_wcrc_fifo_ports_use_rtdma
 #define DCRA_COUT 0x0004
 #define COUT_DEF 0xFFFFFFFF //default; value for CRC calculation
 //initial value of each polynimial: CRC calulation method; polynomial
-#define COUT_32_ETHERNET 0xFFFFFFFF //default; CRC-32-IEEE 802.3; 04C11DB7
+#define COUT_32_ETHERNET 0xFFFFFFFFU //default; CRC-32-IEEE 802.3; 04C11DB7
 #define COUT_16_CCITT_FALSE_CRC16 0xFFFF //CCITT_FALSE_CRC16; 1021
 #define COUT_8_SAE_J1850 0xFF //SAE_J1850; 1D
 #define COUT_8_0X2F 0xFF // 0x2F polynomial
-#define COUT_32_0XF4ACFB13 0xFFFFFFFF //0xF4ACFB13 polynomial
-#define COUT_32_0X1EDC6F41 0xFFFFFFFF //0x1EDC6F41 polynomial CRC-32 (Castagnoli)
+#define COUT_32_0XF4ACFB13 0xFFFFFFFFU //0xF4ACFB13 polynomial
+#define COUT_32_0X1EDC6F41 0xFFFFFFFFU //0x1EDC6F41 polynomial CRC-32 (Castagnoli)
 #define COUT_21_0X102899 0x1FFFFF //0x102899 polynomial CRC-21
 #define COUT_17_0X1685B 0x1FFFF //0x1685B polynomial CRC-17
 #define COUT_15_0X4599 0x7FFF //0x4599 polynomial CRC-15
@@ -963,7 +963,7 @@ static int wcrc_set_e2e_mode(uint8_t module, wcrc_cfg_t const * const p_cfg)
 
     //2. Set initial CRC code value in WCRC_XXXX_INIT_CRC register.
     reg_addr = getRegister(reg_type, unit, WCRC_XXXX_INIT_CRC(module));
-    reg_val = 0xFFFFFFFF;
+    reg_val = 0xFFFFFFFFU;
     writel(reg_val, reg_addr);
 
     //3. (For CRC)  Set DCRAmCTL, DCRAmCTL2, DCRAmCOUT registers.

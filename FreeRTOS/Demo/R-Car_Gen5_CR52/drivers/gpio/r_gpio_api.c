@@ -32,17 +32,17 @@
 
 /* GPIO base adrress */
 #define GPIO_BASE_OFFSET    0x100
-#define GPIO_GR_0           (0xC1080000 + GPIO_BASE_OFFSET)
-#define GPIO_GR_1           (0xC1080800 + GPIO_BASE_OFFSET)
-#define GPIO_GR_2           (0xC1081000 + GPIO_BASE_OFFSET)
-#define GPIO_GR_3           (0xC0800000 + GPIO_BASE_OFFSET)
-#define GPIO_GR_4           (0xC0800800 + GPIO_BASE_OFFSET)
-#define GPIO_GR_5           (0xC0400000 + GPIO_BASE_OFFSET)
-#define GPIO_GR_6           (0xC0400800 + GPIO_BASE_OFFSET)
-#define GPIO_GR_7           (0xC0401000 + GPIO_BASE_OFFSET)
-#define GPIO_GR_8           (0xC0401800 + GPIO_BASE_OFFSET)
-#define GPIO_GR_9           (0xC9B00000 + GPIO_BASE_OFFSET)
-#define GPIO_GR_10          (0xC9B00800 + GPIO_BASE_OFFSET)
+#define GPIO_GR_0           (0xC1080000U + GPIO_BASE_OFFSET)
+#define GPIO_GR_1           (0xC1080800U + GPIO_BASE_OFFSET)
+#define GPIO_GR_2           (0xC1081000U + GPIO_BASE_OFFSET)
+#define GPIO_GR_3           (0xC0800000U + GPIO_BASE_OFFSET)
+#define GPIO_GR_4           (0xC0800800U + GPIO_BASE_OFFSET)
+#define GPIO_GR_5           (0xC0400000U + GPIO_BASE_OFFSET)
+#define GPIO_GR_6           (0xC0400800U + GPIO_BASE_OFFSET)
+#define GPIO_GR_7           (0xC0401000U + GPIO_BASE_OFFSET)
+#define GPIO_GR_8           (0xC0401800U + GPIO_BASE_OFFSET)
+#define GPIO_GR_9           (0xC9B00000U + GPIO_BASE_OFFSET)
+#define GPIO_GR_10          (0xC9B00800U + GPIO_BASE_OFFSET)
 
 /* GPIO register: offset address */
 #define GP_IOINTSEL         0x010

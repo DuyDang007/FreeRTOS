@@ -141,7 +141,7 @@ int ak4619_configure_clock(e_ak4619_mclk_multiplier_t mclk_multiplier,
                             uint8_t bit_per_channel,
                             e_ak4619_fs_select_t fs)
 {
-    uint8_t reg_clk_value = 0xFF; // default Invalid
+    uint8_t reg_clk_value = 0xFFU; // default Invalid
     if (ak4619_check_bick(mclk_multiplier, max_channel, bit_per_channel) != 0) 
     {
         return -1;

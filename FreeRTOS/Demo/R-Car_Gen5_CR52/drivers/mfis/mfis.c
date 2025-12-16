@@ -62,7 +62,7 @@ int mfis_init(struct mfis_channel *ch)
     Irq_Enable(INTID_R_S(ch->ch));
 
     /* Unlock MFIS register write protection */
-    *(volatile uint32_t *)(MFIS_UNLOCK_WRITE) = 0xACC00001;
+    *(volatile uint32_t *)(MFIS_UNLOCK_WRITE) = 0xACC00001U;
 
     return 0;
 }

@@ -260,10 +260,10 @@ static void Ucie_Setup_Pre(e_ucie_ch_t ch, e_ucie_mode_t mode)
 
     if(mode != UCIE_MODE_RC){
         mem_write32( ucie_axi_base + TMP_CXL_RCIEP_FLEXBUS_CNTRL_STATUS_OFF, 0x00000007 );	//CXL_RCIEP_FLEXBUS_CNTRL_STATUS_OFF
-        mem_write32( ucie_axi_base + PF0_PCIE_CAP_PCIE_CAP_ID_PCIE_NEXT_CAP_PTR_PCIE_CAP_REG_ADD, 0x8002D010 ); // PCIE_CAP_ID_PCIE_NEXT_CAP_PTR_PCIE_CAP_REG
+        mem_write32( ucie_axi_base + PF0_PCIE_CAP_PCIE_CAP_ID_PCIE_NEXT_CAP_PTR_PCIE_CAP_REG_ADD, 0x8002D010U ); // PCIE_CAP_ID_PCIE_NEXT_CAP_PTR_PCIE_CAP_REG
         mem_write32( ucie_axi_base + PF0_PORT_LOGIC_MISC_CONTROL_1_OFF_ADD, 0x080BFF48 ); // MISC_CONTROL_1_OFF
     }else{
-        mem_write32( ucie_axi_base + PF0_PCIE_CAP_PCIE_CAP_ID_PCIE_NEXT_CAP_PTR_PCIE_CAP_REG_ADD, 0x8042D010 ); // PCIE_CAP_ID_PCIE_NEXT_CAP_PTR_PCIE_CAP_REG
+        mem_write32( ucie_axi_base + PF0_PCIE_CAP_PCIE_CAP_ID_PCIE_NEXT_CAP_PTR_PCIE_CAP_REG_ADD, 0x8042D010U ); // PCIE_CAP_ID_PCIE_NEXT_CAP_PTR_PCIE_CAP_REG
         mem_write32( ucie_axi_base + PF0_PORT_LOGIC_MISC_CONTROL_1_OFF_ADD, 0x040BFF48 ); // MISC_CONTROL_1_OFF
     }
     
@@ -408,7 +408,7 @@ static void Ucie_Setup_Pre(e_ucie_ch_t ch, e_ucie_mode_t mode)
     uint32_t reg_val;
     #if defined(RCAR_UCIE_V101_W_V100) || defined(RCAR_UCIE_V102_W_V100)
     // Setting CSR for reversalMB
-    mem_write32( ucie_axi_base + ACSMIM_ACSMINSTRREG25_ADD, 0x83000061);
+    mem_write32( ucie_axi_base + ACSMIM_ACSMINSTRREG25_ADD, 0x83000061U);
     mem_write32( ucie_axi_base + ACSM_ACSMLTSMMSK0VAR4_ADD, 0x48E23803);
     mem_write32( ucie_axi_base + ACSM_ACSMLTSMMSK0VAR5_ADD, 0x48E23803);
     mem_write32( ucie_axi_base + ACSM_ACSMLTSMMSK0VAR6_ADD, 0x48E39805);
@@ -617,33 +617,33 @@ static void Ucie_Setup_Pre(e_ucie_ch_t ch, e_ucie_mode_t mode)
     mem_write32(ucie_axi_base + ACSMIM_ACSMINSTRREG9_ADD, 0x02210143); // write_reg_field('h00000000_41F03024,32'hFFFF_FFFF, 32'h02210143  );//   AcsmInstrReg9
 
     mem_write32(ucie_axi_base + ACSMIM_ACSMINSTRREG10_ADD, 0x02200000); // write_reg_field('h00000000_41F03028,32'hFFFF_FFFF, 32'h02200000  );//   AcsmInstrReg10
-    mem_write32(ucie_axi_base + ACSMIM_ACSMINSTRREG11_ADD, 0x83100011); // write_reg_field('h00000000_41F0302C,32'hFFFF_FFFF, 32'h83100011  );//   AcsmInstrReg11
+    mem_write32(ucie_axi_base + ACSMIM_ACSMINSTRREG11_ADD, 0x83100011U); // write_reg_field('h00000000_41F0302C,32'hFFFF_FFFF, 32'h83100011  );//   AcsmInstrReg11
     mem_write32(ucie_axi_base + ACSMIM_ACSMINSTRREG12_ADD, 0x0110C007); // write_reg_field('h00000000_41F03030,32'hFFFF_FFFF, 32'h0110C007  );//   AcsmInstrReg12
     mem_write32(ucie_axi_base + ACSMIM_ACSMINSTRREG13_ADD, 0x02711003); // write_reg_field('h00000000_41F03034,32'hFFFF_FFFF, 32'h02711003  );//   AcsmInstrReg13
-    mem_write32(ucie_axi_base + ACSMIM_ACSMINSTRREG14_ADD, 0xA3100801); // write_reg_field('h00000000_41F03038,32'hFFFF_FFFF, 32'hA3100801  );//   AcsmInstrReg14
-    mem_write32(ucie_axi_base + ACSMIM_ACSMINSTRREG15_ADD, 0xA3100011); // write_reg_field('h00000000_41F0303C,32'hFFFF_FFFF, 32'hA3100011  );//   AcsmInstrReg15
-    mem_write32(ucie_axi_base + ACSMIM_ACSMINSTRREG16_ADD, 0xA3100021); // write_reg_field('h00000000_41F03040,32'hFFFF_FFFF, 32'hA3100021  );//   AcsmInstrReg16
+    mem_write32(ucie_axi_base + ACSMIM_ACSMINSTRREG14_ADD, 0xA3100801U); // write_reg_field('h00000000_41F03038,32'hFFFF_FFFF, 32'hA3100801  );//   AcsmInstrReg14
+    mem_write32(ucie_axi_base + ACSMIM_ACSMINSTRREG15_ADD, 0xA3100011U); // write_reg_field('h00000000_41F0303C,32'hFFFF_FFFF, 32'hA3100011  );//   AcsmInstrReg15
+    mem_write32(ucie_axi_base + ACSMIM_ACSMINSTRREG16_ADD, 0xA3100021U); // write_reg_field('h00000000_41F03040,32'hFFFF_FFFF, 32'hA3100021  );//   AcsmInstrReg16
     mem_write32(ucie_axi_base + ACSMIM_ACSMINSTRREG17_ADD, 0x63970181); // write_reg_field('h00000000_41F03044,32'hFFFF_FFFF, 32'h63970181  );//   AcsmInstrReg17
-    mem_write32(ucie_axi_base + ACSMIM_ACSMINSTRREG18_ADD, 0xA3100031); // write_reg_field('h00000000_41F03048,32'hFFFF_FFFF, 32'hA3100031  );//   AcsmInstrReg18
-    mem_write32(ucie_axi_base + ACSMIM_ACSMINSTRREG19_ADD, 0xA3100041); // write_reg_field('h00000000_41F0304C,32'hFFFF_FFFF, 32'hA3100041  );//   AcsmInstrReg19
-    mem_write32(ucie_axi_base + ACSMIM_ACSMINSTRREG20_ADD, 0xA3100851); // write_reg_field('h00000000_41F03050,32'hFFFF_FFFF, 32'hA3100851  );//   AcsmInstrReg20
+    mem_write32(ucie_axi_base + ACSMIM_ACSMINSTRREG18_ADD, 0xA3100031U); // write_reg_field('h00000000_41F03048,32'hFFFF_FFFF, 32'hA3100031  );//   AcsmInstrReg18
+    mem_write32(ucie_axi_base + ACSMIM_ACSMINSTRREG19_ADD, 0xA3100041U); // write_reg_field('h00000000_41F0304C,32'hFFFF_FFFF, 32'hA3100041  );//   AcsmInstrReg19
+    mem_write32(ucie_axi_base + ACSMIM_ACSMINSTRREG20_ADD, 0xA3100851U); // write_reg_field('h00000000_41F03050,32'hFFFF_FFFF, 32'hA3100851  );//   AcsmInstrReg20
     mem_write32(ucie_axi_base + ACSMIM_ACSMINSTRREG21_ADD, 0x22712003); // write_reg_field('h00000000_41F03054,32'hFFFF_FFFF, 32'h22712003  );//   AcsmInstrReg21
     mem_write32(ucie_axi_base + ACSMIM_ACSMINSTRREG22_ADD, 0x000122C9); // write_reg_field('h00000000_41F03058,32'hFFFF_FFFF, 32'h000122C9  );//   AcsmInstrReg22
     mem_write32(ucie_axi_base + ACSMIM_ACSMINSTRREG23_ADD, 0x000C4125); // write_reg_field('h00000000_41F0305C,32'hFFFF_FFFF, 32'h000C4125  );//   AcsmInstrReg23
-    mem_write32(ucie_axi_base + ACSMIM_ACSMINSTRREG24_ADD, 0x83045062); // write_reg_field('h00000000_41F03060,32'hFFFF_FFFF, 32'h83045062  );//   AcsmInstrReg24
+    mem_write32(ucie_axi_base + ACSMIM_ACSMINSTRREG24_ADD, 0x83045062U); // write_reg_field('h00000000_41F03060,32'hFFFF_FFFF, 32'h83045062  );//   AcsmInstrReg24
     mem_write32(ucie_axi_base + ACSMIM_ACSMINSTRREG25_ADD, 0x000100C6); // write_reg_field('h00000000_41F03064,32'hFFFF_FFFF, 32'h000100C6  );//   AcsmInstrReg25
-    mem_write32(ucie_axi_base + ACSMIM_ACSMINSTRREG26_ADD, 0x83200091); // write_reg_field('h00000000_41F03068,32'hFFFF_FFFF, 32'h83200091  );//   AcsmInstrReg26
+    mem_write32(ucie_axi_base + ACSMIM_ACSMINSTRREG26_ADD, 0x83200091U); // write_reg_field('h00000000_41F03068,32'hFFFF_FFFF, 32'h83200091  );//   AcsmInstrReg26
     mem_write32(ucie_axi_base + ACSMIM_ACSMINSTRREG27_ADD, 0x02500000); // write_reg_field('h00000000_41F0306C,32'hFFFF_FFFF, 32'h02500000  );//   AcsmInstrReg27
-    mem_write32(ucie_axi_base + ACSMIM_ACSMINSTRREG28_ADD, 0x83100041); // write_reg_field('h00000000_41F03070,32'hFFFF_FFFF, 32'h83100041  );//   AcsmInstrReg28
+    mem_write32(ucie_axi_base + ACSMIM_ACSMINSTRREG28_ADD, 0x83100041U); // write_reg_field('h00000000_41F03070,32'hFFFF_FFFF, 32'h83100041  );//   AcsmInstrReg28
     mem_write32(ucie_axi_base + ACSMIM_ACSMINSTRREG29_ADD, 0x02714003); // write_reg_field('h00000000_41F03074,32'hFFFF_FFFF, 32'h02714003  );//   AcsmInstrReg29
     mem_write32(ucie_axi_base + ACSMIM_ACSMINSTRREG30_ADD, 0x02210243); // write_reg_field('h00000000_41F03078,32'hFFFF_FFFF, 32'h02210243  );//   AcsmInstrReg30
     mem_write32(ucie_axi_base + ACSMIM_ACSMINSTRREG31_ADD, 0x00042EC9); // write_reg_field('h00000000_41F0307C,32'hFFFF_FFFF, 32'h00042EC9  );//   AcsmInstrReg31
     mem_write32(ucie_axi_base + ACSMIM_ACSMINSTRREG32_ADD, 0x000300A6); // write_reg_field('h00000000_41F03080,32'hFFFF_FFFF, 32'h000300A6  );//   AcsmInstrReg32
     mem_write32(ucie_axi_base + ACSMIM_ACSMINSTRREG33_ADD, 0x02210443); // write_reg_field('h00000000_41F03084,32'hFFFF_FFFF, 32'h02210443  );//   AcsmInstrReg33
-    mem_write32(ucie_axi_base + ACSMIM_ACSMINSTRREG34_ADD, 0x8300D0C1); // write_reg_field('h00000000_41F03088,32'hFFFF_FFFF, 32'h8300D0C1  );//   AcsmInstrReg34
-    mem_write32(ucie_axi_base + ACSMIM_ACSMINSTRREG35_ADD, 0x832000D1); // write_reg_field('h00000000_41F0308C,32'hFFFF_FFFF, 32'h832000D1  );//   AcsmInstrReg35
-    mem_write32(ucie_axi_base + ACSMIM_ACSMINSTRREG36_ADD, 0x830001D1); // write_reg_field('h00000000_41F03090,32'hFFFF_FFFF, 32'h830001D1  );//   AcsmInstrReg36
-    mem_write32(ucie_axi_base + ACSMIM_ACSMINSTRREG37_ADD, 0x83102071); // write_reg_field('h00000000_41F03094,32'hFFFF_FFFF, 32'h83102071  );//   AcsmInstrReg37
+    mem_write32(ucie_axi_base + ACSMIM_ACSMINSTRREG34_ADD, 0x8300D0C1U); // write_reg_field('h00000000_41F03088,32'hFFFF_FFFF, 32'h8300D0C1  );//   AcsmInstrReg34
+    mem_write32(ucie_axi_base + ACSMIM_ACSMINSTRREG35_ADD, 0x832000D1U); // write_reg_field('h00000000_41F0308C,32'hFFFF_FFFF, 32'h832000D1  );//   AcsmInstrReg35
+    mem_write32(ucie_axi_base + ACSMIM_ACSMINSTRREG36_ADD, 0x830001D1U); // write_reg_field('h00000000_41F03090,32'hFFFF_FFFF, 32'h830001D1  );//   AcsmInstrReg36
+    mem_write32(ucie_axi_base + ACSMIM_ACSMINSTRREG37_ADD, 0x83102071U); // write_reg_field('h00000000_41F03094,32'hFFFF_FFFF, 32'h83102071  );//   AcsmInstrReg37
     mem_write32(ucie_axi_base + ACSMIM_ACSMINSTRREG38_ADD, 0x00034125); // write_reg_field('h00000000_41F03098,32'hFFFF_FFFF, 32'h00034125  );//   AcsmInstrReg38
     mem_write32(ucie_axi_base + ACSMIM_ACSMINSTRREG39_ADD, 0x000F7155); // write_reg_field('h00000000_41F0309C,32'hFFFF_FFFF, 32'h000F7155  );//   AcsmInstrReg39
     mem_write32(ucie_axi_base + ACSMIM_ACSMINSTRREG40_ADD, 0x00021006); // write_reg_field('h00000000_41F030A0,32'hFFFF_FFFF, 32'h00021006  );//   AcsmInstrReg40
@@ -651,20 +651,20 @@ static void Ucie_Setup_Pre(e_ucie_ch_t ch, e_ucie_mode_t mode)
     mem_write32(ucie_axi_base + ACSMIM_ACSMINSTRREG69_ADD, 0x0004F853); // write_reg_field('h00000000_41F03114,32'hFFFF_FFFF, 32'h0004FE53  );//   AcsmInstrReg69
     mem_write32(ucie_axi_base + ACSMIM_ACSMINSTRREG70_ADD, 0x00010FB3); // write_reg_field('h00000000_41F03118,32'hFFFF_FFFF, 32'h0001CFB3  );//   AcsmInstrReg70
     mem_write32(ucie_axi_base + ACSMIM_ACSMINSTRREG71_ADD, 0x03973C6A); // write_reg_field('h00000000_41F0311C,32'hFFFF_FFFF, 32'h03973C6A  );//   AcsmInstrReg71
-    mem_write32(ucie_axi_base + ACSMIM_ACSMINSTRREG72_ADD, 0x834090F1); // write_reg_field('h00000000_41F03120,32'hFFFF_FFFF, 32'h834090F1  );//   AcsmInstrReg72
-    mem_write32(ucie_axi_base + ACSMIM_ACSMINSTRREG73_ADD, 0x80006081); // write_reg_field('h00000000_41F03124,32'hFFFF_FFFF, 32'h80006081  );//   AcsmInstrReg73
-    mem_write32(ucie_axi_base + ACSMIM_ACSMINSTRREG74_ADD, 0x80000281); // write_reg_field('h00000000_41F03128,32'hFFFF_FFFF, 32'h80000281  );//   AcsmInstrReg74
-    mem_write32(ucie_axi_base + ACSMIM_ACSMINSTRREG75_ADD, 0x83209081); // write_reg_field('h00000000_41F0312C,32'hFFFF_FFFF, 32'h83209081  );//   AcsmInstrReg75
-    mem_write32(ucie_axi_base + ACSMIM_ACSMINSTRREG76_ADD, 0x83000281); // write_reg_field('h00000000_41F03130,32'hFFFF_FFFF, 32'h83000281  );//   AcsmInstrReg76
-    mem_write32(ucie_axi_base + ACSMIM_ACSMINSTRREG77_ADD, 0x80004081); // write_reg_field('h00000000_41F03134,32'hFFFF_FFFF, 32'h80004081  );//   AcsmInstrReg77
-    mem_write32(ucie_axi_base + ACSMIM_ACSMINSTRREG78_ADD, 0x80006481); // write_reg_field('h00000000_41F03138,32'hFFFF_FFFF, 32'h80006481  );//   AcsmInstrReg78
-    mem_write32(ucie_axi_base + ACSMIM_ACSMINSTRREG79_ADD, 0x8000A181); // write_reg_field('h00000000_41F0313C,32'hFFFF_FFFF, 32'h8000A181  );//   AcsmInstrReg79
-    mem_write32(ucie_axi_base + ACSMIM_ACSMINSTRREG80_ADD, 0x83000001); // write_reg_field('h00000000_41F03140,32'hFFFF_FFFF, 32'h83000001  );//   AcsmInstrReg80
+    mem_write32(ucie_axi_base + ACSMIM_ACSMINSTRREG72_ADD, 0x834090F1U); // write_reg_field('h00000000_41F03120,32'hFFFF_FFFF, 32'h834090F1  );//   AcsmInstrReg72
+    mem_write32(ucie_axi_base + ACSMIM_ACSMINSTRREG73_ADD, 0x80006081U); // write_reg_field('h00000000_41F03124,32'hFFFF_FFFF, 32'h80006081  );//   AcsmInstrReg73
+    mem_write32(ucie_axi_base + ACSMIM_ACSMINSTRREG74_ADD, 0x80000281U); // write_reg_field('h00000000_41F03128,32'hFFFF_FFFF, 32'h80000281  );//   AcsmInstrReg74
+    mem_write32(ucie_axi_base + ACSMIM_ACSMINSTRREG75_ADD, 0x83209081U); // write_reg_field('h00000000_41F0312C,32'hFFFF_FFFF, 32'h83209081  );//   AcsmInstrReg75
+    mem_write32(ucie_axi_base + ACSMIM_ACSMINSTRREG76_ADD, 0x83000281U); // write_reg_field('h00000000_41F03130,32'hFFFF_FFFF, 32'h83000281  );//   AcsmInstrReg76
+    mem_write32(ucie_axi_base + ACSMIM_ACSMINSTRREG77_ADD, 0x80004081U); // write_reg_field('h00000000_41F03134,32'hFFFF_FFFF, 32'h80004081  );//   AcsmInstrReg77
+    mem_write32(ucie_axi_base + ACSMIM_ACSMINSTRREG78_ADD, 0x80006481U); // write_reg_field('h00000000_41F03138,32'hFFFF_FFFF, 32'h80006481  );//   AcsmInstrReg78
+    mem_write32(ucie_axi_base + ACSMIM_ACSMINSTRREG79_ADD, 0x8000A181U); // write_reg_field('h00000000_41F0313C,32'hFFFF_FFFF, 32'h8000A181  );//   AcsmInstrReg79
+    mem_write32(ucie_axi_base + ACSMIM_ACSMINSTRREG80_ADD, 0x83000001U); // write_reg_field('h00000000_41F03140,32'hFFFF_FFFF, 32'h83000001  );//   AcsmInstrReg80
     mem_write32(ucie_axi_base + ACSMIM_ACSMINSTRREG81_ADD, 0x0397606A); // write_reg_field('h00000000_41F03144,32'hFFFF_FFFF, 32'h0397606A  );//   AcsmInstrReg81
-    mem_write32(ucie_axi_base + ACSMIM_ACSMINSTRREG82_ADD, 0x83200001); // write_reg_field('h00000000_41F03148,32'hFFFF_FFFF, 32'h83200001  );//   AcsmInstrReg82
-    mem_write32(ucie_axi_base + ACSMIM_ACSMINSTRREG83_ADD, 0x83000101); // write_reg_field('h00000000_41F0314C,32'hFFFF_FFFF, 32'h83000101  );//   AcsmInstrReg83
-    mem_write32(ucie_axi_base + ACSMIM_ACSMINSTRREG84_ADD, 0x83005181); // write_reg_field('h00000000_41F03150,32'hFFFF_FFFF, 32'h83005181  );//   AcsmInstrReg84
-    mem_write32(ucie_axi_base + ACSMIM_ACSMINSTRREG85_ADD, 0x80004381); // write_reg_field('h00000000_41F03154,32'hFFFF_FFFF, 32'h80004381  );//   AcsmInstrReg85
+    mem_write32(ucie_axi_base + ACSMIM_ACSMINSTRREG82_ADD, 0x83200001U); // write_reg_field('h00000000_41F03148,32'hFFFF_FFFF, 32'h83200001  );//   AcsmInstrReg82
+    mem_write32(ucie_axi_base + ACSMIM_ACSMINSTRREG83_ADD, 0x83000101U); // write_reg_field('h00000000_41F0314C,32'hFFFF_FFFF, 32'h83000101  );//   AcsmInstrReg83
+    mem_write32(ucie_axi_base + ACSMIM_ACSMINSTRREG84_ADD, 0x83005181U); // write_reg_field('h00000000_41F03150,32'hFFFF_FFFF, 32'h83005181  );//   AcsmInstrReg84
+    mem_write32(ucie_axi_base + ACSMIM_ACSMINSTRREG85_ADD, 0x80004381U); // write_reg_field('h00000000_41F03154,32'hFFFF_FFFF, 32'h80004381  );//   AcsmInstrReg85
     mem_write32(ucie_axi_base + ACSMIM_ACSMINSTRREG86_ADD, 0x000F5135); // write_reg_field('h00000000_41F03158,32'hFFFF_FFFF, 32'h000F5135  );//   AcsmInstrReg86
     mem_write32(ucie_axi_base + ACSMIM_ACSMINSTRREG87_ADD, 0x00016145); // write_reg_field('h00000000_41F0315C,32'hFFFF_FFFF, 32'h00016145  );//   AcsmInstrReg87
     mem_write32(ucie_axi_base + ACSMIM_ACSMINSTRREG88_ADD, 0x03979B6A); // write_reg_field('h00000000_41F03160,32'hFFFF_FFFF, 32'h03979B6A  );//   AcsmInstrReg88
@@ -690,16 +690,16 @@ static void Ucie_Setup_Pre(e_ucie_ch_t ch, e_ucie_mode_t mode)
     mem_write32(ucie_axi_base + ACSM_ACSMLTSMMSK0VAR5_ADD, 0x3727003);  // write_reg_field('h00000000_41F0222c,32'hFFFF_FFFF, 32'h3727003   );//   AcsmLtsmMsk0Var5
     mem_write32(ucie_axi_base + ACSM_ACSMLTSMMSK0VAR6_ADD, 0x2733005);  // write_reg_field('h00000000_41F02230,32'hFFFF_FFFF, 32'h2733005   );//   AcsmLtsmMsk0Var6
     mem_write32(ucie_axi_base + ACSM_ACSMLTSMMSK0VAR7_ADD, 0x36fb005);  // write_reg_field('h00000000_41F02234,32'hFFFF_FFFF, 32'h36fb005   );//   AcsmLtsmMsk0Var7
-    mem_write32(ucie_axi_base + ACSM_ACSMLTSMMSK0VAR8_ADD, 0xde673e05); // write_reg_field('h00000000_41F02238,32'hFFFF_FFFF, 32'hde673e05  );//   AcsmLtsmMsk0Var8
-    mem_write32(ucie_axi_base + ACSM_ACSMLTSMMSK0VAR9_ADD, 0xde673e05); // write_reg_field('h00000000_41F0223C,32'hFFFF_FFFF, 32'hde673e05  );//   AcsmLtsmMsk0Var9
+    mem_write32(ucie_axi_base + ACSM_ACSMLTSMMSK0VAR8_ADD, 0xde673e05u); // write_reg_field('h00000000_41F02238,32'hFFFF_FFFF, 32'hde673e05  );//   AcsmLtsmMsk0Var8
+    mem_write32(ucie_axi_base + ACSM_ACSMLTSMMSK0VAR9_ADD, 0xde673e05u); // write_reg_field('h00000000_41F0223C,32'hFFFF_FFFF, 32'hde673e05  );//   AcsmLtsmMsk0Var9
 
     mem_write32(ucie_axi_base + ACSM_ACSMLTSMMSK0VAR10_ADD, 0xb);		// write_reg_field('h00000000_41F02240,32'hFFFF_FFFF, 32'hb         );//   AcsmLtsmMsk0Var10
     mem_write32(ucie_axi_base + ACSM_ACSMLTSMMSK0VAR11_ADD, 0x1e3);		// write_reg_field('h00000000_41F02244,32'hFFFF_FFFF, 32'h1e3       );//   AcsmLtsmMsk0Var11
-    mem_write32(ucie_axi_base + ACSM_ACSMLTSMMSK0VAR12_ADD, 0xc0000607); // write_reg_field('h00000000_41F02248,32'hFFFF_FFFF, 32'hc0000607  );//   AcsmLtsmMsk0Var12
+    mem_write32(ucie_axi_base + ACSM_ACSMLTSMMSK0VAR12_ADD, 0xc0000607u); // write_reg_field('h00000000_41F02248,32'hFFFF_FFFF, 32'hc0000607  );//   AcsmLtsmMsk0Var12
     mem_write32(ucie_axi_base + ACSM_ACSMLTSMMSK0VAR13_ADD, 0x32673805); // write_reg_field('h00000000_41F0224C,32'hFFFF_FFFF, 32'h32673805  );//   AcsmLtsmMsk0Var13
-    mem_write32(ucie_axi_base + ACSM_ACSMLTSMMSK0VAR14_ADD, 0xde673e05); // write_reg_field('h00000000_41F02250,32'hFFFF_FFFF, 32'hde673e05  );//   AcsmLtsmMsk0Var14
+    mem_write32(ucie_axi_base + ACSM_ACSMLTSMMSK0VAR14_ADD, 0xde673e05u); // write_reg_field('h00000000_41F02250,32'hFFFF_FFFF, 32'hde673e05  );//   AcsmLtsmMsk0Var14
     mem_write32(ucie_axi_base + ACSM_ACSMLTSMMSK0VAR15_ADD, 0x32673805); // write_reg_field('h00000000_41F02254,32'hFFFF_FFFF, 32'h32673805  );//   AcsmLtsmMsk0Var15
-    mem_write32(ucie_axi_base + ACSM_ACSMLTSMMSK0VAR16_ADD, 0xde673e05); // write_reg_field('h00000000_41F02258,32'hFFFF_FFFF, 32'hde673e05  );//   AcsmLtsmMsk0Var16
+    mem_write32(ucie_axi_base + ACSM_ACSMLTSMMSK0VAR16_ADD, 0xde673e05u); // write_reg_field('h00000000_41F02258,32'hFFFF_FFFF, 32'hde673e05  );//   AcsmLtsmMsk0Var16
     mem_write32(ucie_axi_base + ACSM_ACSMLTSMMSK0VAR17_ADD, 0x5);		// write_reg_field('h00000000_41F0225C,32'hFFFF_FFFF, 32'h5         );//   AcsmLtsmMsk0Var17
     mem_write32(ucie_axi_base + ACSM_ACSMLTSMMSK0VAR18_ADD, 0x32673805); // write_reg_field('h00000000_41F02260,32'hFFFF_FFFF, 32'h32673805  );//   AcsmLtsmMsk0Var18
     mem_write32(ucie_axi_base + ACSM_ACSMLTSMMSK0VAR19_ADD, 0x26fb007);	// write_reg_field('h00000000_41F02264,32'hFFFF_FFFF, 32'h26fb007   );//   AcsmLtsmMsk0Var19
@@ -708,11 +708,11 @@ static void Ucie_Setup_Pre(e_ucie_ch_t ch, e_ucie_mode_t mode)
     mem_write32(ucie_axi_base + ACSM_ACSMLTSMMSK0VAR22_ADD, 0xc208985);	// write_reg_field('h00000000_41F02270,32'hFFFF_FFFF, 32'hc208985   );//   AcsmLtsmMsk0Var22
     mem_write32(ucie_axi_base + ACSM_ACSMLTSMMSK0VAR23_ADD, 0x1020605);	// write_reg_field('h00000000_41F02274,32'hFFFF_FFFF, 32'h1020605   );//   AcsmLtsmMsk0Var23
     mem_write32(ucie_axi_base + ACSM_ACSMLTSMMSK0VAR24_ADD, 0x4030005);	// write_reg_field('h00000000_41F02278,32'hFFFF_FFFF, 32'h4030005   );//   AcsmLtsmMsk0Var24
-    mem_write32(ucie_axi_base + ACSM_ACSMLTSMMSK0VAR25_ADD, 0xf8100673); // write_reg_field('h00000000_41F0227C,32'hFFFF_FFFF, 32'hf8100673  );//   AcsmLtsmMsk0Var25
-    mem_write32(ucie_axi_base + ACSM_ACSMLTSMMSK0VAR26_ADD, 0xf8100673); // write_reg_field('h00000000_41F02280,32'hFFFF_FFFF, 32'hf8100673  );//   AcsmLtsmMsk0Var26
-    mem_write32(ucie_axi_base + ACSM_ACSMLTSMMSK0VAR27_ADD, 0x8800c277); // write_reg_field('h00000000_41F02284,32'hFFFF_FFFF, 32'h8800c277  );//   AcsmLtsmMsk0Var27
-    mem_write32(ucie_axi_base + ACSM_ACSMLTSMMSK0VAR28_ADD, 0x8800c275); // write_reg_field('h00000000_41F02288,32'hFFFF_FFFF, 32'h8800c275  );//   AcsmLtsmMsk0Var28
-    mem_write32(ucie_axi_base + ACSM_ACSMLTSMMSK0VAR29_ADD, 0x8800c277); // write_reg_field('h00000000_41F0228C,32'hFFFF_FFFF, 32'h8800c277  );//   AcsmLtsmMsk0Var29
+    mem_write32(ucie_axi_base + ACSM_ACSMLTSMMSK0VAR25_ADD, 0xf8100673u); // write_reg_field('h00000000_41F0227C,32'hFFFF_FFFF, 32'hf8100673  );//   AcsmLtsmMsk0Var25
+    mem_write32(ucie_axi_base + ACSM_ACSMLTSMMSK0VAR26_ADD, 0xf8100673u); // write_reg_field('h00000000_41F02280,32'hFFFF_FFFF, 32'hf8100673  );//   AcsmLtsmMsk0Var26
+    mem_write32(ucie_axi_base + ACSM_ACSMLTSMMSK0VAR27_ADD, 0x8800c277u); // write_reg_field('h00000000_41F02284,32'hFFFF_FFFF, 32'h8800c277  );//   AcsmLtsmMsk0Var27
+    mem_write32(ucie_axi_base + ACSM_ACSMLTSMMSK0VAR28_ADD, 0x8800c275u); // write_reg_field('h00000000_41F02288,32'hFFFF_FFFF, 32'h8800c275  );//   AcsmLtsmMsk0Var28
+    mem_write32(ucie_axi_base + ACSM_ACSMLTSMMSK0VAR29_ADD, 0x8800c277u); // write_reg_field('h00000000_41F0228C,32'hFFFF_FFFF, 32'h8800c277  );//   AcsmLtsmMsk0Var29
     mem_write32(ucie_axi_base + ACSM_ACSMLTSMMSK0VAR30_ADD, 0x7300000d); // write_reg_field('h00000000_41F02290,32'hFFFF_FFFF, 32'h7300000d  );//   AcsmLtsmMsk0Var30
 
     mem_write32(ucie_axi_base + ACSM_ACSMLTSMMSK1VAR0_ADD, 0x140); // write_reg_field('h00000000_41F02298,32'hFFFF_FFFF, 32'h140       );//   AcsmLtsmMsk1Var0
@@ -752,11 +752,11 @@ static void Ucie_Setup_Pre(e_ucie_ch_t ch, e_ucie_mode_t mode)
     mem_write32(ucie_axi_base + ACSM_ACSMLTSMMSK0VAR22ALT_ADD, 0xc208985);  // write_reg_field('h00000000_41F0231C,32'hFFFF_FFFF, 32'hc208985   );//   AcsmLtsmMsk0Var22Alt
     mem_write32(ucie_axi_base + ACSM_ACSMLTSMMSK0VAR23ALT_ADD, 0x100210d);  // write_reg_field('h00000000_41F02320,32'hFFFF_FFFF, 32'h100210d   );//   AcsmLtsmMsk0Var23Alt
     mem_write32(ucie_axi_base + ACSM_ACSMLTSMMSK0VAR24ALT_ADD, 0x4020005);  // write_reg_field('h00000000_41F02324,32'hFFFF_FFFF, 32'h4020005   );//   AcsmLtsmMsk0Var24Alt
-    mem_write32(ucie_axi_base + ACSM_ACSMLTSMMSK0VAR25ALT_ADD, 0xf820a173); // write_reg_field('h00000000_41F02328,32'hFFFF_FFFF, 32'hf820a173  );//   AcsmLtsmMsk0Var25Alt
-    mem_write32(ucie_axi_base + ACSM_ACSMLTSMMSK0VAR26ALT_ADD, 0xf820a173); // write_reg_field('h00000000_41F0232C,32'hFFFF_FFFF, 32'hf820a173  );//   AcsmLtsmMsk0Var26Alt
-    mem_write32(ucie_axi_base + ACSM_ACSMLTSMMSK0VAR27ALT_ADD, 0x88008077); // write_reg_field('h00000000_41F02330,32'hFFFF_FFFF, 32'h88008077  );//   AcsmLtsmMsk0Var27Alt
-    mem_write32(ucie_axi_base + ACSM_ACSMLTSMMSK0VAR28ALT_ADD, 0x88008075); // write_reg_field('h00000000_41F02334,32'hFFFF_FFFF, 32'h88008075  );//   AcsmLtsmMsk0Var28Alt
-    mem_write32(ucie_axi_base + ACSM_ACSMLTSMMSK0VAR29ALT_ADD, 0x88008077); // write_reg_field('h00000000_41F02338,32'hFFFF_FFFF, 32'h88008077  );//   AcsmLtsmMsk0Var29Alt
+    mem_write32(ucie_axi_base + ACSM_ACSMLTSMMSK0VAR25ALT_ADD, 0xf820a173u); // write_reg_field('h00000000_41F02328,32'hFFFF_FFFF, 32'hf820a173  );//   AcsmLtsmMsk0Var25Alt
+    mem_write32(ucie_axi_base + ACSM_ACSMLTSMMSK0VAR26ALT_ADD, 0xf820a173u); // write_reg_field('h00000000_41F0232C,32'hFFFF_FFFF, 32'hf820a173  );//   AcsmLtsmMsk0Var26Alt
+    mem_write32(ucie_axi_base + ACSM_ACSMLTSMMSK0VAR27ALT_ADD, 0x88008077u); // write_reg_field('h00000000_41F02330,32'hFFFF_FFFF, 32'h88008077  );//   AcsmLtsmMsk0Var27Alt
+    mem_write32(ucie_axi_base + ACSM_ACSMLTSMMSK0VAR28ALT_ADD, 0x88008075u); // write_reg_field('h00000000_41F02334,32'hFFFF_FFFF, 32'h88008075  );//   AcsmLtsmMsk0Var28Alt
+    mem_write32(ucie_axi_base + ACSM_ACSMLTSMMSK0VAR29ALT_ADD, 0x88008077u); // write_reg_field('h00000000_41F02338,32'hFFFF_FFFF, 32'h88008077  );//   AcsmLtsmMsk0Var29Alt
     mem_write32(ucie_axi_base + ACSM_ACSMLTSMMSK0VAR30ALT_ADD, 0x7300000d); // write_reg_field('h00000000_41F0233C,32'hFFFF_FFFF, 32'h7300000d  );//   AcsmLtsmMsk0Var30Alt
 
     mem_write32(ucie_axi_base + ACSM_ACSMLTSMMSK1VAR21ALT_ADD, 0x4);	 // write_reg_field('h00000000_41F02344,32'hFFFF_FFFF, 32'h4         );//   AcsmLtsmMsk1Var21Alt
@@ -939,7 +939,7 @@ static void Ucie_Setup_PCIE_Pre(e_ucie_ch_t ch, e_ucie_mode_t mode)
 
     if (mode == UCIE_MODE_RC)
     {
-        mem_write32(ucie_axi_base + PF0_PL16G_CAP_PL16G_CAP_OFF_20H_REG_ADD, 0x8584443A);
+        mem_write32(ucie_axi_base + PF0_PL16G_CAP_PL16G_CAP_OFF_20H_REG_ADD, 0x8584443AU);
         mem_write32(ucie_axi_base + PF0_PL16G_CAP_PL16G_CAP_OFF_24H_REG_ADD, 0x6631482A);
     }
     else
@@ -950,18 +950,18 @@ static void Ucie_Setup_PCIE_Pre(e_ucie_ch_t ch, e_ucie_mode_t mode)
 
     if (mode == UCIE_MODE_RC)
     {
-        mem_write32(ucie_axi_base + PF0_PL32G_CAP_PL32G_CAP_OFF_20H_REG_ADD, 0x915A4145);
-        mem_write32(ucie_axi_base + PF0_PL32G_CAP_PL32G_CAP_OFF_24H_REG_ADD, 0x81817220);
+        mem_write32(ucie_axi_base + PF0_PL32G_CAP_PL32G_CAP_OFF_20H_REG_ADD, 0x915A4145U);
+        mem_write32(ucie_axi_base + PF0_PL32G_CAP_PL32G_CAP_OFF_24H_REG_ADD, 0x81817220U);
     }
     else
     {
         mem_write32(ucie_axi_base + PF0_PL32G_CAP_PL32G_CAP_OFF_20H_REG_ADD, 0x00860582);
-        mem_write32(ucie_axi_base + PF0_PL32G_CAP_PL32G_CAP_OFF_24H_REG_ADD, 0x96558A61);
+        mem_write32(ucie_axi_base + PF0_PL32G_CAP_PL32G_CAP_OFF_24H_REG_ADD, 0x96558A61U);
     }
 
     if (mode == UCIE_MODE_RC)
     {
-        mem_write32(ucie_axi_base + PF0_PL64G_CAP_PL64G_LANE_EQ_10H_REG_ADD, 0xA3057527);
+        mem_write32(ucie_axi_base + PF0_PL64G_CAP_PL64G_LANE_EQ_10H_REG_ADD, 0xA3057527U);
         mem_write32(ucie_axi_base + PF0_PL64G_CAP_PL64G_LANE_EQ_14H_REG_ADD, 0x09548A39);
     }
     else
@@ -1076,8 +1076,8 @@ static void Ucie_Setup_PCIE_Post(e_ucie_ch_t ch, e_ucie_mode_t mode)
         mem_write32(ucie_axi_base + PF0_TYPE1_HDR_PREF_MEM_LIMIT_PREF_MEM_BASE_REG_ADD, 0x00010001);
         mem_write32(ucie_axi_base + PF0_TYPE1_HDR_PREF_BASE_UPPER_REG_ADD, 0x00000000);
         mem_write32(ucie_axi_base + PF0_TYPE1_HDR_PREF_LIMIT_UPPER_REG_ADD, 0x00000000);
-        mem_write32(ucie_axi_base + PF0_TYPE1_HDR_PREF_MEM_LIMIT_PREF_MEM_BASE_REG_ADD, 0xB00FB000);
-        mem_write32(ucie_axi_base + PF0_CXL_2_0_EXT_CAP_CXL_2_0_ALT_MEM_BASE_LIMIT_OFF_ADD, 0xAFEF0930);
+        mem_write32(ucie_axi_base + PF0_TYPE1_HDR_PREF_MEM_LIMIT_PREF_MEM_BASE_REG_ADD, 0xB00FB000U);
+        mem_write32(ucie_axi_base + PF0_CXL_2_0_EXT_CAP_CXL_2_0_ALT_MEM_BASE_LIMIT_OFF_ADD, 0xAFEF0930U);
         mem_write32(ucie_axi_base + PF0_CXL_2_0_EXT_CAP_CXL_2_0_ALT_PREFETCH_MEM_BASE_LIMIT_OFF_ADD, 0x00000000);
 
         mem_write32(ucie_axi_base + PF0_CXL_2_0_EXT_CAP_CXL_2_0_CTRL_ALT_BUS_BASE_LIMIT_OFF_ADD, 0x00000000);
@@ -1098,8 +1098,8 @@ static void Ucie_Setup_PCIE_Post(e_ucie_ch_t ch, e_ucie_mode_t mode)
         mem_write32(ucie_axi_base + PF0_TYPE1_HDR_SEC_LAT_TIMER_SUB_BUS_SEC_BUS_PRI_BUS_REG_ADD + RCAR_UCIE_FN_OFS(1), 0x08F00000);
         mem_write32(ucie_axi_base + PF0_TYPE1_HDR_MEM_LIMIT_MEM_BASE_REG_ADD, 0x00004001);
         mem_write32(ucie_axi_base + PF0_TYPE1_HDR_MEM_LIMIT_MEM_BASE_REG_ADD + RCAR_UCIE_FN_OFS(1), 0x00004101);
-        mem_write32(ucie_axi_base + PF0_TYPE1_HDR_IO_LIMIT_UPPER_IO_BASE_UPPER_REG_ADD, 0xB0000001);
-        mem_write32(ucie_axi_base + PF0_TYPE1_HDR_IO_LIMIT_UPPER_IO_BASE_UPPER_REG_ADD + RCAR_UCIE_FN_OFS(1), 0xB0010001);
+        mem_write32(ucie_axi_base + PF0_TYPE1_HDR_IO_LIMIT_UPPER_IO_BASE_UPPER_REG_ADD, 0xB0000001U);
+        mem_write32(ucie_axi_base + PF0_TYPE1_HDR_IO_LIMIT_UPPER_IO_BASE_UPPER_REG_ADD + RCAR_UCIE_FN_OFS(1), 0xB0010001U);
         mem_write32(ucie_axi_base + PF0_PORT_LOGIC_TRGT_MAP_CTRL_OFF_ADD, 0x00000054);
         mem_write32(ucie_axi_base + PF0_PORT_LOGIC_TRGT_MAP_CTRL_OFF_ADD + RCAR_UCIE_FN_OFS(1), 0x00010054);
     }
@@ -1120,8 +1120,8 @@ static void set_pll9_0(uint32_t f_Speed){
         {0x07700000,0x041895f9,0x00000000} // 16GT/s
     };
 
-    *(volatile uint32_t*)0xDE201370 = 0xA5A5A501; // CLKHSCSD1WCR0
-    *(volatile uint32_t*)0xDE201380 = 0xFFFFFFFF; // CLKHSCSPKCPROT0
+    *(volatile uint32_t*)0xDE201370 = 0xA5A5A501U; // CLKHSCSD1WCR0
+    *(volatile uint32_t*)0xDE201380 = 0xFFFFFFFFU; // CLKHSCSPKCPROT0
 
     // 2-1
     *(volatile uint32_t *)HSCS_APB_PLL9_0_CR0 = pll9prm0[f_Speed].PLL9_CR0;
@@ -1190,8 +1190,8 @@ static void set_pll9_1(uint32_t f_Speed)
         {0x07700000,0x041895f9,0x00000000} // 16GT/s
     };
 
-    *(volatile uint32_t*)0xDE201370 = 0xA5A5A501; // CLKHSCSD1WCR0
-    *(volatile uint32_t*)0xDE201380 = 0xFFFFFFFF; // CLKHSCSPKCPROT0
+    *(volatile uint32_t*)0xDE201370 = 0xA5A5A501U; // CLKHSCSD1WCR0
+    *(volatile uint32_t*)0xDE201380 = 0xFFFFFFFFU; // CLKHSCSPKCPROT0
 
     // 2-4  
     *(volatile uint32_t *)HSCS_APB_PLL9_1_CR0 = pll9prm1[f_Speed].PLL9_CR0;
@@ -1451,7 +1451,7 @@ uint32_t R_UCIE_IATU_SetRegion(st_ucie_iatu_cfg_t *cfg)
     mem_write32(base + IATU_LWR_TARGET_ADDR_OFF, (mDestAddr & 0xFFFFFFFF));
     mem_write32(base + IATU_UPPER_TARGET_ADDR_OFF, (mDestAddr >> 32));
     mem_write32(base + IATU_REGION_CTRL_1_OFF, 0x00000000);
-    mem_write32(base + IATU_REGION_CTRL_2_OFF, 0x80000000);
+    mem_write32(base + IATU_REGION_CTRL_2_OFF, 0x80000000U);
 
     return 0;
 }

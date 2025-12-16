@@ -21,17 +21,17 @@
 
 /* PFC base adrress */
 #define PFC_BASE_OFFSET    0x000
-#define PFC_GR_0           (0xC1080000 + PFC_BASE_OFFSET)
-#define PFC_GR_1           (0xC1080800 + PFC_BASE_OFFSET)
-#define PFC_GR_2           (0xC1081000 + PFC_BASE_OFFSET)
-#define PFC_GR_3           (0xC0800000 + PFC_BASE_OFFSET)
-#define PFC_GR_4           (0xC0800800 + PFC_BASE_OFFSET)
-#define PFC_GR_5           (0xC0400000 + PFC_BASE_OFFSET)
-#define PFC_GR_6           (0xC0400800 + PFC_BASE_OFFSET)
-#define PFC_GR_7           (0xC0401000 + PFC_BASE_OFFSET)
-#define PFC_GR_8           (0xC0401800 + PFC_BASE_OFFSET)
-#define PFC_GR_9           (0xC9B00000 + PFC_BASE_OFFSET)
-#define PFC_GR_10          (0xC9B00800 + PFC_BASE_OFFSET)
+#define PFC_GR_0           (0xC1080000U + PFC_BASE_OFFSET)
+#define PFC_GR_1           (0xC1080800U + PFC_BASE_OFFSET)
+#define PFC_GR_2           (0xC1081000U + PFC_BASE_OFFSET)
+#define PFC_GR_3           (0xC0800000U + PFC_BASE_OFFSET)
+#define PFC_GR_4           (0xC0800800U + PFC_BASE_OFFSET)
+#define PFC_GR_5           (0xC0400000U + PFC_BASE_OFFSET)
+#define PFC_GR_6           (0xC0400800U + PFC_BASE_OFFSET)
+#define PFC_GR_7           (0xC0401000U + PFC_BASE_OFFSET)
+#define PFC_GR_8           (0xC0401800U + PFC_BASE_OFFSET)
+#define PFC_GR_9           (0xC9B00000U + PFC_BASE_OFFSET)
+#define PFC_GR_10          (0xC9B00800U + PFC_BASE_OFFSET)
 
 /* PFC register: offset address */
 #define GP_PMMR             0x000

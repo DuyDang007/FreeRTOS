@@ -22,19 +22,19 @@
 #define SWTCSRA_TME	(1 << 7)
 
 #define SWTCSRB		0x08
-#define OSCCLK		131570
+#define OSCCLK		131570U
 
-#define RST_DM0_BASE	0xC1320000
+#define RST_DM0_BASE	0xC1320000U
 
-#define RST_KCPROT_DIS	0xA5A5A501
-#define RST_KCPROT_EN	0xA5A5A500
+#define RST_KCPROT_DIS	0xA5A5A501U
+#define RST_KCPROT_EN	0xA5A5A500U
 #define RST_WDTRSTCR	0x0420
 #define RST_RESKCPROT0	0x04F0
 #define SWDT_RSTMSK	(1 << 1)
 #define RST_RESFC	0x0460
 #define RST_SRES1FC5	(1 << 25)
 
-#define DIV_ROUND_UP(a, b) (((a) + (b) - 1) / (b))
+#define DIV_ROUND_UP(a, b) (((a) + (b) - 1U) / (b))
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
 #define MUL_BY_CLKS_PER_SEC(cks, d) \
 			DIV_ROUND_UP((d) * OSCCLK, clk_divs[(cks)])
@@ -68,7 +68,7 @@ static uint32_t r_rst_read(uintptr_t Addr)
 
 static void r_swdt_wait_cycles(uint8_t cycles) {
 	uint8_t delay;
-	delay = DIV_ROUND_UP(cycles * 10000000, OSCCLK);
+	delay = DIV_ROUND_UP(cycles * 10000000U, OSCCLK);
 
 	vTaskDelay(delay);
 }

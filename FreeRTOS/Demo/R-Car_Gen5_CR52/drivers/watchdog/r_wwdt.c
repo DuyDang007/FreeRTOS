@@ -18,7 +18,7 @@ const uint16_t timeout_ch0_19[] = { 15, 31, 62, 124, 250, 500, 1000, 2000 };
 const uint16_t timeout_ch20[] = { 2, 4, 8, 17, 34, 68, 136, 273 };
 static uint32_t clk_rate;
 
-#define DIV_ROUND_UP(a, b) (((a) + (b) - 1) / (b))
+#define DIV_ROUND_UP(a, b) (((a) + (b) - 1U) / (b))
 #define TIMEOUT_TO_X(timeout_ms, channel)    \
     ({ \
         const uint16_t *timeout_array = (channel == 0xC1380000) ? timeout_ch20 : timeout_ch0_19; \
@@ -42,7 +42,7 @@ static uint32_t r_rst_read(uintptr_t Addr)
 static void r_wdt_wait_cycles(uint8_t cycles)
 {
 	uint8_t delay;
-	delay = DIV_ROUND_UP(cycles * 1000000, clk_rate);
+	delay = DIV_ROUND_UP(cycles * 1000000U, clk_rate);
 
 	vTaskDelay(delay);
 }

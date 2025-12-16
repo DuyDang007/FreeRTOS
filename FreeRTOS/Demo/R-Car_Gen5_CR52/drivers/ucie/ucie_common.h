@@ -9,8 +9,8 @@
 #ifndef R_UCIE_COMMON_H_
 #define R_UCIE_COMMON_H_
 
-#define UCIE_AXI_BASE(n)    (0xD8000000 + (n) * 0x1000000)
-#define UCIE_APB_BASE(n)    (0xDC000000 + (n) * 0x1000000)
+#define UCIE_AXI_BASE(n)    (0xD8000000U + (n) * 0x1000000)
+#define UCIE_APB_BASE(n)    (0xDC000000U + (n) * 0x1000000)
 
 /* Remote Interrupt Address & Data (T.B.D) */
 #define MSI_STOP_BASE           (0x7FFF0000U)

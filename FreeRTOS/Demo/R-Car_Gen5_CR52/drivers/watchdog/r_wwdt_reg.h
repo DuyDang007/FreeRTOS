@@ -41,13 +41,13 @@
 #define WDTA0WIE	(1 << 3)
 #define WDTA0OVF(x)	(((x) << 4) & 0x70)
 
-#define RST_DM0_BASE	0xC1320000
-#define RST_KCPROT_DIS	0xA5A5A501
+#define RST_DM0_BASE	0xC1320000U
+#define RST_KCPROT_DIS	0xA5A5A501U
 #define RST_WDTRSTCR	0x0420
 #define WWDT_RSTMSK	(1 << 2)
 #define RST_RESFC	0x0460
 #define RST_SRES1FC4    (1 << 7)
-#define RST_RESKCPROT0	0x04F0
+#define RST_RESKCPROT0	0x04F0U
 
 uintptr_t R_WWDT_PRV_GetRegbase(wwdt_unit_t unit);
 void r_wwdt_write(uintptr_t Addr, uint32_t val);

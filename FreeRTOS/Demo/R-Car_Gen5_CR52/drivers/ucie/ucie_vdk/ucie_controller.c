@@ -168,7 +168,7 @@ void R_PCIE_Outbound_ATU(uint16_t channel, uint64_t base_addr, uint64_t target_a
     R_UCIE_RegWrite32(channel, UCIE_OB_ATU_LOWER_TARGET, lower_target);
     R_UCIE_RegWrite32(channel, UCIE_OB_ATU_UPPER_TARGET, upper_target);
     R_UCIE_RegWrite32(channel, UCIE_OB_REGION_CTL1, 0x00000000);
-    R_UCIE_RegWrite32(channel, UCIE_OB_REGION_CTL2, 0x80000000);
+    R_UCIE_RegWrite32(channel, UCIE_OB_REGION_CTL2, 0x80000000U);
 
 }
 

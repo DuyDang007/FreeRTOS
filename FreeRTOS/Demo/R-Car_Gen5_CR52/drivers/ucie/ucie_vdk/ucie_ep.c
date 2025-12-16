@@ -178,7 +178,7 @@ static void rcar_ucie_ep_hw_enable(uint16_t channel)
 static void rcar_ucie_ep_header(uint16_t channel)
 {
     R_UCIE_RegWrite16(channel, UCIE_VENDOR_ID, 0x16c3);
-    R_UCIE_RegWrite16(channel, UCIE_DEVICE_ID, 0xedda);
+    R_UCIE_RegWrite16(channel, UCIE_DEVICE_ID, 0xeddau);
     //R_UCIE_RegWrite16(channel, 0x3d, 0x1);
 }
 
@@ -337,7 +337,7 @@ void R_PCIE_EP_Inbound_ATU(struct st_pcie_ep *ep, uint16_t channel)
     R_UCIE_RegWrite32(channel, UCIE_IB_ATU_LOWER_TARGET, 0x45142000);
     R_UCIE_RegWrite32(channel, UCIE_IB_ATU_UPPER_TARGET, 0);
     R_UCIE_RegWrite32(channel, UCIE_IB_REGION_CTL1, 0);
-    R_UCIE_RegWrite32(channel, UCIE_IB_REGION_CTL2, 0xc0080000);
+    R_UCIE_RegWrite32(channel, UCIE_IB_REGION_CTL2, 0xc0080000u);
 
     index = free_win / 32;
     bit_pos = free_win % 32;

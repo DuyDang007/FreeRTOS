@@ -25,19 +25,19 @@ void rcar_ucie_setup_rc(uint16_t channel)
 
     /* Setup interrupt pins */
     val = R_UCIE_RegRead32(channel, UCIE_INTERRUPT_LINE);
-    val &= 0xffff00ff;
+    val &= 0xffff00ffu;
     val |= 0x00000100;
     R_UCIE_RegWrite32(channel, UCIE_INTERRUPT_LINE, val);
 
     /* Setup bus numbers */
     val = R_UCIE_RegRead32(channel, UCIE_PRIMARY_BUS);
-    val &= 0xff000000;
+    val &= 0xff000000u;
     val |= 0x00ff0100;
     R_UCIE_RegWrite32(channel, UCIE_PRIMARY_BUS, val);
 
     /* Setup command register */
     val = R_UCIE_RegRead32(channel, UCIE_COMMAND);
-    val &= 0xffff0000;
+    val &= 0xffff0000u;
     val |= UCIE_COMMAND_IO | UCIE_COMMAND_MEMORY |
 	   UCIE_COMMAND_MASTER | UCIE_COMMAND_SERR;
     R_UCIE_RegWrite32(channel, UCIE_COMMAND, val);
@@ -81,7 +81,7 @@ void R_PCIE_Host_Outbound_ATU(uint16_t channel)
 
     /* TYPE1_HDR  MEM_LIMIT_MEM_BASE_REG */
     R_UCIE_RegWrite32(channel, UCIE_PCICONF8, 0x223f2220);
-    R_UCIE_RegWrite32(channel, UCIE_PCICONF9, 0xffff0001);
+    R_UCIE_RegWrite32(channel, UCIE_PCICONF9, 0xffff0001u);
     R_UCIE_RegWrite32(channel, UCIE_PCICONF10, 0x612d3f00);
     R_UCIE_RegWrite32(channel, UCIE_PCICONF11, 0x612d3f0f);
 
