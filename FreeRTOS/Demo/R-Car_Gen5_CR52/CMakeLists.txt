@@ -379,6 +379,7 @@ add_subdirectory(sample_apps/ecm_app)
 add_subdirectory(sample_apps/dummy_app)
 if(ENABLE_OPENAMP)
     add_subdirectory(sample_apps/rpmsg_sample)
+    add_subdirectory(sample_apps/rpmsg_virtio_backend)
 endif()
 
 # TODO: Delete application makefile
