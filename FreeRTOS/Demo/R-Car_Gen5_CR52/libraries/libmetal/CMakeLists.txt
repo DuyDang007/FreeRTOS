@@ -21,7 +21,7 @@ ExternalProject_Add(libmetal_build
     BINARY_DIR build
     INSTALL_DIR install
 
-    DEPENDS freertos_bsp
+    # DEPENDS freertos_bsp
 
     CONFIGURE_COMMAND ${CMAKE_COMMAND}
         -DCMAKE_TOOLCHAIN_FILE=${CMAKE_CURRENT_SOURCE_DIR}/toolchain-libmetal.cmake 

@@ -163,6 +163,15 @@ set(bsp_source
     
 )
 
+if(ENABLE_OPENAMP)
+    list(APPEND bsp_source
+        ${BSP_DIR}/drivers/virtio/platform_rcar.c
+        ${BSP_DIR}/drivers/virtio/remoteproc_rcar.c
+        ${BSP_DIR}/drivers/virtio/rsc_table.c
+        ${BSP_DIR}/drivers/virtio/r_virtio.c
+    )
+endif()
+
 set(posix_source
     ${POSIX_DIR}/FreeRTOS-Plus-POSIX/source/FreeRTOS_POSIX_clock.c
     ${POSIX_DIR}/FreeRTOS-Plus-POSIX/source/FreeRTOS_POSIX_mqueue.c 
@@ -232,6 +241,14 @@ target_include_directories(freertos_bsp
         $<BUILD_INTERFACE:${BSP_DIR}/CMSIS_5>
         $<BUILD_INTERFACE:${BSP_DIR}/CMSIS_5/CMSIS/Core_R/Include>
 )
+
+if(ENABLE_OPENAMP)
+    target_include_directories(freertos_bsp PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/libraries/openamp/open-amp/lib/include>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/libraries//libmetal/build/lib/include/>
+        $<BUILD_INTERFACE:${BSP_DIR}/drivers/virtio>
+    )
+endif()
 
 ### Installation config
 # Kernel
@@ -326,6 +343,12 @@ endfunction()
 if(ENABLE_OPENAMP)
     add_subdirectory(libraries/libmetal)
     add_subdirectory(libraries/openamp)
+    add_custom_target(openamp_full)
+    add_dependencies(openamp_full libmetal_build openamp_build)
+endif()
+
+if(ENABLE_OPENAMP)
+    add_dependencies(freertos_bsp openamp_full)
 endif()
 
 add_subdirectory(Blinky)
