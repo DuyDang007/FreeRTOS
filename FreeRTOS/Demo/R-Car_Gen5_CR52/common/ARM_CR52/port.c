@@ -174,11 +174,11 @@
 volatile static uint64_t kernel_start = 0;
 
 void portConfig_Timer_For_Run_Time_Starts(void) {
-    kernel_start = R_UTILS_GetCPUCycles();
+    kernel_start = R_UTILS_GetTimerCounter();
 }
 
 unsigned long long portGet_Run_Time_Counter_Value(void) {
-    return R_UTILS_GetCPUCycles() - kernel_start;
+    return (R_UTILS_GetTimerCounter() - kernel_start);
 }
 #endif
 
