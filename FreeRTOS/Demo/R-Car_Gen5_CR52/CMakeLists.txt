@@ -169,6 +169,7 @@ if(ENABLE_OPENAMP)
         ${BSP_DIR}/drivers/virtio/remoteproc_rcar.c
         ${BSP_DIR}/drivers/virtio/rsc_table.c
         ${BSP_DIR}/drivers/virtio/r_virtio.c
+        ${BSP_DIR}/drivers/smmu-virtio-backend/r_smmu_virtio_backend.c
     )
 endif()
 
@@ -379,7 +380,7 @@ add_subdirectory(sample_apps/ecm_app)
 add_subdirectory(sample_apps/dummy_app)
 if(ENABLE_OPENAMP)
     add_subdirectory(sample_apps/rpmsg_sample)
-    add_subdirectory(sample_apps/rpmsg_virtio_backend)
+    add_subdirectory(sample_apps/smmu_virtio_backend_sample)
 endif()
 
 # TODO: Delete application makefile
