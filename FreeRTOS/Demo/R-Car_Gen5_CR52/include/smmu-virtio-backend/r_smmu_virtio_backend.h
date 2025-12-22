@@ -4,16 +4,17 @@
  * SPDX-License-Identifier: MIT
  */
 
-/**
- * @file r_smmu_virtio_backend.h
- * @brief SMMU Virtio backend interface.
- *
- * This header provides public APIs for initializing and deinitializing
- * the SMMU Virtio backend used in inter-processor communication.
- */
-
 #ifndef R_SMMU_VIRTIO_BACKEND_H
 #define R_SMMU_VIRTIO_BACKEND_H
+
+/**
+ * @defgroup SMMU_VIRTIO_BACKEND SMMU Virtio Backend
+ * @{
+ * @brief SMMU Virtio backend driver interface.
+ *
+ * This module provides APIs to initialize and deinitialize the SMMU Virtio
+ * backend used for Virtio-based inter-processor communication.
+ */
 
 /***********************************************************************************************************************
  * Includes
@@ -57,5 +58,7 @@ smmu_virtio_instance_ctrl_t * R_SMMU_VIRTIO_BackEnd_Init(e_mfis_channel_t ch);
  * @return Non-zero value on failure.
  */
 uint8_t R_SMMU_VIRTIO_BackEnd_DeInit(smmu_virtio_instance_ctrl_t * p_inst);
+
+/** @} */ // end of SMMU_VIRTIO_BACKEND_Module
 
 #endif /* R_SMMU_VIRTIO_BACKEND_H */
