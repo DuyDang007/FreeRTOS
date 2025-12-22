@@ -87,10 +87,10 @@ else()
 
         message(STATUS "CORE: ${CORE}")
 
-        set(app_name "rpmsg_mfis${MFIS_CHAN}_cluster0_core${CORE}")
+        set(app_name "smmu_virtio_backend_app_mfis${MFIS_CHAN}_cluster0_core${CORE}")
 
         add_executable(${app_name}
-            rpmsg-echo.c
+            smmu-virtio-backend-app.c
         )
 
         target_compile_definitions(${app_name}
@@ -106,9 +106,9 @@ else()
 
         # Essential libraries to link with
         target_link_libraries(${app_name}
+            freertos_bsp
             openamp
             libmetal
-            freertos_bsp
             m
         )
 
