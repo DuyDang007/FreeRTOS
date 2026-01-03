@@ -163,6 +163,12 @@ set(bsp_source
     
 )
 
+if (BOARD STREQUAL "x5h_ironhide" OR BOARD STREQUAL "x5h_rfs2")
+    list(APPEND bsp_source ${BSP_DIR}/common/devicetree/x5h-devicetree.c)
+elseif(BOARD STREQUAL "ai-acc")
+    list(APPEND bsp_source ${BSP_DIR}/common/devicetree/aiacc-devicetree.c)
+endif()
+
 if(ENABLE_OPENAMP)
     list(APPEND bsp_source
         ${BSP_DIR}/drivers/virtio/platform_rcar.c
@@ -229,6 +235,9 @@ target_include_directories(freertos_bsp
         $<BUILD_INTERFACE:${POSIX_DIR}/FreeRTOS-Plus-POSIX/include/portable>
         # LOGGING
         $<BUILD_INTERFACE:${LOGGING_DIR}>
+
+        # Devicetree
+        $<BUILD_INTERFACE:${BSP_DIR}/common/devicetree>
         
         $<INSTALL_INTERFACE:include/kernel/include>
         $<INSTALL_INTERFACE:include>
@@ -236,6 +245,7 @@ target_include_directories(freertos_bsp
         $<INSTALL_INTERFACE:include/POSIX/include>
         $<INSTALL_INTERFACE:include/POSIX/include/private>
         $<INSTALL_INTERFACE:include/POSIX/include/portable>
+
         
     PRIVATE 
         $<BUILD_INTERFACE:${BSP_DIR}>

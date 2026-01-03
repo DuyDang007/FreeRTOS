@@ -14,14 +14,6 @@
 /// \param[in]     port          port number
 /// \return 1 on success, 0 on error.
 
-#ifndef UART_BAUDRATE
-#if (BOARD == X5H_VDK || BOARD == X5H_IRONHIDE || BOARD == X5H_RFS2)
-#define UART_BAUDRATE 115200
-#else
-#define UART_BAUDRATE 3000000
-#endif
-#endif
-
 uint32_t console_init(uint32_t port);
 
 void console_putc(char c);

@@ -5,6 +5,7 @@
  *
  */
 
+#include "devicetree-binding.h"
 #include "CMSIS_5/cmsis_rcar_gen5.h"
 #include "scif.h"
 
@@ -268,38 +269,22 @@ static int uart_rcar_irq_update(void)
 }
 
 uint32_t console_init(uint32_t port) {
-#if (BOARD == X5H_VDK || BOARD == X5H_IRONHIDE || BOARD == X5H_RFS2)
-    const uint32_t serial_channels_arr[] = {
-        0xc0700000, // SCIF0
-        0xc0704000, // SCIF1
-        0x0,        // Unsupported
-        0xc0708000, // SCIF3
-        0xc070C000, // SCIF4
-        0xc0710000, // HSCIF0
-        0xc0714000, // HSCIF1
-        0xc0718000, // HSCIF2
-        0xc071C000  // HSCIF3
-    };
-#else
-    const uint32_t serial_channels_arr[] = {
-        0x0,
-        0x0,
-        0x0,
-        0x0,
-        0x0,
-        0x38010000, // HSCIF0
-        0x38014000, // HSCIF1
-        0x0,
-        0x0
-    };
-#endif
 	uint16_t reg_val;
+	uint32_t baudrate;
 
-    scif_base = serial_channels_arr[port];
+	/* Check if port is valid */
+	for(uint32_t i = 0; i < count_node((void*)uart_list); i++) {
+		if(uart_list[i] == NULL) {
+			return -1;
+		}
+	}
+
+    scif_base = uart_list[port]->base_address;
     if (scif_base == (uint32_t)0)
     {
         return -1;
     }
+	baudrate = uart_list[port]->baudrate;
 
 	/* Disable Transmit and Receive */
 	reg_val = uart_rcar_read_16(SCSCR);
@@ -320,7 +305,7 @@ uint32_t console_init(uint32_t port) {
 	reg_val &= ~(SCLSR_TO | SCLSR_ORER);
 	uart_rcar_write_16(SCLSR, reg_val);
 
-    if (UART_BAUDRATE < 3000000) {
+    if (baudrate < 3000000) {
         /* Select internal clock */
 	    reg_val = uart_rcar_read_16(SCSCR);
 	    reg_val &= ~(SCSCR_CKE1 | SCSCR_CKE0);
@@ -337,7 +322,7 @@ uint32_t console_init(uint32_t port) {
     uart_rcar_write_16(SCSMR, reg_val);
 
 	/* Set baudrate */
-	uart_rcar_set_baudrate(port, UART_BAUDRATE);
+	uart_rcar_set_baudrate(port, baudrate);
 
 	/* reset-off tx-fifo, rx-fifo. */
 	reg_val = uart_rcar_read_16(SCFCR);
