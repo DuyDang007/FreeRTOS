@@ -273,7 +273,7 @@ uint32_t console_init(uint32_t port) {
 	uint32_t baudrate;
 
 	/* Check if port is valid */
-	for(uint32_t i = 0; i < count_node((void*)uart_list); i++) {
+	for(uint32_t i = 0; i < dt_count_node((void*)uart_list); i++) {
 		if(uart_list[i] == NULL) {
 			return -1;
 		}

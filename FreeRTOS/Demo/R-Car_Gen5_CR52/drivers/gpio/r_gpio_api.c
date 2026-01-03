@@ -8,6 +8,7 @@
 #include "stdio.h"
 #include "pfc/r_pfc_api.h"
 #include "r_gpio_api.h"
+#include "devicetree-binding.h"
 
 #define PINS_EACH_GROUP 32
 
@@ -32,17 +33,6 @@
 
 /* GPIO base adrress */
 #define GPIO_BASE_OFFSET    0x100
-#define GPIO_GR_0           (0xC1080000U + GPIO_BASE_OFFSET)
-#define GPIO_GR_1           (0xC1080800U + GPIO_BASE_OFFSET)
-#define GPIO_GR_2           (0xC1081000U + GPIO_BASE_OFFSET)
-#define GPIO_GR_3           (0xC0800000U + GPIO_BASE_OFFSET)
-#define GPIO_GR_4           (0xC0800800U + GPIO_BASE_OFFSET)
-#define GPIO_GR_5           (0xC0400000U + GPIO_BASE_OFFSET)
-#define GPIO_GR_6           (0xC0400800U + GPIO_BASE_OFFSET)
-#define GPIO_GR_7           (0xC0401000U + GPIO_BASE_OFFSET)
-#define GPIO_GR_8           (0xC0401800U + GPIO_BASE_OFFSET)
-#define GPIO_GR_9           (0xC9B00000U + GPIO_BASE_OFFSET)
-#define GPIO_GR_10          (0xC9B00800U + GPIO_BASE_OFFSET)
 
 /* GPIO register: offset address */
 #define GP_IOINTSEL         0x010
@@ -242,51 +232,19 @@ void R_GPIO_ClearInterrupt(rcar_gpio_group_t grp, rcar_pin_t pin)
 int R_GPIO_SetInterruptCallback(rcar_gpio_group_t grp, IrqHandlerFn handler, void *ctx)
 {
     uint32_t int_id;
+    uint32_t int_priority;
 
-    switch (grp) {
-    case 0:
-        int_id = INTID_GPIO_GRP0;
-        break;
-    case 1:
-        int_id = INTID_GPIO_GRP1;
-        break;
-    case 2:
-        int_id = INTID_GPIO_GRP2;
-        break;
-    case 3:
-        int_id = INTID_GPIO_GRP3;
-        break;
-    case 4:
-        int_id = INTID_GPIO_GRP4;
-        break;
-    case 5:
-        int_id = INTID_GPIO_GRP5;
-        break;
-    case 6:
-        int_id = INTID_GPIO_GRP6;
-        break;
-    case 7:
-        int_id = INTID_GPIO_GRP7;
-        break;
-    case 8:
-        int_id = INTID_GPIO_GRP8;
-        break;
-    case 9:
-        int_id = INTID_GPIO_GRP9;
-        break;
-    case 10:
-        int_id = INTID_GPIO_GRP10;
-        break;
-    default:
-        int_id = INTID_GPIO_NO_EXIST;
+    if(grp > dt_count_node((void*)gpio_list) - 1 || gpio_list[grp]->status != OKAY) {
         goto setup_irq_fail;
     }
+    int_id = *(gpio_list[grp]->irq)[1];
+    int_priority = *(gpio_list[grp]->irq)[3];
 
     /* Set Handler for Irq */
     Irq_SetupEntry(int_id, handler, ctx);
 
     /* Set priority for Irq */
-    Irq_SetPriority(int_id, IPRIORITY(3));
+    Irq_SetPriority(int_id, int_priority);
     
     /* Enable Irq */
     Irq_Enable(int_id);
@@ -332,45 +290,11 @@ static uint32_t getGpioRegister(rcar_gpio_group_t grp, uint32_t offset)
     uint32_t base_addr;
     uint32_t reg_addr;
 
-    switch (grp) {
-    case 0:
-        base_addr = GPIO_GR_0;
-        break;
-    case 1:
-        base_addr = GPIO_GR_1;
-        break;
-    case 2:
-        base_addr = GPIO_GR_2;
-        break;
-    case 3:
-        base_addr = GPIO_GR_3;
-        break;
-    case 4:
-        base_addr = GPIO_GR_4;
-        break;
-    case 5:
-        base_addr = GPIO_GR_5;
-        break;
-    case 6:
-        base_addr = GPIO_GR_6;
-        break;
-    case 7:
-        base_addr = GPIO_GR_7;
-        break;
-    case 8:
-        base_addr = GPIO_GR_8;
-        break;
-    case 9:
-        base_addr = GPIO_GR_9;
-        break;
-    case 10:
-        base_addr = GPIO_GR_10;
-        break;
-    default:
-        base_addr = GPIO_BASE_ADDR_ERR;
+    if(grp > dt_count_node((void*)gpio_list) - 1 || gpio_list[grp]->status != OKAY) {
         goto hang_drive;
     }
 
+    base_addr = gpio_list[grp]->base_address + GPIO_BASE_OFFSET;
     reg_addr = base_addr + offset;
 
     return reg_addr;

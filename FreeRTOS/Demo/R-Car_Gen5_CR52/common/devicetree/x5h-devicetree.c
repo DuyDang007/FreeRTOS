@@ -1,5 +1,6 @@
 #include "devicetree-binding.h"
 
+/* ------------------------------ UART NODES ----------------------------------- */
 const struct uart_node scif0 = {
     .compatible = "rcar_scif",
     .base_address = 0xc0700000,
@@ -67,3 +68,86 @@ const struct uart_node hscif_dummy = {
 
 const struct uart_node *uart_list[] = { &scif0, &scif1, &hscif_dummy, &scif3, &scif4, &hscif0, &hscif1, &hscif2, &hscif3, NULL };
 
+/* ------------------------------ GPIO NODES ----------------------------------- */
+const irq_id gpio_irq[] = {
+    {GIC_SPI, 0x20, IRQ_TYPE_LEVEL, DEFAULT_IRQ_PRIORITY + 2},
+    {GIC_SPI, 0x24, IRQ_TYPE_LEVEL, DEFAULT_IRQ_PRIORITY + 2},
+    {GIC_SPI, 0x28, IRQ_TYPE_LEVEL, DEFAULT_IRQ_PRIORITY + 2},
+    {GIC_SPI, 0x2C, IRQ_TYPE_LEVEL, DEFAULT_IRQ_PRIORITY + 2},
+    {GIC_SPI, 0x30, IRQ_TYPE_LEVEL, DEFAULT_IRQ_PRIORITY + 2},
+    {GIC_SPI, 0x34, IRQ_TYPE_LEVEL, DEFAULT_IRQ_PRIORITY + 2},
+    {GIC_SPI, 0x38, IRQ_TYPE_LEVEL, DEFAULT_IRQ_PRIORITY + 2},
+    {GIC_SPI, 0x3C, IRQ_TYPE_LEVEL, DEFAULT_IRQ_PRIORITY + 2},
+    {GIC_SPI, 0x40, IRQ_TYPE_LEVEL, DEFAULT_IRQ_PRIORITY + 2},
+    {GIC_SPI, 0x44, IRQ_TYPE_LEVEL, DEFAULT_IRQ_PRIORITY + 2},
+    {GIC_SPI, 0x48, IRQ_TYPE_LEVEL, DEFAULT_IRQ_PRIORITY + 2}
+};
+
+const struct gpio_node gpio0 = {
+    .compatible = "rcar_gpio",
+    .base_address = 0xC1080000U,
+    .irq = &gpio_irq[0],
+    .status = OKAY
+};
+const struct gpio_node gpio1 = {
+    .compatible = "rcar_gpio",
+    .base_address = 0xC1080800U,
+    .irq = &gpio_irq[1],
+    .status = OKAY
+};
+const struct gpio_node gpio2 = {
+    .compatible = "rcar_gpio",
+    .base_address = 0xC1081000U,
+    .irq = &gpio_irq[2],
+    .status = OKAY
+};
+const struct gpio_node gpio3 = {
+    .compatible = "rcar_gpio",
+    .base_address = 0xC0800000U,
+    .irq = &gpio_irq[3],
+    .status = OKAY
+};
+const struct gpio_node gpio4 = {
+    .compatible = "rcar_gpio",
+    .base_address = 0xC0800800U,
+    .irq = &gpio_irq[4],
+    .status = OKAY
+};
+const struct gpio_node gpio5 = {
+    .compatible = "rcar_gpio",
+    .base_address = 0xC0400000U,
+    .irq = &gpio_irq[5],
+    .status = OKAY
+};
+const struct gpio_node gpio6 = {
+    .compatible = "rcar_gpio",
+    .base_address = 0xC0400800U,
+    .irq = &gpio_irq[6],
+    .status = OKAY
+};
+const struct gpio_node gpio7 = {
+    .compatible = "rcar_gpio",
+    .base_address = 0xC0401000U,
+    .irq = &gpio_irq[7],
+    .status = OKAY
+};
+const struct gpio_node gpio8 = {
+    .compatible = "rcar_gpio",
+    .base_address = 0xC0401800U,
+    .irq = &gpio_irq[8],
+    .status = OKAY
+};
+const struct gpio_node gpio9 = {
+    .compatible = "rcar_gpio",
+    .base_address = 0xC9B00000U,
+    .irq = &gpio_irq[9],
+    .status = OKAY
+};
+const struct gpio_node gpio10 = {
+    .compatible = "rcar_gpio",
+    .base_address = 0xC9B00800U,
+    .irq = &gpio_irq[10],
+    .status = OKAY
+};
+
+const struct gpio_node *gpio_list[] = { &gpio0, &gpio1, &gpio2, &gpio3, &gpio4, &gpio5, &gpio6, &gpio7, &gpio8, &gpio9, &gpio10, NULL };

@@ -66,22 +66,6 @@
 #define IPRIORITY(x) (((x <= MAX_PRIORITY_VALUE && x >= 0) ? x : MAX_PRIORITY_VALUE) << RESERVED_PRIORITY_BIT)
 
 /**
- * @brief Interrupt IDs of GPIO group
- */
-#define INTID_GPIO_GRP0                0x0020
-#define INTID_GPIO_GRP1                0x0024
-#define INTID_GPIO_GRP2                0x0028
-#define INTID_GPIO_GRP3                0x002C
-#define INTID_GPIO_GRP4                0x0030
-#define INTID_GPIO_GRP5                0x0034
-#define INTID_GPIO_GRP6                0x0038
-#define INTID_GPIO_GRP7                0x003C
-#define INTID_GPIO_GRP8                0x0040
-#define INTID_GPIO_GRP9                0x0044
-#define INTID_GPIO_GRP10       0x0048
-#define INTID_GPIO_NO_EXIST    0x0
-
-/**
  * @brief Interrupt IDs of I2C driver
  */
 #define INTID_I2C_IF0		0x0392

@@ -30,6 +30,15 @@ struct uart_node {
 
 extern const struct uart_node *uart_list[];
 
+/* ------- GPIO ---------- */
+struct gpio_node {
+    const char *compatible;
+    const uint32_t base_address;
+    const irq_id *irq;
+    const e_node_status_t status;
+};
+extern const struct gpio_node *gpio_list[];
+
 /* ------- I2C ---------- */
 struct i2c_node {
     const char *compatible;
@@ -48,7 +57,7 @@ extern const struct i2c_node *i2c_list[];
 /** Count the number of node in a node array. Make sure the last element is always NULL
  *  and it will be excluded
  */
-static inline uint32_t count_node(void *nodes[]) {
+static inline uint32_t dt_count_node(void *nodes[]) {
     size_t count = 0;
     while (nodes[count] != NULL) {
         count++;
