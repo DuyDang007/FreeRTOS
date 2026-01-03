@@ -230,3 +230,59 @@ const struct i2c_node i2c8 = {
 };
 
 const struct i2c_node *i2c_list[] = { &i2c0, &i2c1, &i2c2, &i2c3, &i2c4, &i2c5, &i2c6, &i2c7, &i2c8, NULL };
+
+/* ------------------------------ TAUD NODES ----------------------------------- */
+const irq_id taud0_irq[] = {
+    {GIC_SPI, 0x0397, IRQ_TYPE_EDGE, DEFAULT_IRQ_PRIORITY + 2},
+    {GIC_SPI, 0x0398, IRQ_TYPE_EDGE, DEFAULT_IRQ_PRIORITY + 2},
+    {GIC_SPI, 0x0399, IRQ_TYPE_EDGE, DEFAULT_IRQ_PRIORITY + 2},
+    {GIC_SPI, 0x039A, IRQ_TYPE_EDGE, DEFAULT_IRQ_PRIORITY + 2},
+    {GIC_SPI, 0x039B, IRQ_TYPE_EDGE, DEFAULT_IRQ_PRIORITY + 2},
+    {GIC_SPI, 0x039C, IRQ_TYPE_EDGE, DEFAULT_IRQ_PRIORITY + 2},
+    {GIC_SPI, 0x039D, IRQ_TYPE_EDGE, DEFAULT_IRQ_PRIORITY + 2},
+    {GIC_SPI, 0x039E, IRQ_TYPE_EDGE, DEFAULT_IRQ_PRIORITY + 2},
+    {GIC_SPI, 0x039F, IRQ_TYPE_EDGE, DEFAULT_IRQ_PRIORITY + 2},
+    {GIC_SPI, 0x03A0, IRQ_TYPE_EDGE, DEFAULT_IRQ_PRIORITY + 2},
+    {GIC_SPI, 0x03A1, IRQ_TYPE_EDGE, DEFAULT_IRQ_PRIORITY + 2},
+    {GIC_SPI, 0x03A2, IRQ_TYPE_EDGE, DEFAULT_IRQ_PRIORITY + 2},
+    {GIC_SPI, 0x03A3, IRQ_TYPE_EDGE, DEFAULT_IRQ_PRIORITY + 2},
+    {GIC_SPI, 0x03A4, IRQ_TYPE_EDGE, DEFAULT_IRQ_PRIORITY + 2},
+    {GIC_SPI, 0x03A5, IRQ_TYPE_EDGE, DEFAULT_IRQ_PRIORITY + 2},
+    {GIC_SPI, 0x03A6, IRQ_TYPE_EDGE, DEFAULT_IRQ_PRIORITY + 2},
+};
+const irq_id taud1_irq[] = {
+    {GIC_SPI, 0x03A7, IRQ_TYPE_EDGE, DEFAULT_IRQ_PRIORITY + 2},
+    {GIC_SPI, 0x03A8, IRQ_TYPE_EDGE, DEFAULT_IRQ_PRIORITY + 2},
+    {GIC_SPI, 0x03A9, IRQ_TYPE_EDGE, DEFAULT_IRQ_PRIORITY + 2},
+    {GIC_SPI, 0x03AA, IRQ_TYPE_EDGE, DEFAULT_IRQ_PRIORITY + 2},
+    {GIC_SPI, 0x03AB, IRQ_TYPE_EDGE, DEFAULT_IRQ_PRIORITY + 2},
+    {GIC_SPI, 0x03AC, IRQ_TYPE_EDGE, DEFAULT_IRQ_PRIORITY + 2},
+    {GIC_SPI, 0x03AD, IRQ_TYPE_EDGE, DEFAULT_IRQ_PRIORITY + 2},
+    {GIC_SPI, 0x03AE, IRQ_TYPE_EDGE, DEFAULT_IRQ_PRIORITY + 2},
+    {GIC_SPI, 0x03AF, IRQ_TYPE_EDGE, DEFAULT_IRQ_PRIORITY + 2},
+    {GIC_SPI, 0x03B0, IRQ_TYPE_EDGE, DEFAULT_IRQ_PRIORITY + 2},
+    {GIC_SPI, 0x03B1, IRQ_TYPE_EDGE, DEFAULT_IRQ_PRIORITY + 2},
+    {GIC_SPI, 0x03B2, IRQ_TYPE_EDGE, DEFAULT_IRQ_PRIORITY + 2},
+    {GIC_SPI, 0x03B3, IRQ_TYPE_EDGE, DEFAULT_IRQ_PRIORITY + 2},
+    {GIC_SPI, 0x03B4, IRQ_TYPE_EDGE, DEFAULT_IRQ_PRIORITY + 2},
+    {GIC_SPI, 0x03B5, IRQ_TYPE_EDGE, DEFAULT_IRQ_PRIORITY + 2},
+    {GIC_SPI, 0x03B6, IRQ_TYPE_EDGE, DEFAULT_IRQ_PRIORITY + 2},
+};
+const struct taud_node taud0 = {
+    .compatible = "rcar_taud",
+    .channel_count = 16,
+    .base_address = 0xC1392000U,
+    .irq = taud0_irq,
+    .clock_id = X5H_CLOCK_ID_MDLC_TAUD0,
+    .status = OKAY
+};
+const struct taud_node taud1 = {
+    .compatible = "rcar_taud",
+    .channel_count = 16,
+    .base_address = 0xC1393000U,
+    .irq = taud1_irq,
+    .clock_id = X5H_CLOCK_ID_MDLC_TAUD1,
+    .status = OKAY
+};
+
+const struct taud_node *taud_list[] = { &taud0, &taud1, NULL };

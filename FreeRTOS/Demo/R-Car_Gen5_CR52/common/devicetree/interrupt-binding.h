@@ -10,8 +10,8 @@ typedef enum {
 } e_gic_type_t;
 
 typedef enum {
-    IRQ_TYPE_LEVEL,
-    IRQ_TYPE_EDGE
+    IRQ_TYPE_LEVEL = 0x00,
+    IRQ_TYPE_EDGE = 0x02
 } e_irq_type_t;
 
 /* Elements are in order of:

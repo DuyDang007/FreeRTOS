@@ -50,6 +50,19 @@ struct i2c_node {
 
 extern const struct i2c_node *i2c_list[];
 
+/* ---- TAUD Timer ------*/
+struct taud_node {
+    const char *compatible;
+    const uint32_t channel_count;
+    const uint32_t base_address;
+    const irq_id *irq;
+    const int32_t clock_id;
+    const e_node_status_t status;
+};
+
+extern const struct taud_node *taud_list[];
+
+
 
 /* ------------------ HELPER FUNCTIONS --------------- */
 

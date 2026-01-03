@@ -15,6 +15,7 @@
 #include "state-manager/r_clock_domain_id.h"
 #include <stdio.h>
 #include "gic.h"
+#include "devicetree-binding.h"
 
 
 /***********************************************************************************************************************
@@ -178,8 +179,8 @@ static uint8_t r_taud_setup_clk_src(void)
         return 0;
     }
     uint32_t rate;
-    R_StateManager_ClockOn(X5H_CLOCK_ID_MDLC_TAUD0);
-    R_StateManager_ClockOn(X5H_CLOCK_ID_MDLC_TAUD1);
+    R_StateManager_ClockOn(taud_list[0]->clock_id);
+    R_StateManager_ClockOn(taud_list[1]->clock_id);
 
     R_StateManager_GetClock(X5H_CLOCK_ID_CLK_BUSD8_SCP_MAIN, &rate);
     taud_set_src_clk_main(rate);
@@ -325,22 +326,16 @@ static e_taud_err_t r_taud_pwm_hardware_initialize(e_taud_unit_t unit, e_taud_fu
 static uint8_t r_taud_irq_setup(e_taud_unit_t unit, e_taud_ch_t ch, st_taud_irq_Cfg_t *  p_irq_cfg)
 {
     e_taud_err_t ret = TAUD_SUCCESS;
-    unsigned int irq_id = taud_get_irq_id(unit, ch);
+    unsigned int irq_id = taud_list[unit]->irq[ch][1];
+    unsigned int irq_type = taud_list[unit]->irq[ch][2];
+    unsigned int irq_priority = taud_list[unit]->irq[ch][3];
     /* Set Handler for Irq */
     Irq_SetupEntry(irq_id, p_irq_cfg->p_callback, p_irq_cfg->p_context);
-    Irq_SetIntType(irq_id, TNT_TYPE_EDGE_TRIGGERED);
+    Irq_SetIntType(irq_id, irq_type);
     /* Set priority for Irq */
-    Irq_SetPriority(irq_id, IPRIORITY(3));
+    Irq_SetPriority(irq_id, irq_priority);
     /* Enable Irq */
     Irq_Enable(irq_id);
 
     return ret;
-}
-
-static unsigned int taud_get_irq_id(uint8_t unit, uint8_t channel)
-{
-    unsigned int id;
-    id = INTID_TAUD0_CH0 + (unsigned int)channel + (unit * 0x10);
-
-    return id;
 }

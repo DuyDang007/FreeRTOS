@@ -234,46 +234,6 @@
 #define INTID_RTDMA3_NO_EXIST           0x0
 
 /**
- * @brief Interrupt IDs of TAUD unit 0
- */
-#define INTID_TAUD0_CH0                 0x0397
-#define INTID_TAUD0_CH1                 0x0398
-#define INTID_TAUD0_CH2                 0x0399
-#define INTID_TAUD0_CH3                 0x039A
-#define INTID_TAUD0_CH4                 0x039B
-#define INTID_TAUD0_CH5                 0x039C
-#define INTID_TAUD0_CH6                 0x039D
-#define INTID_TAUD0_CH7                 0x039E
-#define INTID_TAUD0_CH8                 0x039F
-#define INTID_TAUD0_CH9                 0x03A0
-#define INTID_TAUD0_CH10                0x03A1
-#define INTID_TAUD0_CH11                0x03A2
-#define INTID_TAUD0_CH12                0x03A3
-#define INTID_TAUD0_CH13                0x03A4
-#define INTID_TAUD0_CH14                0x03A5
-#define INTID_TAUD0_CH15                0x03A6
-
-/**
- * @brief Interrupt IDs of TAUD unit 1
- */
-#define INTID_TAUD1_CH0                 0x03A7
-#define INTID_TAUD1_CH1                 0x03A8
-#define INTID_TAUD1_CH2                 0x03A9
-#define INTID_TAUD1_CH3                 0x03AA
-#define INTID_TAUD1_CH4                 0x03AB
-#define INTID_TAUD1_CH5                 0x03AC
-#define INTID_TAUD1_CH6                 0x03AD
-#define INTID_TAUD1_CH7                 0x03AE
-#define INTID_TAUD1_CH8                 0x03AF
-#define INTID_TAUD1_CH9                 0x03B0
-#define INTID_TAUD1_CH10                0x03B1
-#define INTID_TAUD1_CH11                0x03B2
-#define INTID_TAUD1_CH12                0x03B3
-#define INTID_TAUD1_CH13                0x03B4
-#define INTID_TAUD1_CH14                0x03B5
-#define INTID_TAUD1_CH15                0x03B6
-
-/**
  * @brief Interrupt IDs of ECM
  */
 #define INTID_ECMERR_MERGE              0x0326
