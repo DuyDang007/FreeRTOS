@@ -45,7 +45,6 @@ struct i2c_node {
     const uint32_t base_address;
     const irq_id *irq;
     const int32_t clock_id;
-    const uint8_t master_address;
     const e_node_status_t status;
 };
 

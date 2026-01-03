@@ -18,6 +18,7 @@
 #include "dmac/sysdmac_ctrl.h"
 #include "i2c/r_i2c.h"
 #include "r_i2c_regs.h"
+#include "devicetree-binding.h"
 
 /* ==================== DEFINES ==================== */
 #define I2C_OPEN                                (0x00000001ULL)
@@ -223,39 +224,13 @@ static int RCar_I2C_Init(i2c_instance_ctrl_t * p_instance_ctrl)
     uintptr_t i2c_base_addr = R_I2C_PRV_GetRegbase(Unit);
     uint8_t ret;
 
-    switch (Unit) {
-        case R_I2C_IF0:
-            clock_id = X5H_CLOCK_ID_MDLC_I2C0;
-            break;
-        case R_I2C_IF1:
-            clock_id = X5H_CLOCK_ID_MDLC_I2C1;
-            break;
-        case R_I2C_IF2:
-            clock_id = X5H_CLOCK_ID_MDLC_I2C2;
-            break;
-        case R_I2C_IF3:
-            clock_id = X5H_CLOCK_ID_MDLC_I2C3;
-            break;
-        case R_I2C_IF4:
-            clock_id = X5H_CLOCK_ID_MDLC_I2C4;
-            break;
-        case R_I2C_IF5:
-            clock_id = X5H_CLOCK_ID_MDLC_I2C5;
-            break;
-        case R_I2C_IF6:
-            clock_id = X5H_CLOCK_ID_MDLC_I2C6;
-            break;
-        case R_I2C_IF7:
-            clock_id = X5H_CLOCK_ID_MDLC_I2C7;
-            break;
-        case R_I2C_IF8:
-            clock_id = X5H_CLOCK_ID_MDLC_I2C8;
-            break;
-        default:
-            printf("[R_I2C_PRV_GetClockId] : Wrong I2C Unit %d\r\n", Unit);
-            break;
+    if((uint32_t)Unit > dt_count_node((void *)i2c_list) - 1)
+    {
+        printf("[RCar_I2C_Init] : Wrong I2C Unit %d\r\n", Unit);
+        return -1;
     }
 
+    clock_id = i2c_list[(uint32_t)Unit]->clock_id;
     ret = R_StateManager_ClockOn(clock_id);
     if (ret)
     {
@@ -1018,44 +993,21 @@ static int R_I2C_SetInterruptCallback(r_i2c_Unit_t Unit, IrqHandlerFn handler, v
 {
     uintptr_t i2c_base_addr = R_I2C_PRV_GetRegbase(Unit);
     uint32_t int_id;
-    switch (Unit) {
-	case R_I2C_IF0:
-	    int_id = INTID_I2C_IF0;
-	    break;
-	case R_I2C_IF1:
-	    int_id = INTID_I2C_IF1;
-	    break;
-	case R_I2C_IF2:
-	    int_id = INTID_I2C_IF2;
-	    break;
-	case R_I2C_IF3:
-	    int_id = INTID_I2C_IF3;
-	    break;
-	case R_I2C_IF4:
-	    int_id = INTID_I2C_IF4;
-	    break;
-	case R_I2C_IF5:
-	    int_id = INTID_I2C_IF5;
-	    break;
-	case R_I2C_IF6:
-	    int_id = INTID_I2C_IF6;
-	    break;
-	case R_I2C_IF7:
-	    int_id = INTID_I2C_IF7;
-	    break;
-	case R_I2C_IF8:
-	    int_id = INTID_I2C_IF8;
-	    break;
-	default:
-	    int_id = INTID_NO_EXIST;
-	    printf("ERROR: IRQ FAILED - no INTID exist!\n");
+    uint32_t int_priority;
+
+    if((uint32_t)Unit > dt_count_node((void *)i2c_list) - 1) {
+        printf("ERROR: IRQ FAILED - no INTID exist!\n");
         return -1;
-	}
+    }
+
+    int_id = *(i2c_list[Unit]->irq)[2];
+    int_priority = *(i2c_list[Unit]->irq)[3];
+
     /* Set Handler for Irq */
     Irq_SetupEntry(int_id, handler, ctx);
 
     /* Set priority for Irq */
-    Irq_SetPriority(int_id, IPRIORITY(3));
+    Irq_SetPriority(int_id, int_priority);
 
     /* Enable Irq */
     Irq_Enable(int_id);
@@ -1067,41 +1019,13 @@ static int RCar_I2C_DisableGICInterrupt(r_i2c_Unit_t Unit)
 {
     uintptr_t i2c_base_addr = R_I2C_PRV_GetRegbase(Unit);
     uint32_t int_id;
-    switch (Unit) {
-	case R_I2C_IF0:
-	    int_id = INTID_I2C_IF0;
-	    break;
-	case R_I2C_IF1:
-	    int_id = INTID_I2C_IF1;
-	    break;
-	case R_I2C_IF2:
-	    int_id = INTID_I2C_IF2;
-	    break;
-	case R_I2C_IF3:
-	    int_id = INTID_I2C_IF3;
-	    break;
-	case R_I2C_IF4:
-	    int_id = INTID_I2C_IF4;
-	    break;
-	case R_I2C_IF5:
-	    int_id = INTID_I2C_IF5;
-	    break;
-	case R_I2C_IF6:
-	    int_id = INTID_I2C_IF6;
-	    break;
-	case R_I2C_IF7:
-	    int_id = INTID_I2C_IF7;
-	    break;
-	case R_I2C_IF8:
-	    int_id = INTID_I2C_IF8;
-	    break;
-	default:
-	    int_id = INTID_NO_EXIST;
-	    printf("ERROR: IRQ FAILED - no INTID exist!\n");
-        return -1;
-	}
 
-    /* Disable Irq */
+    if((uint32_t)Unit > dt_count_node((void *)i2c_list) - 1) {
+        printf("ERROR: IRQ FAILED - no INTID exist!\n");
+        return -1;
+    }
+
+    int_id = *(i2c_list[Unit]->irq)[2];
     Irq_Disable(int_id);
 
     return 0;

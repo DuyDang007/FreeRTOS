@@ -66,20 +66,6 @@
 #define IPRIORITY(x) (((x <= MAX_PRIORITY_VALUE && x >= 0) ? x : MAX_PRIORITY_VALUE) << RESERVED_PRIORITY_BIT)
 
 /**
- * @brief Interrupt IDs of I2C driver
- */
-#define INTID_I2C_IF0		0x0392
-#define INTID_I2C_IF1		0x025D
-#define INTID_I2C_IF2		0x025E
-#define INTID_I2C_IF3		0x025F
-#define INTID_I2C_IF4		0x0260
-#define INTID_I2C_IF5		0x0261
-#define INTID_I2C_IF6		0x0262
-#define INTID_I2C_IF7		0x0263
-#define INTID_I2C_IF8		0x0264
-#define INTID_NO_EXIST		0x0
-
-/**
  * @brief Interrupt IDs of SYS-DMAC group 0
  */
 #define INTID_SYSDMA0_CH0                0x013A

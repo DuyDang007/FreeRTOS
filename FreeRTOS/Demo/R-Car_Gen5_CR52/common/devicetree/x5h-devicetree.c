@@ -1,4 +1,5 @@
 #include "devicetree-binding.h"
+#include "state-manager/r_clock_domain_id.h"
 
 /* ------------------------------ UART NODES ----------------------------------- */
 const struct uart_node scif0 = {
@@ -151,3 +152,81 @@ const struct gpio_node gpio10 = {
 };
 
 const struct gpio_node *gpio_list[] = { &gpio0, &gpio1, &gpio2, &gpio3, &gpio4, &gpio5, &gpio6, &gpio7, &gpio8, &gpio9, &gpio10, NULL };
+
+/* ------------------------------ I2C NODES ----------------------------------- */
+const irq_id i2c_irq[] = {
+    {GIC_SPI, 0x0392, IRQ_TYPE_LEVEL, DEFAULT_IRQ_PRIORITY + 2},
+    {GIC_SPI, 0x025D, IRQ_TYPE_LEVEL, DEFAULT_IRQ_PRIORITY + 2},
+    {GIC_SPI, 0x025E, IRQ_TYPE_LEVEL, DEFAULT_IRQ_PRIORITY + 2},
+    {GIC_SPI, 0x025F, IRQ_TYPE_LEVEL, DEFAULT_IRQ_PRIORITY + 2},
+    {GIC_SPI, 0x0260, IRQ_TYPE_LEVEL, DEFAULT_IRQ_PRIORITY + 2},
+    {GIC_SPI, 0x0261, IRQ_TYPE_LEVEL, DEFAULT_IRQ_PRIORITY + 2},
+    {GIC_SPI, 0x0262, IRQ_TYPE_LEVEL, DEFAULT_IRQ_PRIORITY + 2},
+    {GIC_SPI, 0x0263, IRQ_TYPE_LEVEL, DEFAULT_IRQ_PRIORITY + 2},
+    {GIC_SPI, 0x0264, IRQ_TYPE_LEVEL, DEFAULT_IRQ_PRIORITY + 2}
+};
+const struct i2c_node i2c0 = {
+    .compatible = "rcar_i2c",
+    .base_address = 0xc11d0000,
+    .irq = &i2c_irq[0],
+    .clock_id = X5H_CLOCK_ID_MDLC_I2C0,
+    .status = OKAY
+};
+const struct i2c_node i2c1 = {
+    .compatible = "rcar_i2c",
+    .base_address = 0xc06c0000,
+    .irq = &i2c_irq[1],
+    .clock_id = X5H_CLOCK_ID_MDLC_I2C1,
+    .status = OKAY
+};
+const struct i2c_node i2c2 = {
+    .compatible = "rcar_i2c",
+    .base_address = 0xc06c8000,
+    .irq = &i2c_irq[2],
+    .clock_id = X5H_CLOCK_ID_MDLC_I2C2,
+    .status = OKAY
+};
+const struct i2c_node i2c3 = {
+    .compatible = "rcar_i2c",
+    .base_address = 0xc06d0000,
+    .irq = &i2c_irq[3],
+    .clock_id = X5H_CLOCK_ID_MDLC_I2C3,
+    .status = OKAY
+};
+const struct i2c_node i2c4 = {
+    .compatible = "rcar_i2c",
+    .base_address = 0xc06d8000,
+    .irq = &i2c_irq[4],
+    .clock_id = X5H_CLOCK_ID_MDLC_I2C4,
+    .status = OKAY
+};
+const struct i2c_node i2c5 = {
+    .compatible = "rcar_i2c",
+    .base_address = 0xc06e0000,
+    .irq = &i2c_irq[5],
+    .clock_id = X5H_CLOCK_ID_MDLC_I2C5,
+    .status = OKAY
+};
+const struct i2c_node i2c6 = {
+    .compatible = "rcar_i2c",
+    .base_address = 0xc06e8000,
+    .irq = &i2c_irq[6],
+    .clock_id = X5H_CLOCK_ID_MDLC_I2C6,
+    .status = OKAY
+};
+const struct i2c_node i2c7 = {
+    .compatible = "rcar_i2c",
+    .base_address = 0xc06f0000,
+    .irq = &i2c_irq[7],
+    .clock_id = X5H_CLOCK_ID_MDLC_I2C7,
+    .status = OKAY
+};
+const struct i2c_node i2c8 = {
+    .compatible = "rcar_i2c",
+    .base_address = 0xc06f8000,
+    .irq = &i2c_irq[8],
+    .clock_id = X5H_CLOCK_ID_MDLC_I2C8,
+    .status = OKAY
+};
+
+const struct i2c_node *i2c_list[] = { &i2c0, &i2c1, &i2c2, &i2c3, &i2c4, &i2c5, &i2c6, &i2c7, &i2c8, NULL };

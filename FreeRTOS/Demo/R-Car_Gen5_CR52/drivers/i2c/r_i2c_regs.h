@@ -26,16 +26,6 @@ typedef enum {
     R_I2C_LAST      /**< delimiter */
 } r_i2c_Unit_t;
 
-#define R_I2C_IF0_BASE    0xc11d0000
-#define R_I2C_IF1_BASE    0xc06c0000
-#define R_I2C_IF2_BASE    0xc06c8000
-#define R_I2C_IF3_BASE    0xc06d0000
-#define R_I2C_IF4_BASE    0xc06d8000
-#define R_I2C_IF5_BASE    0xc06e0000
-#define R_I2C_IF6_BASE    0xc06e8000
-#define R_I2C_IF7_BASE    0xc06f0000
-#define R_I2C_IF8_BASE    0xc06f8000
-
 #define R_I2C_ICSCR       0x00UL
 #define R_I2C_ICMCR       0x04UL
 #define R_I2C_ICSSR       0x08UL
