@@ -7,10 +7,11 @@
 
 #include "mfis.h"
 #include "interrupts.h"
+#include "devicetree-binding.h"
 
 /* MFIS */
 /* Sender: CR52 - Receiver: CA720 */
-#define MFIS_BASE   (0x18800000)
+#define MFIS_BASE   mfis_get_base_address()
 #define IICR(i)     (MFIS_BASE + 0x1000 * (i))        // Common communication control register Sender core to Receiver core ch[i]
 #define EICR(i)     (MFIS_BASE + 0x1000 * (i) + 0x04) // Common communication control register Receiver core to Sender core ch[i]
 #define IMBR(i)     (MFIS_BASE + 0x1000 * (i) + 0x40) // Common communication message register Sender core to Receiver core ch[i]
@@ -19,10 +20,24 @@
 #define MFIS_UNLOCK_WRITE	(0x189e0900)
 
 /* Interrupt ID of MFIS, i=[0-63] */
-#define INTID_S_R(i)    (0x0056 + i * 2) // Common INTID ch[i] from Sender to Receiver, unused
-#define INTID_R_S(i)    (0x0057 + i * 2) // Common INTID ch[i] from Receiver to Sender
+#define INTID_R_S(i)    (mfis_get_irq_base() + i * 2) // Common INTID ch[i] from Receiver to Sender
 
 /*--------------------------- MFIS Driver ---------------------------------*/
+static inline uint32_t mfis_get_base_address(void)
+{
+    /* There is only one MFIS unit */
+    return mfis_list[0]->base_address;
+}
+
+static inline uint32_t mfis_get_irq_base(void)
+{
+    return mfis_list[0]->irq[0][1];
+}
+
+static inline uint32_t mfis_get_irq_priority(void)
+{
+    return mfis_list[0]->irq[0][3];
+}
 
 /* Get interrupt source number of a channel */
 uint16_t mfis_get_int_source_num(struct mfis_channel *ch)
@@ -58,7 +73,7 @@ int mfis_init(struct mfis_channel *ch)
     /* Set callback function */
     Irq_SetupEntry(INTID_R_S(ch->ch), (IrqHandlerFn)mfis_interrupt_cb, (void*) ch);
     /* Enable interrupt from Receiver to Sender */
-    Irq_SetPriority(INTID_R_S(ch->ch), IPRIORITY(2));
+    Irq_SetPriority(INTID_R_S(ch->ch), mfis_get_irq_priority());
     Irq_Enable(INTID_R_S(ch->ch));
 
     /* Unlock MFIS register write protection */

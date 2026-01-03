@@ -49,7 +49,6 @@
 #define RST_SRES1FC4    (1 << 7)
 #define RST_RESKCPROT0	0x04F0U
 
-uintptr_t R_WWDT_PRV_GetRegbase(wwdt_unit_t unit);
 void r_wwdt_write(uintptr_t Addr, uint32_t val);
 uint32_t r_wwdt_read(uintptr_t Addr);
 

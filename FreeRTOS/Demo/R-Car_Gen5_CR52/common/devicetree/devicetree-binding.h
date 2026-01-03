@@ -62,7 +62,25 @@ struct taud_node {
 
 extern const struct taud_node *taud_list[];
 
+/* ------ MFIS ---------- */
+struct mfis_node {
+    const char *compatible;
+    const uint32_t base_address;
+    const irq_id *irq;
+    const e_node_status_t status;
+};
+extern const struct mfis_node *mfis_list[];
 
+/* ------- WATCHDOG ------ */
+struct watchdog_node {
+    const char *compatible;
+    const uint32_t base_address;
+    const uint32_t *clock_domain_id;
+    const uint32_t *reset_domain_id;
+    const e_node_status_t status;
+};
+extern const struct watchdog_node *sys_watchdog_list[];
+extern const struct watchdog_node *window_watchdog_list[];
 
 /* ------------------ HELPER FUNCTIONS --------------- */
 

@@ -12,8 +12,8 @@
 #include "state-manager/r_clock_domain_id.h"
 #include "state-manager/r_state_manager.h"
 #include "state-manager/r_reset_domain_id.h"
+#include "devicetree-binding.h"
 
-#define SWDT_BASE	0x1C050000
 #define SWTCNT		0x0
 
 #define SWTCSRA		0x04
@@ -40,6 +40,9 @@
 			DIV_ROUND_UP((d) * OSCCLK, clk_divs[(cks)])
 
 static const unsigned int clk_divs[] = { 1, 4, 16, 32, 64, 128, 1024, 4096 };
+
+/* Only one unit*/
+const struct watchdog_node *swdt_unit;
 
 uint8_t R_SWDT_Init(uint8_t timeout_sec);
 uint8_t R_SWDT_Ping(uint8_t timeout_new_sec);
@@ -78,28 +81,31 @@ uint8_t R_SWDT_Init(uint8_t timeout_sec) {
 	uint8_t ret;
 	int clock_id, reset_id;
 
-	clock_id = X5H_CLOCK_ID_MDLC_WDT0;
+	/* Assign swdt_unit to the first and only watchdog node */
+	swdt_unit = sys_watchdog_list[0];
+
+	clock_id = swdt_unit->clock_domain_id[0];
 	ret = R_StateManager_ClockOn(clock_id);
 	if (ret)
 		printf("Error: Failed to turn clock ID %d ON.\r\n", clock_id);
 
-	reset_id = X5H_RESET_DOMAIN_ID_SWDT0;
+	reset_id = swdt_unit->reset_domain_id[0];
 	ret = R_StateManager_Reset(reset_id);
 	if (ret)
 		printf("Error: Failed to reset id %d.\r\n", reset_id);
 
-	reset_id = X5H_RESET_DOMAIN_ID_SWDT1;
+	reset_id = swdt_unit->reset_domain_id[1];
 	ret = R_StateManager_Reset(reset_id);
 	if (ret)
 		printf("Error: Failed to reset id %d ON.\r\n", reset_id);
 
 	/* for SWDT */
-	r_swdt_write(SWDT_BASE + SWTCSRA, (0xA5A5A5 << 8) | (r_swdt_read(SWDT_BASE + SWTCSRA) & ~SWTCSRA_TME));
+	r_swdt_write(swdt_unit->base_address + SWTCSRA, (0xA5A5A5 << 8) | (r_swdt_read(swdt_unit->base_address + SWTCSRA) & ~SWTCSRA_TME));
 	r_swdt_wait_cycles(2);
 
-	r_swdt_write(SWDT_BASE + SWTCNT, 0x5A5A0000); //reset counter
-	r_swdt_write(SWDT_BASE + SWTCSRA, (0xA5A5A5 << 8) | (r_swdt_read(SWDT_BASE + SWTCSRA) & ~SWTCSRA_WOVF));
-	r_swdt_write(SWDT_BASE + SWTCSRB, (0xA5A5A5 << 8) | 0);
+	r_swdt_write(swdt_unit->base_address + SWTCNT, 0x5A5A0000); //reset counter
+	r_swdt_write(swdt_unit->base_address + SWTCSRA, (0xA5A5A5 << 8) | (r_swdt_read(swdt_unit->base_address + SWTCSRA) & ~SWTCSRA_WOVF));
+	r_swdt_write(swdt_unit->base_address + SWTCSRB, (0xA5A5A5 << 8) | 0);
 
 	for (uint8_t i = ARRAY_SIZE(clk_divs) - 1; i >= 0; i--) {
 		clks_per_sec = OSCCLK / clk_divs[i];
@@ -116,33 +122,33 @@ uint8_t R_SWDT_Init(uint8_t timeout_sec) {
 	r_swdt_write(RST_DM0_BASE + RST_RESFC, r_rst_read(RST_DM0_BASE + RST_RESFC) & ~RST_SRES1FC5);
 
 	/* Wait WRFLG becomes 0 */
-	while (r_swdt_read(SWDT_BASE + SWTCSRA) & SWTCSRA_WRFLG);
+	while (r_swdt_read(swdt_unit->base_address + SWTCSRA) & SWTCSRA_WRFLG);
 
 	/* Enable Generating internal reset when SWDT overflow */
 	r_swdt_write(RST_DM0_BASE + RST_WDTRSTCR, r_rst_read(RST_DM0_BASE + RST_WDTRSTCR) & ~SWDT_RSTMSK);
 	r_swdt_write(RST_DM0_BASE + RST_RESKCPROT0, RST_KCPROT_EN);
 
-	r_swdt_write(SWDT_BASE + SWTCNT, (0x5A5A << 16) | (65536 - MUL_BY_CLKS_PER_SEC(cks, timeout_sec)));
+	r_swdt_write(swdt_unit->base_address + SWTCNT, (0x5A5A << 16) | (65536 - MUL_BY_CLKS_PER_SEC(cks, timeout_sec)));
 
 	return 0;
 }
 
 uint8_t R_SWDT_Ping(uint8_t ping_rate) {
 	vTaskDelay(ping_rate*1000);
-	r_swdt_write(SWDT_BASE + SWTCNT, (0x5A5A << 16) | (65536 - MUL_BY_CLKS_PER_SEC(cks, init_timeout)));
+	r_swdt_write(swdt_unit->base_address + SWTCNT, (0x5A5A << 16) | (65536 - MUL_BY_CLKS_PER_SEC(cks, init_timeout)));
 
 	return 0;
 }
 
 uint32_t R_SWDT_Start() {
-	r_swdt_write(SWDT_BASE + SWTCSRA, (0xA5A5A5 << 8) | (r_swdt_read(SWDT_BASE + SWTCSRA) | SWTCSRA_TME));
+	r_swdt_write(swdt_unit->base_address + SWTCSRA, (0xA5A5A5 << 8) | (r_swdt_read(swdt_unit->base_address + SWTCSRA) | SWTCSRA_TME));
 
 	return 0;
 }
 
 uint32_t R_SWDT_Stop() {
 	r_swdt_wait_cycles(3);
-	r_swdt_write(SWDT_BASE + SWTCSRA, 0);
+	r_swdt_write(swdt_unit->base_address + SWTCSRA, 0);
 
 	return 0;
 }
