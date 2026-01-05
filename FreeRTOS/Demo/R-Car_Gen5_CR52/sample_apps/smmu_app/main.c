@@ -88,7 +88,7 @@ int main( void )
     
     prvSetupHardware();
 
-    xTaskCreate(prvSMMUTask, "SMMUTask", configMINIMAL_STACK_SIZE, NULL, main_SMMU_TASK_PRIORITY, NULL );
+    xTaskCreate(prvSMMUTask, "SMMUTask", configMINIMAL_STACK_SIZE * 2, NULL, main_SMMU_TASK_PRIORITY, NULL );
     /* Start the tasks and timer running. */
     vTaskStartScheduler();
     for( ;; )

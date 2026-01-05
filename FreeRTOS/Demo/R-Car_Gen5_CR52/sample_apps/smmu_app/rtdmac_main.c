@@ -89,7 +89,7 @@ int main( void )
         prvSetupHardware();
 
 
-        xTaskCreate( prvDMACTask, "DMACTask", configMINIMAL_STACK_SIZE, NULL, main_DMAC_TASK_PRIORITY, NULL );
+        xTaskCreate( prvDMACTask, "DMACTask", configMINIMAL_STACK_SIZE * 2, NULL, main_DMAC_TASK_PRIORITY, NULL );
         /* Start the tasks and timer running. */
         vTaskStartScheduler();
         for( ;; )

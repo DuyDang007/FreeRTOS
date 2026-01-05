@@ -281,7 +281,7 @@ int main( void )
         prvSetupHardware();
 
         xSemaphore = xSemaphoreCreateBinary();
-        xTaskCreate( prvSYSDMACTask, "SYSDMACTask", configMINIMAL_STACK_SIZE, NULL, main_DMAC_TASK_PRIORITY, NULL );
+        xTaskCreate( prvSYSDMACTask, "SYSDMACTask", configMINIMAL_STACK_SIZE * 2, NULL, main_DMAC_TASK_PRIORITY, NULL );
         /* Start the tasks and timer running. */
         vTaskStartScheduler();
         for( ;; )
