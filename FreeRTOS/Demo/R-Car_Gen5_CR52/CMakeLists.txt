@@ -12,13 +12,11 @@ enable_language(C ASM)
 
 file(REAL_PATH ${CMAKE_SOURCE_DIR}/../../.. FREERTOS_DIR)
 set(BSP_DIR ${CMAKE_SOURCE_DIR})
-set(POSIX_DIR ${FREERTOS_DIR}/FreeRTOS-Plus/Source/FreeRTOS-Plus-POSIX)
 set(KERNEL_DIR ${FREERTOS_DIR}/FreeRTOS/Source)
 set(LOGGING_DIR ${FREERTOS_DIR}/FreeRTOS-Plus/Source/Utilities/logging)
 set(LINKER_DIR ${BSP_DIR}/common/linker)
 
 message(STATUS ${BSP_DIR})
-message(STATUS ${POSIX_DIR})
 message(STATUS ${KERNEL_DIR})
 message(STATUS ${LOGGING_DIR})
 
@@ -66,11 +64,6 @@ else()
     set(UCIE_VER "NONE")
 endif()
 
-### Global compile definitions
-set(global_definition
-    -DconfigUSE_POSIX_ERRNO=1
-    -DconfigSUPPORT_POSIX=1
-)
 
 
 message(STATUS "board: ${BOARD}")
@@ -173,20 +166,6 @@ if(ENABLE_OPENAMP)
     )
 endif()
 
-set(posix_source
-    ${POSIX_DIR}/FreeRTOS-Plus-POSIX/source/FreeRTOS_POSIX_clock.c
-    ${POSIX_DIR}/FreeRTOS-Plus-POSIX/source/FreeRTOS_POSIX_mqueue.c 
-    ${POSIX_DIR}/FreeRTOS-Plus-POSIX/source/FreeRTOS_POSIX_pthread.c 
-    ${POSIX_DIR}/FreeRTOS-Plus-POSIX/source/FreeRTOS_POSIX_pthread_cond.c 
-    ${POSIX_DIR}/FreeRTOS-Plus-POSIX/source/FreeRTOS_POSIX_pthread_mutex.c 
-    ${POSIX_DIR}/FreeRTOS-Plus-POSIX/source/FreeRTOS_POSIX_sched.c 
-    ${POSIX_DIR}/FreeRTOS-Plus-POSIX/source/FreeRTOS_POSIX_semaphore.c 
-    ${POSIX_DIR}/FreeRTOS-Plus-POSIX/source/FreeRTOS_POSIX_timer.c 
-    ${POSIX_DIR}/FreeRTOS-Plus-POSIX/source/FreeRTOS_POSIX_unistd.c 
-    ${POSIX_DIR}/FreeRTOS-Plus-POSIX/source/FreeRTOS_POSIX_utils.c
-    ${POSIX_DIR}/FreeRTOS-Plus-POSIX/source/FreeRTOS_POSIX_pthread_barrier.c
-)
-
 add_library(dummy OBJECT
     ${BSP_DIR}/common/dummy.c
 )
@@ -195,7 +174,6 @@ link_libraries(dummy)
 add_library(freertos_bsp STATIC
     ${kernel_source}
     ${bsp_source}
-    ${posix_source}
 )
 
 target_include_directories(freertos_bsp
@@ -221,21 +199,11 @@ target_include_directories(freertos_bsp
         $<BUILD_INTERFACE:${BSP_DIR}/drivers/wcrc>
         $<BUILD_INTERFACE:${BSP_DIR}/drivers/taud>
         $<BUILD_INTERFACE:${BSP_DIR}/drivers/ecm>
-        # POSIX
-        $<BUILD_INTERFACE:${BSP_DIR}/common/POSIX_portable>
-        $<BUILD_INTERFACE:${POSIX_DIR}/include>
-        $<BUILD_INTERFACE:${POSIX_DIR}/include/private>
-        $<BUILD_INTERFACE:${POSIX_DIR}/FreeRTOS-Plus-POSIX/include>
-        $<BUILD_INTERFACE:${POSIX_DIR}/FreeRTOS-Plus-POSIX/include/portable>
         # LOGGING
         $<BUILD_INTERFACE:${LOGGING_DIR}>
         
         $<INSTALL_INTERFACE:include/kernel/include>
         $<INSTALL_INTERFACE:include>
-        # POSIX
-        $<INSTALL_INTERFACE:include/POSIX/include>
-        $<INSTALL_INTERFACE:include/POSIX/include/private>
-        $<INSTALL_INTERFACE:include/POSIX/include/portable>
         
     PRIVATE 
         $<BUILD_INTERFACE:${BSP_DIR}>
@@ -277,18 +245,6 @@ install(
 install(
     DIRECTORY ${BSP_DIR}/include
     DESTINATION .
-)
-# POSIX
-install(
-    DIRECTORY
-        ${POSIX_DIR}/include
-        ${POSIX_DIR}/FreeRTOS-Plus-POSIX/include
-    DESTINATION include/POSIX
-    FILES_MATCHING PATTERN "*.h"
-)
-install(
-    FILES ${BSP_DIR}/common/POSIX_portable/FreeRTOS_POSIX_portable.h
-    DESTINATION include
 )
 
 # Logging
@@ -353,10 +309,9 @@ if(ENABLE_OPENAMP)
 endif()
 
 add_subdirectory(Blinky)
-add_subdirectory(Full_Demo)
+# add_subdirectory(Full_Demo)
 add_subdirectory(sample_apps/hello_world)
 add_subdirectory(sample_apps/uart_app)
-add_subdirectory(sample_apps/posix_app)
 add_subdirectory(sample_apps/logging_app)
 add_subdirectory(sample_apps/mpu_app)
 add_subdirectory(sample_apps/gpio_app)
