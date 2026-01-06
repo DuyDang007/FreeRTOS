@@ -240,7 +240,7 @@ int main( void )
     /* Configure the hardware ready to run the demo. */
     prvSetupHardware();
 
-    xTaskCreate( prvCRCTask, "CRC", configMINIMAL_STACK_SIZE, NULL, main_CRC_TASK_PRIORITY, NULL );
+    xTaskCreate( prvCRCTask, "CRC", configMINIMAL_STACK_SIZE * 2, NULL, main_CRC_TASK_PRIORITY, NULL );
     /* Start the tasks and timer running. */
     vTaskStartScheduler();
     for( ;; )
