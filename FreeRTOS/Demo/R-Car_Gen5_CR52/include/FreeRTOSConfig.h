@@ -189,7 +189,7 @@ void assert_func(const char *file, int line, const char *func);
 #define INCLUDE_xTaskGetCurrentTaskHandle (1)
 #endif
 #ifndef INCLUDE_uxTaskGetStackHighWaterMark
-#define INCLUDE_uxTaskGetStackHighWaterMark (0)
+#define INCLUDE_uxTaskGetStackHighWaterMark (1)
 #endif
 #ifndef INCLUDE_xTaskGetIdleTaskHandle
 #define INCLUDE_xTaskGetIdleTaskHandle (0)
