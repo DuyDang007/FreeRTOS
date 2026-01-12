@@ -43,11 +43,6 @@
 #define main_CRC_TASK_PRIORITY        ( tskIDLE_PRIORITY + 1 )
 
 #include "pfc/r_pfc_api.h"
-
-#include "state-manager/r_state_manager.h"
-#include "state-manager/r_power_domain_id.h"
-#include "state-manager/r_clock_domain_id.h"
-#include "state-manager/r_reset_domain_id.h"
 /*-----------------------------------------------------------*/
 
 /*
@@ -251,54 +246,6 @@ int main( void )
 }
 /*-----------------------------------------------------------*/
 
-static void WcrcRequestClockOn(void)
-{
-    int ret;
-    uint32_t idx;
-    uint32_t clock_id[] = {
-        X5H_CLOCK_ID_MDLC_WCRC0,
-        X5H_CLOCK_ID_MDLC_WCRC1,
-        X5H_CLOCK_ID_MDLC_WCRC2,
-        X5H_CLOCK_ID_MDLC_WCRC3,
-        X5H_CLOCK_ID_MDLC_WCRC4,
-        X5H_CLOCK_ID_MDLC_WCRC5,
-        X5H_CLOCK_ID_MDLC_WCRC6,
-        X5H_CLOCK_ID_MDLC_WCRC7,
-        X5H_CLOCK_ID_MDLC_WCRC8,
-        X5H_CLOCK_ID_MDLC_WCRC9,
-        X5H_CLOCK_ID_MDLC_WCRC10,
-        X5H_CLOCK_ID_MDLC_CRC0,
-        X5H_CLOCK_ID_MDLC_CRC1,
-        X5H_CLOCK_ID_MDLC_CRC2,
-        X5H_CLOCK_ID_MDLC_CRC3,
-        X5H_CLOCK_ID_MDLC_CRC4,
-        X5H_CLOCK_ID_MDLC_CRC5,
-        X5H_CLOCK_ID_MDLC_CRC6,
-        X5H_CLOCK_ID_MDLC_CRC7,
-        X5H_CLOCK_ID_MDLC_CRC8,
-        X5H_CLOCK_ID_MDLC_CRC9,
-        X5H_CLOCK_ID_MDLC_CRC10,
-        X5H_CLOCK_ID_MDLC_KCRC0,
-        X5H_CLOCK_ID_MDLC_KCRC1,
-        X5H_CLOCK_ID_MDLC_KCRC2,
-        X5H_CLOCK_ID_MDLC_KCRC3,
-        X5H_CLOCK_ID_MDLC_KCRC4,
-        X5H_CLOCK_ID_MDLC_KCRC5,
-        X5H_CLOCK_ID_MDLC_KCRC6,
-        X5H_CLOCK_ID_MDLC_KCRC7,
-        X5H_CLOCK_ID_MDLC_KCRC8,
-        X5H_CLOCK_ID_MDLC_KCRC9,
-        X5H_CLOCK_ID_MDLC_KCRC10,
-    };
-
-    for(idx = 0; idx < sizeof(clock_id)/sizeof(clock_id[0]); idx++)
-    {
-        ret = R_StateManager_ClockOn(clock_id[idx]);
-        if (ret)
-            printf("Error: Failed to set clock id %d ON.\r\n", clock_id[idx]);
-    }
-}
-
 static void prvSetupHardware( void )
 {
     /* Ensure no interrupts execute while the scheduler is in an inconsistent
@@ -310,7 +257,6 @@ static void prvSetupHardware( void )
 
     (void)pfcInitModules(getModuleConfigs());
 
-    WcrcRequestClockOn();
 }
 
 static void prvCRCTask( void *pvParameters )
