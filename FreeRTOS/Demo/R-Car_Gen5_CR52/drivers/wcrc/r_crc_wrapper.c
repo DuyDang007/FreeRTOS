@@ -1540,6 +1540,8 @@ static int wcrc_set_rtdma(uint8_t module, wcrc_instance_ctrl_t * const p_instanc
         return -1;
     }
 
+    p_wcrc_cfg_dma->cfg.mResource       = DRV_RTDMAC_RESOUCE_MAX;
+
     if (dma_direction == MEM_TO_DEV) {
         p_wcrc_cfg_dma->cfg.mSrcAddr        = (uintptr_t)p_input_cfg->p_input_buffer;
         p_wcrc_cfg_dma->cfg.mDestAddr       = port_addr;
@@ -1548,7 +1550,6 @@ static int wcrc_set_rtdma(uint8_t module, wcrc_instance_ctrl_t * const p_instanc
         p_wcrc_cfg_dma->cfg.mSrcAddrMode    = DRV_RTDMAC_ADDR_INCREMENTED;
         p_wcrc_cfg_dma->cfg.mDestAddrMode   = DRV_RTDMAC_ADDR_FIXED;
         p_wcrc_cfg_dma->cfg.mTransferUnit   = wcrc_get_dma_transf_unit_size_config(dma_tx_unit);
-        p_wcrc_cfg_dma->cfg.mResource       = DRV_RTDMAC_RESOUCE_MAX;
         p_wcrc_cfg_dma->cfg.mSourceRequest  = port_req_id;
         p_wcrc_cfg_dma->cfg.mLowSpeed       = DRV_RTDMAC_SPEED_NORMAL;
         p_wcrc_cfg_dma->cfg.mPrioLevel      = 0;
