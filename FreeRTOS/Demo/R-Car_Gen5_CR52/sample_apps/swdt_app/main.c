@@ -92,17 +92,20 @@ static void prvSWDTTask( void *pvParameters )
 
 	int timeout = 3000; // 3s
 
-	printf("Watting swdt idle...\n");
-
-	while (SWDT_SWTCSRA_REG & (1U << 7))
+	if ((SWDT_SWTCSRA_REG & (1U << 7)) != 0U)
 	{
-		vTaskDelay(1);
-		timeout--;
-		if (timeout <= 0)
+		printf("Waiting for SWDT to be available...\n");
+
+		while (SWDT_SWTCSRA_REG & (1U << 7))
 		{
-			printf("Timeout the SWDT busy\n");
+			vTaskDelay(1);
+			timeout--;
+			if (timeout <= 0)
+			{
+				printf("Timeout: SWDT still busy\n");
+				for( ;; );
+			}
 		}
-		
 	}
 
 	printf("\n=== TC1: Init Watchdog Timer ===\n");
