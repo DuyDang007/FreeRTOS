@@ -61,8 +61,14 @@ void kcrcUserCallback(void *data);
  */
 static uint32_t crc_input[4]    = {0x12345678, 0x12345678, 0x12345678, 0x12345678};
 static uint32_t kcrc_input[4]   = {0x12345678, 0x12345678, 0x12345678, 0x12345678};
+static uint32_t crc_output = 0xefbda81a;
+static uint32_t kcrc_output = 0xefbda81a;
 static uint32_t crc_input2[16];
 static uint32_t kcrc_input2[16];
+static uint32_t crc_output2 = 0xaf6d87d2;
+static uint32_t kcrc_output2 = 0xaf6d87d2;
+static uint32_t crc_output3[4] = {0x24884ce6, 0xf897a2b3, 0xf9dd2419, 0x25c2ca4c};
+static uint32_t kcrc_output3[4] = {0xc9d32fbd, 0x7e657dd7, 0x2f212a60, 0x9897780a};
 
 static uint32_t rtdma_inst[4]  = {RTDMA2_CH4, RTDMA2_CH2, RTDMA0_CH4, RTDMA1_CH6};
 static uint32_t rtdma_inst2[4] = {RTDMA0_CH0, RTDMA1_CH4, RTDMA1_CH8, RTDMA2_CH6};
@@ -310,6 +316,21 @@ static void prvCRCTask( void *pvParameters )
     ret = R_CRC_Get_Generated_Value(&g_wcrc_inst_ctrl_indepe);
     printf("\nR_CRC_Get_Generated_Value: ret = %d\n", ret);
 
+    uint32_t *p_data_crc;
+    p_data_crc = (uint32_t *)g_wcrc_inst_ctrl_indepe.crc_data[CRC_SUB_MODULE].p_output_buffer;
+
+    uint32_t *p_data_kcrc;
+    p_data_kcrc = (uint32_t *)g_wcrc_inst_ctrl_indepe.crc_data[KCRC_SUB_MODULE].p_output_buffer;
+
+    if(*p_data_crc == crc_output && *p_data_kcrc == kcrc_output)
+    {
+        printf("TC1 Result: Passed");
+    }
+    else
+    {
+        printf("TC1 Result: Failed");
+    }
+
     printf("\n********** TC2: E2E CRC Mode **********\n");
     ret = R_CRC_Open(&g_wcrc_inst_ctrl_e2e, &g_wcrc_cfg1);
     printf("R_CRC_Open: ret = %d\n", ret);
@@ -346,6 +367,18 @@ static void prvCRCTask( void *pvParameters )
 
     ret = R_CRC_Get_Generated_Value(&g_wcrc_inst_ctrl_e2e);
     printf("\nR_CRC_Get_Generated_Value: ret = %d\n", ret);
+
+    p_data_crc = (uint32_t *)g_wcrc_inst_ctrl_e2e.crc_data[CRC_SUB_MODULE].p_output_buffer;
+    p_data_kcrc = (uint32_t *)g_wcrc_inst_ctrl_e2e.crc_data[KCRC_SUB_MODULE].p_output_buffer;
+
+    if(*p_data_crc == crc_output2 && *p_data_kcrc == kcrc_output2)
+    {
+        printf("TC2 Result: Passed");
+    }
+    else
+    {
+        printf("TC2 Result: Failed");
+    }
 
     printf("\n********** TC3: E2E CRC Mode **********\n");
     ret = R_CRC_Open(&g_wcrc_inst_ctrl_e2e_3, &g_wcrc_cfg3);
@@ -391,6 +424,30 @@ static void prvCRCTask( void *pvParameters )
 
     ret = R_CRC_Close(&g_wcrc_inst_ctrl_e2e_3);
     printf("\nR_CRC_Close: ret = %d\n", ret);
+
+    p_data_crc = (uint32_t *)g_wcrc_inst_ctrl_e2e_3.crc_data[CRC_SUB_MODULE].p_output_buffer;
+    p_data_kcrc = (uint32_t *)g_wcrc_inst_ctrl_e2e_3.crc_data[KCRC_SUB_MODULE].p_output_buffer;
+    bool pass = true;
+
+    for (int i = 0; i < g_wcrc_inst_ctrl_e2e_3.crc_data[CRC_SUB_MODULE].num_data; i++)
+    {
+        if (p_data_crc[i] != crc_output3[i])
+        {
+            pass = false;
+            break;
+        }
+    }
+
+    for (int i = 0; i < g_wcrc_inst_ctrl_e2e_3.crc_data[KCRC_SUB_MODULE].num_data; i++)
+    {
+        if (p_data_kcrc[i] != kcrc_output3[i])
+        {
+            pass = false;
+            break;
+        }
+    }
+
+    printf("TC3 Result: %s\n", pass ? "Passed" : "Failed");
 
     for( ;; )
     {
