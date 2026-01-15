@@ -12,6 +12,7 @@
 #include <openamp/version.h>
 #include <metal/alloc.h>
 #include <metal/version.h>
+#include <stdio.h>
 
 #include "FreeRTOS.h"
 #include "virtio/r_virtio.h"
@@ -45,11 +46,15 @@ struct st_virtio_instance_ctrl
     uint16_t                        ept_num;
 };
 
-static st_virtio_instance_ctrl_t *virtio_inst[MFIS_CH_MAX] =
+static st_virtio_instance_ctrl_t *virtio_be_inst[MFIS_CH_MAX] =
 {
     [0 ... (MFIS_CH_MAX - 1)] = NULL
 };
 
+static st_virtio_instance_ctrl_t *virtio_fe_inst[MFIS_CH_MAX] =
+{
+    [0 ... (MFIS_CH_MAX - 1)] = NULL
+};
 /***********************************************************************************************************************
  * Global Variables
  **********************************************************************************************************************/
@@ -57,21 +62,34 @@ static st_virtio_instance_ctrl_t *virtio_inst[MFIS_CH_MAX] =
 /***********************************************************************************************************************
  * Functions
  **********************************************************************************************************************/
-st_virtio_instance_ctrl_t * R_VIRTIO_Create(e_mfis_channel_t mfis_ch)
+st_virtio_instance_ctrl_t * R_VIRTIO_BE_Create(e_mfis_channel_t mfis_ch)
 {
     st_virtio_instance_ctrl_t *result;
     int ret;
-    static int create_task = 1;
-    if(virtio_inst[mfis_ch] != NULL)
+
+    if(virtio_be_inst[mfis_ch] != NULL)
     {
-        result = virtio_inst[mfis_ch];
+        result = virtio_be_inst[mfis_ch];
     }
     else
     {
         result = ( st_virtio_instance_ctrl_t * ) pvPortMalloc( sizeof( st_virtio_instance_ctrl_t ) );
-        
-        ret = platform_init(mfis_ch, &(result->platform));
+        struct mfis_channel *mfis_inst  = (struct mfis_channel *)pvPortMalloc(sizeof(struct mfis_channel));
+        struct remoteproc_priv *rproc_priv = (struct remoteproc_priv *)pvPortMalloc(sizeof(struct remoteproc_priv));
+        mfis_inst->ch = (unsigned int)mfis_ch;
+        mfis_inst->type = MFIS_TYPE_RECEVER;
+        mfis_inst->int_source = 0U;
+        mfis_inst->recv_message = 0U;
+        mfis_inst->cb_function = NULL;
+        rproc_priv->p_mfis_ch = mfis_inst;
+        rproc_priv->type = VIRTIO_BACK_END;
+        ret = platform_init(rproc_priv, &(result->platform));
         if (ret != 0) {
+            if (rproc_priv != NULL)
+            {
+                vPortFree(mfis_inst);
+                vPortFree(rproc_priv);
+            }
             vPortFree(result);
             result = NULL;
         } else {
@@ -84,17 +102,72 @@ st_virtio_instance_ctrl_t * R_VIRTIO_Create(e_mfis_channel_t mfis_ch)
             else
             {
                 result->is_initialized = 1;
-                virtio_inst[mfis_ch] = result;
+                virtio_be_inst[mfis_ch] = result;
+                char task_name[16];
+                snprintf(task_name, sizeof(task_name), "Virtio_BE_Task%d", mfis_ch);
+                xTaskCreate( Virtio_Task, task_name, configMINIMAL_STACK_SIZE *10, result, ( configMAX_PRIORITIES - 1), NULL);
             }
         }
     }
+ 
+    return result;
+}
 
-    if(create_task == 1)
+st_virtio_instance_ctrl_t * R_VIRTIO_FE_Create(e_mfis_channel_t mfis_ch, st_rsc_table_info_t * rsc_table_info)
+{
+    st_virtio_instance_ctrl_t *result;
+    int ret;
+
+    if(virtio_fe_inst[mfis_ch] != NULL)
     {
-        xTaskCreate( Virtio_Task, "Virtio_Task", configMINIMAL_STACK_SIZE, NULL, ( tskIDLE_PRIORITY + 3 ), NULL );
-        create_task = 0;
+        result = virtio_fe_inst[mfis_ch];
     }
-
+    else
+    {
+        result = ( st_virtio_instance_ctrl_t * ) pvPortMalloc( sizeof( st_virtio_instance_ctrl_t ) );
+        struct mfis_channel *mfis_inst  = (struct mfis_channel *)pvPortMalloc(sizeof(struct mfis_channel));
+        struct remoteproc_priv *rproc_priv = (struct remoteproc_priv *)pvPortMalloc(sizeof(struct remoteproc_priv));
+        rproc_priv->rsc_mem_pa = rsc_table_info->rsc_mem_pa;
+        rproc_priv->rsc_mem_size = rsc_table_info->rsc_mem_size;
+        rproc_priv->vring_mem_pa = rsc_table_info->vring_mem_pa;
+        rproc_priv->vring_mem_offset = rsc_table_info->vring_mem_offset;
+        rproc_priv->shared_buf_pa = rsc_table_info->shared_buf_pa;
+        rproc_priv->shared_buf_size = rsc_table_info->shared_buf_size;
+        mfis_inst->ch = (unsigned int)mfis_ch;
+        mfis_inst->type = MFIS_TYPE_SENDER;
+        mfis_inst->int_source = 0U;
+        mfis_inst->recv_message = 0U;
+        mfis_inst->cb_function = NULL;
+        rproc_priv->p_mfis_ch = mfis_inst;
+        rproc_priv->type = VIRTIO_FRONT_END;
+        
+        ret = platform_init(rproc_priv, &(result->platform));
+        if (ret != 0) {
+            if (rproc_priv != NULL)
+            {
+                vPortFree(mfis_inst);
+                vPortFree(rproc_priv);
+            }
+            vPortFree(result);
+            result = NULL;
+        } else {
+            result->rp_dev = platform_create_rpmsg_vdev(result->platform, 0, VIRTIO_DEV_DRIVER, NULL, NULL);
+            if (!(result->rp_dev))
+            {
+                vPortFree(result);
+                result = NULL;
+            }
+            else
+            {
+                result->is_initialized = 1;
+                virtio_fe_inst[mfis_ch] = result;
+                char task_name[16];
+                snprintf(task_name, sizeof(task_name), "Virtio_FE_Task%d", mfis_ch);
+                xTaskCreate( Virtio_Task, task_name, configMINIMAL_STACK_SIZE *10, result, ( configMAX_PRIORITIES - 1), NULL);
+            }
+        }
+    }
+ 
     return result;
 }
 
@@ -130,18 +203,32 @@ uint8_t R_VIRTIO_ReleaseEP(st_virtio_endpoint_t * p_ept)
 static void Virtio_Task( void *pvParameters )
 {
     /* Remove compiler warning about unused parameter. */
-    ( void ) pvParameters;
+    st_virtio_instance_ctrl_t *p_virtio_inst =  (st_virtio_instance_ctrl_t *)pvParameters;
 
     for( ;; )
     {
-        for (int ch = 0; ch < (int)MFIS_CH_MAX; ch++)
-        {
-            if (virtio_inst[ch] != NULL)
-            {
-                (void)platform_poll(virtio_inst[ch]->platform);
-            }
-        }
-        
+        (void)platform_poll(p_virtio_inst->platform);
+
         vTaskDelay(1);
     }
+}
+
+
+typedef uint32_t (*VirtIO_Handler)(st_virtio_msg_t *msg);
+
+static uint32_t virtio_default_handler (st_virtio_msg_t *msg) {
+    uint32_t ret = 0;
+    return ret;
+}
+
+extern uint32_t VirtIO_SMMU_Handler(st_virtio_msg_t *msg);
+
+const VirtIO_Handler VirtIO_Handler_tbl[] = {
+    [VIRTIO_SMMU_ID]    = VirtIO_SMMU_Handler,
+    [VIRTIO_GPIO_ID]    = virtio_default_handler,
+    [VIRTIO_I2C_ID]     = virtio_default_handler,
+};
+
+uint32_t VirtIO_driver_handler(st_virtio_msg_t *msg) {
+    VirtIO_Handler_tbl[msg->driver_id](msg);
 }

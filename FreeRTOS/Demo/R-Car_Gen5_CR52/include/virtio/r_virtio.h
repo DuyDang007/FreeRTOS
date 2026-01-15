@@ -31,6 +31,32 @@
  **********************************************************************************************************************/
 
 /**
+ * @brief Identifier for supported virtio drivers.
+ *
+ * This enumeration defines driver IDs used to identify and dispatch
+ * virtio driver requests. Each value represents a specific virtio-based device driver.
+ */
+typedef enum e_virtio_driver_id {
+    VIRTIO_SMMU_ID,
+    VIRTIO_GPIO_ID,
+    VIRTIO_I2C_ID,
+} e_driver_id_t;
+
+struct st_virtio_smmu_payload_req;
+struct st_virtio_smmu_payload_resp;
+/**
+ * @brief Virtio message structure.
+ *
+ * This structure represents a generic virtio message used to transfer
+ * driver-specific requests. The driver_id field identifies the target
+ * virtio driver, while the payload contains driver-dependent data.
+ */
+typedef struct st_virtio_msg {
+    e_driver_id_t driver_id;
+    uint8_t payload[128] __attribute__((aligned(8)));
+} st_virtio_msg_t;
+
+/**
  * @enum e_mfis_channel
  * @brief MFIS communication channel identifiers.
  *
@@ -45,7 +71,7 @@ typedef enum e_mfis_channel
     MFIS_CR_TO_CA_CH1,
 
     /** Maximum number of MFIS channels */
-    MFIS_CH_MAX = 8,
+    MFIS_CH_MAX = 64,
 } e_mfis_channel_t;
 
 /**
@@ -58,6 +84,16 @@ struct rpmsg_endpoint;
  * @brief Alias for RPMsg endpoint structure.
  */
 typedef struct rpmsg_endpoint st_virtio_endpoint_t;
+
+typedef struct st_rsc_table_info 
+{
+	uintptr_t rsc_mem_pa; /**< rsc table physical address */
+	size_t rsc_mem_size; /**< Size of the rsc table */
+	uintptr_t vring_mem_pa; /**< vring physical address */
+	size_t vring_mem_offset; /**< Offset of each vring */
+	uintptr_t shared_buf_pa; /**< Shared buffer physical address */
+	size_t shared_buf_size; /**< Size of the shared buffer */
+} st_rsc_table_info_t;
 
 /**
  * @brief Forward declaration of Virtio instance control structure.
@@ -105,7 +141,24 @@ typedef void (*virtio_ns_unbind_cb)(st_virtio_endpoint_t *ept);
  * @return Pointer to Virtio instance control structure on success.
  * @return NULL on failure.
  */
-st_virtio_instance_ctrl_t * R_VIRTIO_Create(e_mfis_channel_t mfis_ch);
+st_virtio_instance_ctrl_t * R_VIRTIO_BE_Create(e_mfis_channel_t mfis_ch);
+
+/**
+ * @brief Create a Virtio instance for a specific MFIS channel (Frontend).
+ *
+ * This function initializes a Virtio frontend device and sets up RPMsg
+ * communication using the provided resource table information.
+ * It binds the Virtio FE instance to the given MFIS channel and prepares
+ * shared resources such as vrings and buffers.
+ *
+ * @param[in] mfis_ch        MFIS channel to bind the Virtio instance to.
+ * @param[in] rsc_table_info Pointer to resource table information used
+ *                           to configure shared memory and vrings.
+ *
+ * @return Pointer to Virtio instance control structure on success.
+ * @return NULL on failure.
+ */
+st_virtio_instance_ctrl_t * R_VIRTIO_FE_Create(e_mfis_channel_t mfis_ch, st_rsc_table_info_t * rsc_table_info);
 
 /**
  * @brief Release a Virtio instance.

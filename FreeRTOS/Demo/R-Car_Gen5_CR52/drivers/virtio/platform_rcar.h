@@ -13,6 +13,7 @@
 #include <openamp/remoteproc.h>
 #include <openamp/virtio.h>
 #include <openamp/rpmsg.h>
+#include "mfis.h"
 
 /* Cortex R52 memory attributes */
 #define DEVICE_SHARED       ((uint32_t)0x00000001U) /* device, shareable */
@@ -25,15 +26,27 @@
 extern "C" {
 #endif
 
+typedef enum virtio_type
+{
+	VIRTIO_FRONT_END = VIRTIO_DEV_DRIVER,
+	VIRTIO_BACK_END = VIRTIO_DEV_DEVICE,
+} virtio_type_t;
+
 struct remoteproc_priv {
-	const char *kick_dev_name;
-	const char *kick_dev_bus_name;
-	struct metal_device *kick_dev;
-	struct metal_io_region *kick_io;
-#ifndef RPMSG_NO_IPI
-	unsigned int ipi_chn_mask; /**< IPI channel mask */
-	atomic_int ipi_nokick;
-#endif /* !RPMSG_NO_IPI */
+	metal_phys_addr_t rsc_mem_pa; /**< rsc table physical address */
+	size_t rsc_mem_size; /**< Size of the rsc table */
+	metal_phys_addr_t vring_mem_pa; /**< vring physical address */
+	size_t vring_mem_offset; /**< Offset of each vring */
+	metal_phys_addr_t shared_buf_pa; /**< Shared buffer physical address */
+	size_t shared_buf_size; /**< Size of the shared buffer */
+
+	struct metal_io_region *shm_io; /**< pointer to sh mem i/o region */
+
+	struct remoteproc_mem shm_mem; /**< shared memory */
+
+	struct mfis_channel *p_mfis_ch;
+
+	virtio_type_t type;
 };
 
 /**
@@ -47,7 +60,7 @@ struct remoteproc_priv {
  *
  * return 0 for success or negative value for failure
  */
-int platform_init(int channel, struct remoteproc **platform);
+int platform_init(struct remoteproc_priv *rproc_priv, struct remoteproc **platform);
 
 /**
  * platform_create_rpmsg_vdev - create rpmsg vdev

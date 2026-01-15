@@ -50,7 +50,7 @@ x5h_proc_init(struct remoteproc *rproc,
               void *arg)
 {
     (void)ops;
-    (void)arg;
+    struct remoteproc_priv *rproc_priv = arg;
     struct remoteproc *ret = NULL;
     struct mfis_channel *mfis;
 
@@ -59,13 +59,11 @@ x5h_proc_init(struct remoteproc *rproc,
         /* MISRA-C:2012 Rule 11.5 deviation
          * arg is expected to point to struct mfis_channel by design.
          */
-        mfis = (struct mfis_channel *)arg;
-
+        mfis = rproc_priv->p_mfis_ch;
         mfis->cb_function = x5h_proc_interrupt_cb;
-        mfis->arg = arg;
+        mfis->arg = mfis;
         mfis_init(mfis);
 
-        rproc->priv = arg;
         ret = rproc;
     }
 
@@ -169,9 +167,10 @@ x5h_proc_mmap(struct remoteproc *rproc, metal_phys_addr_t *pa,
 */
 static int x5h_proc_notify(struct remoteproc *rproc, uint32_t id)
 {
+    struct remoteproc_priv *priv = rproc->priv;
     uint16_t irq_id = (uint16_t)id;
     irq_id &= (uint16_t)0x7FFF;
-    return mfis_trigger_interrupt((struct mfis_channel*)rproc->priv, irq_id);
+    return mfis_trigger_interrupt(priv->p_mfis_ch, irq_id);
 }
 
 /* Remote processor operations from r52 to a720. It defines

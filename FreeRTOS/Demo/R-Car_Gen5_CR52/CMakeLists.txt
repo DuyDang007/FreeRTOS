@@ -157,7 +157,6 @@ set(bsp_source
     ${BSP_DIR}/common/ARM_CR52/port.c
     ${BSP_DIR}/common/rcar_utils.c
 
-    ${BSP_DIR}/drivers/iommu/virtio_mmu.c
     ${SCMI_SRC_LIST}
     ${BSP_DIR}/drivers/state-manager/state_manager.c
     ${BSP_DIR}/drivers/wcrc/r_wcrc.c
@@ -185,8 +184,10 @@ if(ENABLE_OPENAMP)
         ${BSP_DIR}/drivers/virtio/platform_rcar.c
         ${BSP_DIR}/drivers/virtio/remoteproc_rcar.c
         ${BSP_DIR}/drivers/virtio/rsc_table.c
+        ${BSP_DIR}/drivers/virtio/rsc_table_parser.c
         ${BSP_DIR}/drivers/virtio/r_virtio.c
-        ${BSP_DIR}/drivers/smmu-virtio-backend/r_smmu_virtio_backend.c
+        ${BSP_DIR}/drivers/virtio-iommu-backend/r_virtio_iommu_backend.c
+        ${BSP_DIR}/drivers/virtio-iommu-frontend/r_virtio_iommu_frontend.c
     )
 endif()
 
@@ -204,7 +205,6 @@ target_include_directories(freertos_bsp
     PUBLIC
         $<BUILD_INTERFACE:${KERNEL_DIR}/include>
         $<BUILD_INTERFACE:${BSP_DIR}/include>
-        $<BUILD_INTERFACE:${BSP_DIR}/include/iommu>
         $<BUILD_INTERFACE:${BSP_DIR}/drivers/mpu>
         $<BUILD_INTERFACE:${BSP_DIR}/drivers/serial>
         $<BUILD_INTERFACE:${BSP_DIR}/drivers/timer>
@@ -240,6 +240,7 @@ if(ENABLE_OPENAMP)
         $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/libraries/openamp/open-amp/lib/include>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/libraries//libmetal/build/lib/include/>
         $<BUILD_INTERFACE:${BSP_DIR}/drivers/virtio>
+        $<BUILD_INTERFACE:${BSP_DIR}/drivers/virtio-iommu-backend>
     )
 endif()
 
@@ -346,7 +347,6 @@ add_subdirectory(sample_apps/sys_dmac_app)
 add_subdirectory(sample_apps/rt_dmac_app)
 add_subdirectory(sample_apps/swdt_app)
 add_subdirectory(sample_apps/wwdt_app)
-add_subdirectory(sample_apps/viommufe_app)
 add_subdirectory(sample_apps/smmu_app)
 add_subdirectory(sample_apps/power-management_app)
 add_subdirectory(sample_apps/wcrc_app)
@@ -357,7 +357,6 @@ add_subdirectory(sample_apps/dummy_app)
 
 if(ENABLE_OPENAMP)
     add_subdirectory(sample_apps/rpmsg_sample)
-    add_subdirectory(sample_apps/smmu_virtio_backend_sample)
 endif()
 
 # To do: Remove after adding UCIe build support for AI ACC.

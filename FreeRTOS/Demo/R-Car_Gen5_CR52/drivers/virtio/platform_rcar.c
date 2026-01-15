@@ -11,7 +11,11 @@
 #include "platform_rcar.h"
 #include "rsc_table.h"
 #include "mfis.h"
+#include <stdio.h>
 
+#include <openamp/remoteproc.h>
+#include <openamp/rpmsg_virtio.h>
+#include "rsc_table_parser.h"
 
 /* Define shared DRAM area for each channel. */
 #define SHARED_CH_RAM_BASE (0x40000000UL)
@@ -28,7 +32,7 @@ extern const struct remoteproc_ops x5h_r_a_proc_ops;
 
 /* RPMsg virtio shared buffer pool */
 
-static struct remoteproc * platform_create_proc(int mfis_ch, int rsc_index);
+static struct remoteproc * platform_create_proc(struct remoteproc_priv *rproc_priv, int rsc_index);
 
 /*----------------------------- RPMSG Platform implementation ----------------------------*/
 /* Create platform
@@ -36,10 +40,9 @@ static struct remoteproc * platform_create_proc(int mfis_ch, int rsc_index);
 - Map shared memory and resource table to the instance
 - Set resource table
 */
-static struct remoteproc * platform_create_proc(int mfis_ch, int rsc_index)
+static struct remoteproc * platform_create_proc(struct remoteproc_priv *rproc_priv, int rsc_index)
 {
     struct remoteproc *rproc_inst = NULL;
-    struct mfis_channel *mfis_inst = NULL;
     struct remoteproc *ret_rproc = NULL;
 
     void *rsc_table = NULL;
@@ -48,30 +51,33 @@ static struct remoteproc * platform_create_proc(int mfis_ch, int rsc_index)
     metal_phys_addr_t pa;
 
     rproc_inst = (struct remoteproc *)pvPortMalloc(sizeof(struct remoteproc));
-    mfis_inst  = (struct mfis_channel *)pvPortMalloc(sizeof(struct mfis_channel));
+    
 
-    if ((rproc_inst != NULL) && (mfis_inst != NULL))
+    if ((rproc_inst != NULL) && (rproc_priv != NULL))
     {
-        /* init mfis instance */
-        mfis_inst->ch = (unsigned int)mfis_ch;
-        mfis_inst->int_source = 0U;
-        mfis_inst->recv_message = 0U;
-        mfis_inst->cb_function = NULL;
-
+        struct mfis_channel *p_mfis_ch = rproc_priv->p_mfis_ch;
         /* Initialize the resource table on shared memory */
-        init_resource_table();
-
-        rsc_table = get_resource_table(rsc_index, &rsc_size);
-
+        if(rproc_priv->type == VIRTIO_BACK_END)
+        {
+            init_resource_table();
+            rsc_table = get_resource_table(rsc_index, &rsc_size);
+        }
+        else
+        {
+            pa = rproc_priv->rsc_mem_pa;
+            rsc_table = (void*)pa;
+            rsc_size = rproc_priv->rsc_mem_size;
+        }
+        
         if ((rsc_table != NULL) && (rsc_size > 0))
         {
             if (remoteproc_init(rproc_inst,
                                 &x5h_r_a_proc_ops,
-                                (void *)mfis_inst) != NULL)
+                                (void *)rproc_priv) != NULL)
             {
                 /* mmap resource table */
                 pa = (metal_phys_addr_t)rsc_table;
-                (void)remoteproc_mmap(rproc_inst,
+                rsc_table = remoteproc_mmap(rproc_inst,
                                       &pa,
                                       NULL,
                                       rsc_size,
@@ -80,7 +86,7 @@ static struct remoteproc * platform_create_proc(int mfis_ch, int rsc_index)
 
                 /* mmap shared memory */
                 pa = SHARED_CH_RAM_BASE;
-                (void)remoteproc_mmap(rproc_inst,
+                (void *)remoteproc_mmap(rproc_inst,
                                       &pa,
                                       NULL,
                                       SHARED_CH_RAM_SIZE,
@@ -91,6 +97,7 @@ static struct remoteproc * platform_create_proc(int mfis_ch, int rsc_index)
                 ret = remoteproc_set_rsc_table(rproc_inst,
                                                rproc_inst->rsc_io->virt,
                                                rsc_size);
+                
                 if (ret == 0)
                 {
                     ret_rproc = rproc_inst;
@@ -107,10 +114,6 @@ static struct remoteproc * platform_create_proc(int mfis_ch, int rsc_index)
             remoteproc_remove(rproc_inst);
             vPortFree(rproc_inst);
         }
-        if (mfis_inst != NULL)
-        {
-            vPortFree(mfis_inst);
-        }
     }
 
     return ret_rproc;
@@ -121,27 +124,57 @@ static struct remoteproc * platform_create_proc(int mfis_ch, int rsc_index)
 - Init related HW module if required
 - Create a `struct remoteproc` and return it to `platform` pointer
 */
-int platform_init(int channel, struct remoteproc **platform)
+int platform_init(struct remoteproc_priv *rproc_priv, struct remoteproc **platform)
 {
     int ret = -EINVAL;
-    unsigned long mfis_ch = (unsigned long)channel;
-    unsigned long rsc_id = 0UL;
+    unsigned long rsc_id = rproc_priv->p_mfis_ch->ch;
     struct remoteproc *rproc = NULL;
-
+    
     if (platform != NULL)
     {
-        rproc = platform_create_proc(mfis_ch, rsc_id);
+        rproc = platform_create_proc(rproc_priv, rsc_id);
         if (rproc != NULL)
         {
             *platform = rproc;
             ret = 0;
         }
     }
-
     return ret;
 }
 
+void platform_update_vring_addr(struct remoteproc *rproc, unsigned int vdev_id, int role)
+{
+	char *rsc_table = rproc->rsc_table;
+	struct fw_rsc_vdev *vdev_rsc;
+	size_t vdev_rsc_offset;
+	unsigned int num_vrings, i;
 
+	if (role == VIRTIO_DEV_DEVICE)
+		return;
+
+	metal_assert(rproc);
+	metal_mutex_acquire(&rproc->lock);
+
+	vdev_rsc_offset = find_rsc(rsc_table, RSC_VDEV, vdev_id);
+	if (!vdev_rsc_offset)
+		goto err;
+
+	vdev_rsc = (struct fw_rsc_vdev *)(rsc_table + vdev_rsc_offset);
+	num_vrings = vdev_rsc->num_of_vrings;
+
+	for (i = 0; i < num_vrings; i++) {
+		struct fw_rsc_vdev_vring *vring_rsc;
+		struct remoteproc_priv *priv = rproc->priv;
+
+		vring_rsc = &vdev_rsc->vring[i];
+
+		if (vring_rsc->da == FW_RSC_U32_ADDR_ANY)
+			vring_rsc->da = priv->vring_mem_pa + i * priv->vring_mem_offset;
+	}
+
+err:
+	metal_mutex_release(&rproc->lock);
+}
 
 /* Create a RPMsg VirtIO device
 - Create VirtIO device of remoteproc instance
@@ -168,6 +201,14 @@ platform_create_rpmsg_vdev(struct remoteproc *platform,
     */
     struct remoteproc *rproc = platform;
     struct metal_io_region *shbuf_io = NULL;
+    struct rpmsg_virtio_shm_pool *shpool = NULL;
+    struct remoteproc_priv *rproc_priv = rproc->priv;
+
+    if (rproc_priv->type == VIRTIO_BACK_END)
+    {
+        rproc_priv->shared_buf_pa = SHARED_CH_RAM_BASE;
+    }
+    
     void *shbuf;
     int ret = 1;
 
@@ -178,12 +219,20 @@ platform_create_rpmsg_vdev(struct remoteproc *platform,
 
     if (rpmsg_vdev != NULL)
     {
-        shbuf_io = remoteproc_get_io_with_pa(rproc, SHARED_CH_RAM_BASE);
+        shbuf_io = remoteproc_get_io_with_pa(rproc, rproc_priv->shared_buf_pa);
     }
 
     if (shbuf_io != NULL)
     {
-        shbuf = metal_io_phys_to_virt(shbuf_io, SHARED_CH_RAM_BASE);
+        shbuf = metal_io_phys_to_virt(shbuf_io, rproc_priv->shared_buf_pa);
+
+        if (rproc_priv->type == VIRTIO_FRONT_END)
+        {
+            shpool = metal_allocate_memory(sizeof(*shpool));
+            platform_update_vring_addr(rproc, vdev_index, role);
+            /* Only RPMsg virtio driver needs to initialize the shared buffers pool */
+            rpmsg_virtio_init_shm_pool(shpool, shbuf, rproc_priv->shared_buf_size);
+        }
 
         vdev = remoteproc_create_virtio(rproc,
                                         vdev_index,
@@ -197,13 +246,12 @@ platform_create_rpmsg_vdev(struct remoteproc *platform,
                                 vdev,
                                 ns_bind_cb,
                                 shbuf_io,
-                                NULL);
+                                shpool);
     }
 
     if (ret == 0)
     {
-        ret_rpdev =
-            rpmsg_virtio_get_rpmsg_device(rpmsg_vdev);
+        ret_rpdev = rpmsg_virtio_get_rpmsg_device(rpmsg_vdev);
     }
 
     /* cleanup on failure */
@@ -214,8 +262,8 @@ platform_create_rpmsg_vdev(struct remoteproc *platform,
             remoteproc_remove_virtio(rproc, vdev);
         }
         metal_free_memory(rpmsg_vdev);
+        metal_free_memory(shpool);
     }
-
     return ret_rpdev;
 }
 
@@ -227,12 +275,13 @@ Otherwise return negative value
 int platform_poll(struct remoteproc *platform)
 {
     struct remoteproc *rproc = platform;
-    struct mfis_channel* mfis = (struct mfis_channel*)rproc->priv;
+    struct remoteproc_priv *priv = rproc->priv;
+    struct mfis_channel* mfis = priv->p_mfis_ch;
     int ret = -1;
 
     if (0 != mfis->int_source)
     {
-	remoteproc_get_notification(rproc, RSC_NOTIFY_ID_ANY);
+	    remoteproc_get_notification(rproc, RSC_NOTIFY_ID_ANY);
         mfis->int_source = 0; // Reset int source to 0
         ret = 0;
     }
