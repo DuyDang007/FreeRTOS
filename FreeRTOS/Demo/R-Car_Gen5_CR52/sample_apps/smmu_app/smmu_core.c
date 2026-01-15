@@ -86,7 +86,12 @@ static void prvSMMU_RT_Task( void *pvParameters )
     /* Remove compiler warning about unused parameter. */
     ( void ) pvParameters;
     int ret;
+
     bool is_secure = true;
+#if (BOARD == X5H_RFS2)
+    is_secure = false;
+#endif
+
     uint32_t coreid = R_UTILS_GetCpuID();
     
     if(coreid >= SMMU_COREID_MAX)
