@@ -357,6 +357,8 @@ add_subdirectory(sample_apps/dummy_app)
 
 if(ENABLE_OPENAMP)
     add_subdirectory(sample_apps/rpmsg_sample)
+    add_subdirectory(sample_apps/virtio_iommu_frontend_sample)
+    add_subdirectory(sample_apps/virtio_iommu_backend_sample)
 endif()
 
 # To do: Remove after adding UCIe build support for AI ACC.

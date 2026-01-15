@@ -24,13 +24,13 @@ if(NOT DEFINED MFIS_CHAN)
         #message(STATUS "MFIS channel: ${MFIS_CHAN}")
         #message(STATUS "VRAM_REGION: ${VRAM_REGION}")
 
-        set(app_name "smmu_virtio_backend_app_mfis${MFIS_CHAN}_cluster0_core${CORE}")
+        set(app_name "virtio_iommu_backend_app_mfis${MFIS_CHAN}_cluster0_core${CORE}")
 
         set(TEMP_LDFILE ${BSP_DIR}/common/linker/lscript_vram${VRAM_REGION}.ld)
         #message(STATUS "TEMP_LDFILE: ${TEMP_LDFILE}")
 
         add_executable(${app_name}
-            smmu-virtio-backend-app.c
+            virtio-iommu-backend-app.c
         )
 
         target_compile_definitions(${app_name}
@@ -87,10 +87,10 @@ else()
 
         message(STATUS "CORE: ${CORE}")
 
-        set(app_name "smmu_virtio_backend_app_mfis${MFIS_CHAN}_cluster0_core${CORE}")
+        set(app_name "virtio_iommu_backend_app_mfis${MFIS_CHAN}_cluster0_core${CORE}")
 
         add_executable(${app_name}
-            smmu-virtio-backend-app.c
+            virtio-iommu-backend-app.c
         )
 
         target_compile_definitions(${app_name}

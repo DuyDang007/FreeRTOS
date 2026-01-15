@@ -10,17 +10,15 @@
  * This application echoes back data that was sent to it by the host core.
  */
 
-#include <stdio.h>
-#include <errno.h>
-#include <openamp/open_amp.h>
-#include <openamp/version.h>
-#include <metal/alloc.h>
-#include <metal/version.h>
-#include "FreeRTOS.h"
-#include "interrupts.h"
-#include "pfc/r_pfc_api.h"
-#include "smmu-virtio-backend/r_smmu_virtio_backend.h"
 
+
+#include "FreeRTOS.h"
+#include "task.h"
+#include "interrupts.h"
+
+#include "pfc/r_pfc_api.h"
+#include "virtio-iommu-backend/r_virtio_iommu_backend.h"
+#include <stdio.h>
 
 /*----------------------------------------------------------------------------*/
 static void prvSetupHardware( void )
@@ -43,8 +41,8 @@ void echoTask( void *pvParameters )
     /* Remove compiler warning about unused parameter. */
     ( void ) pvParameters;
     int ret;
-    printf("Starting Virtio sample\r\n");
-    smmu_virtio_instance_ctrl_t *smmu_virtio_inst;
+    printf("VIRTIO IOMMU Backend:  Starting Virtio sample\r\n");
+    virtio_iommu_instance_ctrl_t *virtio_iommu_inst;
     e_mfis_channel_t mfis_ch;
     if (MFIS_CHAN == 0)
     {
@@ -56,19 +54,19 @@ void echoTask( void *pvParameters )
     }
     else
     {
-        printf("MFIS Channel not support\r\n");
+        printf("VIRTIO IOMMU Backend:  MFIS Channel not support\r\n");
     }
     
 
-    printf("TC1: SMMU Virtio Create. Waiting for connection ...\r\n");
-    smmu_virtio_inst = R_SMMU_VIRTIO_BackEnd_Init(mfis_ch);
-    if(smmu_virtio_inst == NULL)
+    printf("VIRTIO IOMMU Backend:  TC1: Virtio IOMMU Create. Waiting for connection ...\r\n");
+    virtio_iommu_inst = R_VIRTIO_IOMMU_Backend_Init(mfis_ch);
+    if(virtio_iommu_inst == NULL)
     {
-        printf("Result: Failed\r\n");
+        printf("VIRTIO IOMMU Backend:  Result: Failed\r\n");
     }
     else
     {
-        printf("Result: Passed\r\n");
+        printf("VIRTIO IOMMU Backend:  Result: Passed\r\n");
     };
 
     for( ;; )
