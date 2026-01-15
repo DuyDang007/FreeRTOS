@@ -80,6 +80,8 @@ rDmacIrqCfg_t rDmacIrqHandler_t_irq =
 	.SubCh = DMAC_CH1,
 	.irq_channel = INTID_SYSDMA3_CH1
 };
+
+bool isr_flag = false;
 /*-----------------------------------------------------------*/
 
 int main( void )
@@ -199,7 +201,9 @@ static void prvSMMUTask( void *pvParameters )
 
     int dmaStatus = R_SYSDMAC_RcarDmacExec(SYS_DMAC3, DMAC_CH1, &cfg, 0);
 
-    vTaskDelay(10);
+    while(!isr_flag) {
+        __asm__ volatile("nop");
+    }
 
     // Verify destination data
     uint32_t total_transfer_size = 4;
@@ -228,6 +232,7 @@ static void prvSMMUTask( void *pvParameters )
 void dmacUserCallback(void *data)
 {
     rDmacIrqCfg_t *instance_ctrl = (rDmacIrqCfg_t *)data;
+    isr_flag = true;
 }
 /*-----------------------------------------------------------*/
 
