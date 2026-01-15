@@ -15,6 +15,7 @@
 #include "mpu.h"
 #include "state-manager/r_state_manager.h"
 #include "memory_map/memory_map.h"
+#include "tcm.h"
 
 #define CNTCR_ADDR   ((volatile uint32_t *)0x1C000000) // Counter Control Register
 
@@ -24,6 +25,10 @@ extern const unsigned int _STACK_SIZE;
 
 extern char _RAM_START;
 extern const uint32_t _RAM_SIZE;
+extern const uint32_t _TCM_SIZE;
+
+extern uint32_t __tcm_start__, __tcm_end__;
+extern const uint32_t __kernel_region_start__, __kernel_region_end__;
 
 extern uint32_t _Reset;
 uint32_t resource_table;
@@ -47,8 +52,16 @@ static void Init_MPU(void)
 
     MPU_Init();
 
-    MPU_SetRegion(REGION_SRAM_ATTR((uint32_t) &_RAM_START, (uint32_t) &_RAM_SIZE));
-    
+    MPU_SetRegion(REGION_SRAM_ATTR((uint32_t) &__kernel_region_start__, (uint32_t) &__kernel_region_end__ - (uint32_t) &__kernel_region_start__));
+
+#if (TCM_ENABLE == 1)
+    MPU_SetRegion(REGION_TCM_ATTR((uint32_t) &__tcm_start__, (uint32_t) &_TCM_SIZE));
+#else
+    MPU_SetRegion(REGION_SRAM_ATTR((uint32_t) &__tcm_start__, (uint32_t) &_TCM_SIZE));
+#endif
+
+    MPU_SetRegion(REGION_SRAM_ATTR((uint32_t) &__tcm_end__, (uint32_t) &_RAM_SIZE - ((uint32_t) &__tcm_end__ - (uint32_t) &__kernel_region_start__)));
+
     for (int i = 0; i < sizeof(RCAR_MEMMORY_ARR)/sizeof(st_memory_region_t); i++) {
        
         uint8_t ret = 0;
@@ -85,6 +98,10 @@ static void Init_MPU(void)
 
             case FLASH_ATTR:
                 ret = MPU_SetRegion(REGION_FLASH_ATTR(RCAR_MEMMORY_ARR[i].mem_addr.base_address, RCAR_MEMMORY_ARR[i].mem_addr.size));
+                break;
+
+            case TCM_ATTR:
+                ret = MPU_SetRegion(REGION_TCM_ATTR(RCAR_MEMMORY_ARR[i].mem_addr.base_address, RCAR_MEMMORY_ARR[i].mem_addr.size));
                 break;
 
             default:
@@ -180,6 +197,22 @@ void SystemInit(void)
     FPU_Enable();
 #endif
     Init_MPU();
+
+#if (TCM_ENABLE == 1)    
+    st_memory_t info_osal = R_UTILS_GetMemoryRegionInfo(OSAL, 0);
+    volatile uint32_t *osal_mem = (volatile uint32_t *)info_osal.base_address;
+    memcpy((void *)osal_mem, &__tcm_start__, (size_t)&_TCM_SIZE);
+
+    // Configuration for TCM region B.
+    ConfigureTCM(RCAR_TCM_B, (uint32_t)&__tcm_start__, RCAR_TCM_SIZE_32KB);
+
+    // Enable TCM region B at EL1.
+    ControlTCM(RCAR_TCM_B, RCAR_TCM_EL1, RCAR_TCM_ENABLE);
+
+    memcpy(&__tcm_start__, (void *)osal_mem, (size_t)&_TCM_SIZE);
+    memset((void *)osal_mem, 0, (size_t)&_TCM_SIZE);
+#endif
+
 #if (CACHE == 1)
     EnableCache(); 
 #endif

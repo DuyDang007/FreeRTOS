@@ -9,6 +9,7 @@ _SVC_STACK_SIZE   = 0x1B000;    /* 100 KB */
 _ABORT_STACK_SIZE = 0x1B000;    /* 100 KB */
 _UNDEF_STACK_SIZE = 0x1B000;    /* 100 KB */
 _HEAP_SIZE        = 0x500000;   /* 5MB */
+_TCM_SIZE         = 0x8000;     /* X5H Max: 32KB */
 /* Heap uses HeapBase global var, see configTOTAL_HEAP_SIZE */
 
 /* Address of RAM */

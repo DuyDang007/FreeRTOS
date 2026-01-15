@@ -9,6 +9,7 @@ _SVC_STACK_SIZE   = 0x1B000;    /* 100 KB */
 _ABORT_STACK_SIZE = 0x1B000;    /* 100 KB */
 _UNDEF_STACK_SIZE = 0x16800;    /* 90 KB */
 _HEAP_SIZE        = 0x500000;   /* 5MB */
+_TCM_SIZE         = 0x8000;     /* X5H Max: 32KB */
 /* Heap uses HeapBase global var, see configTOTAL_HEAP_SIZE */
 
 /* Address of RAM */
@@ -18,6 +19,7 @@ _RAM_SIZE = LENGTH(vram1_base_addr);
 SECTIONS
 {
 .text (READONLY): {
+   __kernel_region_start__ = .;
    _vector_table = .;
    *(.isr_vector)
    *(.vectors)
@@ -33,6 +35,15 @@ SECTIONS
    *(.glue_7t)
    *(.ARM.extab)
    *(.gnu.linkonce.armextab.*)
+   __kernel_region_end__ = .;
+
+   . = ALIGN(0x8000);
+   __tcm_start__ = .;
+   *(.tcm.code)
+   *(.tcm.*)
+   . = __tcm_start__ + _TCM_SIZE;
+   __tcm_end__ = .;
+
 } > vram1_base_addr
 
 .init : {
