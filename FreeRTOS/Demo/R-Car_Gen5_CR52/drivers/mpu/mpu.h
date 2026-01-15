@@ -89,6 +89,16 @@ typedef enum {
 		.prlar = ARM_MPU_SET_PRLAR(BASE + SIZE - 1, MPU_MAIR_INDEX_SRAM_NOCACHE),	      \
 	}
 
+/** \brief Non shareable - EL1 RW EL0 None - Execute - Outer Non Cacheable, Inner Non Cacheable
+ * \param BASE  Region Base address
+ * \param LIMIT Region Size
+*/
+#define REGION_TCM_ATTR(BASE, SIZE)				      \
+	(ARM_MPU_Region_t){							      \
+		.prbar = ARM_MPU_SET_PRBAR(BASE, ARM_MPU_SH_NON, ARM_MPU_AP_EL1_RW_EL0_None, ARM_MPU_EX), \
+		.prlar = ARM_MPU_SET_PRLAR(BASE + SIZE - 1, MPU_MAIR_INDEX_SRAM_NOCACHE),	      \
+	}
+
 /** \brief Non shareable - EL1 RO EL0 RO - Execute - Outer NT-WB-RA-WA, Inner NT-WB-RA-WA
  * \param BASE  Region Base address
  * \param LIMIT Region Size

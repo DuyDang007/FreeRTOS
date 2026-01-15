@@ -58,7 +58,7 @@ uint16_t mfis_get_message(struct mfis_channel *ch)
 
 
 /* Interrupt callback sample */
-void mfis_interrupt_cb(void* data)
+void __attribute__((section(".tcm.code"), used)) mfis_interrupt_cb(void* data)
 {
     struct mfis_channel *ch = (struct mfis_channel*) data;
     

@@ -88,12 +88,17 @@ message(STATUS "BOARD_ID: ${BOARD_ID}")
 ### Set common build flags
 set(CACHE 1 CACHE BOOL "Enable cache for CPU CR52")
 message(STATUS "CACHE option: ${CACHE}")
+
+set(TCM_ENABLE 1 CACHE BOOL "Enable TCM for CPU CR52")
+message(STATUS "TCM option: ${TCM_ENABLE}")
+
 set(CMAKE_ASM_FLAGS "--specs=nosys.specs -mfloat-abi=hard")
 set(CMAKE_C_FLAGS "-std=c99")
 add_compile_options(
     -ffreestanding -mfpu=neon-fp-armv8 -mcpu=cortex-r52 -mtune=cortex-r52 -mfloat-abi=softfp
     -Wno-unknown-pragmas -DSCMI_DEBUG -DBOARD=${BOARD_ID} -DRAM_REGION=${RAM_REGION} -g
     -DCACHE=${CACHE}
+    -DTCM_ENABLE=${TCM_ENABLE}
     ${global_definition}
     -D${UCIE_VER}=1
     -ffile-prefix-map=${FREERTOS_DIR}/=
@@ -140,6 +145,7 @@ set(bsp_source
     ${BSP_DIR}/drivers/serial/serial.c
     ${BSP_DIR}/drivers/serial/scif.c
     ${BSP_DIR}/drivers/mpu/mpu.c
+    ${BSP_DIR}/drivers/tcm/tcm.c
     ${BSP_DIR}/drivers/gpio/r_gpio_api.c
     ${BSP_DIR}/drivers/gpio/r_gpio.c
     ${BSP_DIR}/drivers/audio/ak4619_module.c
@@ -223,6 +229,13 @@ target_include_directories(freertos_bsp
         $<BUILD_INTERFACE:${BSP_DIR}/drivers/wcrc>
         $<BUILD_INTERFACE:${BSP_DIR}/drivers/taud>
         $<BUILD_INTERFACE:${BSP_DIR}/drivers/ecm>
+        $<BUILD_INTERFACE:${BSP_DIR}/drivers/tcm>
+        # POSIX
+        $<BUILD_INTERFACE:${BSP_DIR}/common/POSIX_portable>
+        $<BUILD_INTERFACE:${POSIX_DIR}/include>
+        $<BUILD_INTERFACE:${POSIX_DIR}/include/private>
+        $<BUILD_INTERFACE:${POSIX_DIR}/FreeRTOS-Plus-POSIX/include>
+        $<BUILD_INTERFACE:${POSIX_DIR}/FreeRTOS-Plus-POSIX/include/portable>
         # LOGGING
         $<BUILD_INTERFACE:${LOGGING_DIR}>
         
@@ -354,7 +367,6 @@ add_subdirectory(sample_apps/utils_app)
 add_subdirectory(sample_apps/taud_app)
 add_subdirectory(sample_apps/ecm_app)
 add_subdirectory(sample_apps/dummy_app)
-
 if(ENABLE_OPENAMP)
     add_subdirectory(sample_apps/rpmsg_sample)
     add_subdirectory(sample_apps/virtio_iommu_frontend_sample)

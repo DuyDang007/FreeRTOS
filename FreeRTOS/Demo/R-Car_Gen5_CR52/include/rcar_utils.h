@@ -35,7 +35,8 @@ typedef enum e_memory_type {
     PERIPHERAL,
     CMA,
     OSAL,
-    SHARE_MEM 
+    SHARE_MEM,
+    TCM
 } e_memory_type_t;
 
 /**
