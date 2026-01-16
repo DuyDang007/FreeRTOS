@@ -89,7 +89,11 @@ message(STATUS "BOARD_ID: ${BOARD_ID}")
 set(CACHE 1 CACHE BOOL "Enable cache for CPU CR52")
 message(STATUS "CACHE option: ${CACHE}")
 
-set(TCM_ENABLE 1 CACHE BOOL "Enable TCM for CPU CR52")
+if(BOARD STREQUAL "x5h_ironhide")
+    set(TCM_ENABLE 1 CACHE BOOL "Enable TCM for CPU CR52")
+else()
+    set(TCM_ENABLE 0 CACHE BOOL "Disable TCM for CPU CR52")
+endif()
 message(STATUS "TCM option: ${TCM_ENABLE}")
 
 set(CMAKE_ASM_FLAGS "--specs=nosys.specs -mfloat-abi=hard")
