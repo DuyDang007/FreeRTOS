@@ -17,7 +17,8 @@ typedef enum e_mem_attr {
     RAM_TEXT_ATTR,
     RAM_RO_ATTR,
     SRAM_ATTR,
-    FLASH_ATTR
+    FLASH_ATTR,
+    TCM_ATTR
 } e_mem_attr_t;
 
 typedef struct st_memory_region {
