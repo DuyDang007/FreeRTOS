@@ -71,7 +71,7 @@ int R_VIRTIO_IOMMU_Init(void);
  * @return 0 on success.
  * @return Negative error code on failure.
  */
-int R_VIRTIO_IOMMU_DeInitD(void);
+int R_VIRTIO_IOMMU_DeInit(void);
 
 /**
  * @brief Attach a device to an IOMMU domain.
