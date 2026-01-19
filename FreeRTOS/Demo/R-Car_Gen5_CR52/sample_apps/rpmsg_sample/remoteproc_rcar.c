@@ -14,7 +14,7 @@
 
 #define LPRINTF(format, ...) printf(format, ##__VA_ARGS__); vTaskDelay(10);
 
-void x5h_proc_interrupt_cb(void *arg)
+void __attribute__((section(".tcm.code"), used)) x5h_proc_interrupt_cb(void *arg)
 {
 	return;
 }
