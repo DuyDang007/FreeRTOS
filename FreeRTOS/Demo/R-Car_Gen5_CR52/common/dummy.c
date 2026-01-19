@@ -9,6 +9,13 @@
 #include <sys/types.h>
 #include <errno.h>
 #include <stdarg.h>
+#include <stdint.h>
+
+__attribute__((weak)) uint32_t __tcm_start__ = 0u;
+__attribute__((weak)) uint32_t __tcm_end__   = 0u;
+
+__attribute__((weak)) uint32_t __kernel_region_start__ = 0u;
+__attribute__((weak)) uint32_t __kernel_region_end__   = 0u;
 
 //Dummy for these function when using newlib
 __attribute__((weak)) int _open(int fd)

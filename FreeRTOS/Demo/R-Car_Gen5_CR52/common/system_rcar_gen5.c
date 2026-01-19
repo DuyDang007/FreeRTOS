@@ -29,6 +29,7 @@ extern const uint32_t _TCM_SIZE;
 
 extern uint32_t __tcm_start__, __tcm_end__;
 extern const uint32_t __kernel_region_start__, __kernel_region_end__;
+static int is_linker_tcm_symbols_define = 0;
 
 extern uint32_t _Reset;
 uint32_t resource_table;
@@ -44,6 +45,22 @@ extern int main(void);
 
 extern void __libc_init_array(void) ;
 
+static int init_linker_symbols_check(void)
+{
+#if (TCM_ENABLE == 1)
+    if ((__kernel_region_start__ != 0u) && (__kernel_region_end__ != 0u) &&
+        (__tcm_start__ != 0u) && (__tcm_end__ != 0u) &&
+        ((uint32_t)&__kernel_region_end__ > (uint32_t)&__kernel_region_start__) &&
+        ((uint32_t)&__tcm_end__ > (uint32_t)&__tcm_start__))
+    {
+        return 1;
+    }
+    return 0;
+#else
+    return 0;
+#endif
+}
+
 static void Init_MPU(void)
 {
 //    uint32_t entry_address = (uint32_t) &_RAM_START;
@@ -52,15 +69,22 @@ static void Init_MPU(void)
 
     MPU_Init();
 
-    MPU_SetRegion(REGION_SRAM_ATTR((uint32_t) &__kernel_region_start__, (uint32_t) &__kernel_region_end__ - (uint32_t) &__kernel_region_start__));
+    is_linker_tcm_symbols_define = init_linker_symbols_check();
 
-#if (TCM_ENABLE == 1)
-    MPU_SetRegion(REGION_TCM_ATTR((uint32_t) &__tcm_start__, (uint32_t) &_TCM_SIZE));
+#if (TCM_ENABLE == 1)    
+    if (is_linker_tcm_symbols_define == 1) 
+    {
+        MPU_SetRegion(REGION_SRAM_ATTR((uint32_t) &__kernel_region_start__, (uint32_t) &__kernel_region_end__ - (uint32_t) &__kernel_region_start__));
+        MPU_SetRegion(REGION_TCM_ATTR((uint32_t) &__tcm_start__, (uint32_t) &_TCM_SIZE));
+        MPU_SetRegion(REGION_SRAM_ATTR((uint32_t) &__tcm_end__, (uint32_t) &_RAM_SIZE - ((uint32_t) &__tcm_end__ - (uint32_t) &__kernel_region_start__)));
+    }
+    else
+    {
+        MPU_SetRegion(REGION_SRAM_ATTR((uint32_t) &_RAM_START, (uint32_t) &_RAM_SIZE));
+    }
 #else
-    MPU_SetRegion(REGION_SRAM_ATTR((uint32_t) &__tcm_start__, (uint32_t) &_TCM_SIZE));
+    MPU_SetRegion(REGION_SRAM_ATTR((uint32_t) &_RAM_START, (uint32_t) &_RAM_SIZE));
 #endif
-
-    MPU_SetRegion(REGION_SRAM_ATTR((uint32_t) &__tcm_end__, (uint32_t) &_RAM_SIZE - ((uint32_t) &__tcm_end__ - (uint32_t) &__kernel_region_start__)));
 
     for (int i = 0; i < sizeof(RCAR_MEMMORY_ARR)/sizeof(st_memory_region_t); i++) {
        
@@ -198,19 +222,22 @@ void SystemInit(void)
 #endif
     Init_MPU();
 
-#if (TCM_ENABLE == 1)    
-    st_memory_t info_osal = R_UTILS_GetMemoryRegionInfo(OSAL, 0);
-    volatile uint32_t *osal_mem = (volatile uint32_t *)info_osal.base_address;
-    memcpy((void *)osal_mem, &__tcm_start__, (size_t)&_TCM_SIZE);
+#if (TCM_ENABLE == 1)   
+    if (is_linker_tcm_symbols_define == 1) 
+    {
+        st_memory_t info_osal = R_UTILS_GetMemoryRegionInfo(OSAL, 0);
+        volatile uint32_t *osal_mem = (volatile uint32_t *)info_osal.base_address;
+        memcpy((void *)osal_mem, &__tcm_start__, (size_t)&_TCM_SIZE);
 
-    // Configuration for TCM region B.
-    ConfigureTCM(RCAR_TCM_B, (uint32_t)&__tcm_start__, RCAR_TCM_SIZE_32KB);
+        // Configuration for TCM region B.
+        ConfigureTCM(RCAR_TCM_B, (uint32_t)&__tcm_start__, RCAR_TCM_SIZE_32KB);
 
-    // Enable TCM region B at EL1.
-    ControlTCM(RCAR_TCM_B, RCAR_TCM_EL1, RCAR_TCM_ENABLE);
+        // Enable TCM region B at EL1.
+        ControlTCM(RCAR_TCM_B, RCAR_TCM_EL1, RCAR_TCM_ENABLE);
 
-    memcpy(&__tcm_start__, (void *)osal_mem, (size_t)&_TCM_SIZE);
-    memset((void *)osal_mem, 0, (size_t)&_TCM_SIZE);
+        memcpy(&__tcm_start__, (void *)osal_mem, (size_t)&_TCM_SIZE);
+        memset((void *)osal_mem, 0, (size_t)&_TCM_SIZE);
+    }
 #endif
 
 #if (CACHE == 1)
