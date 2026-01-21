@@ -50,6 +50,7 @@ static int init_linker_symbols_check(void)
 #if (TCM_ENABLE == 1)
     if ((__kernel_region_start__ != 0u) && (__kernel_region_end__ != 0u) &&
         (__tcm_start__ != 0u) && (__tcm_end__ != 0u) &&
+        (uint32_t)&_TCM_SIZE != 0u &&
         ((uint32_t)&__kernel_region_end__ > (uint32_t)&__kernel_region_start__) &&
         ((uint32_t)&__tcm_end__ > (uint32_t)&__tcm_start__))
     {
