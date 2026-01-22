@@ -24,11 +24,14 @@ export PATH=$PATH:<your_tool_chain_path>/bin/
 cd FreeRTOS/Demo/R-Car_Gen5_CR52/
 mkdir build && cd build
 cmake -G "Unix Makefiles" \
-    -DCMAKE_TOOLCHAIN_FILE=../toolchain_arm_none_eabi.cmake \
-    -DCMAKE_INSTALL_PREFIX=<path/to/install/dir> \
-    -DENABLE_OPENAMP=1 \
-    -DBOARD=x5h_ironhide \
-    ..
+  -DCMAKE_TOOLCHAIN_FILE=toolchain_arm_none_eabi.cmake \
+  -DCMAKE_INSTALL_PREFIX=<path/to/install/dir> \
+  -DBOARD=<TARGET_PLATFORM> \
+  -DENABLE_OPENAMP=1 \
+  -DUART_ID=1 \
+  -DCACHE=1 \
+  -DRAM_REGION=1 \
+  ..
 make
 ```
 
@@ -46,7 +49,7 @@ CMake options for the project:
   - `x5h_vdk`: For X5H on VDK
   - `x5h_rfs2`: For X5H on RFS2
   - `x5h_ironhide`: For X5H Ironhide board
-  - `ai-acc`: For AI Accelerator
+  - `ai-acc`: For AI Accelerator, (**requires `-DRAM_REGION=5`**)
 
 ## Output
 
