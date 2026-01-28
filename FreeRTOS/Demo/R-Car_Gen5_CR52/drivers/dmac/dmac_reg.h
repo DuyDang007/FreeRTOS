@@ -55,7 +55,7 @@
 #define DRV_RTDMAC_REG_MASK_LOWER_RDMDAR    (0xFFFFFFFFU)      /* RDMDAR use bit lower mask */
 #define DRV_RTDMAC_REG_MASK_UPPER_RDMDAR    (0x000000FFU)      /* RDMDAR use bit upper mask */
 #define DRV_RTDMAC_REG_MASK_LOWER_RDMDPBASE (0xFFFFFFF0U)      /* RDMDPBASE use bit lower mask */
-#define DRV_RTDMAC_REG_MASK_UPPER_RDMDPBASE (0x000000FFU)      /* RDMDPBASE use bit upper mask */
+#define DRV_RTDMAC_REG_MASK_UPPER_RDMDPBASE (0x000007FFU)      /* RDMDPBASE use bit upper mask */
 #define DRV_RTDMAC_REG_MASK_RDMCHCR_TS      (0x00000003U)      /* RDMCHCR use bit TS */
 #define DRV_RTDMAC_REG_MASK_ADDR            (0x000000FFFFFFFFFFU)      /* ADDRESS(40Bit) mask */
 #define DRV_RTDMAC_REG_MASK_CHECK_ADDR      (0x000000FFFFFFF000U)      /* Check ADDRESS(40Bit) mask */
@@ -314,8 +314,8 @@ typedef union u_regRDMFIXDAR {
 /* Structure of RDMFIXDPBASE_0 to RDMFIXDPBASE_32    */
 typedef union u_regRDMFIXDPBASE {
     struct {
-        uint32_t    DPBASE:     8;     /* R/W DMA Fixed Descriptor Base Address */
-        uint32_t    reserve_1:  24;    /* R   Reserved */
+        uint32_t    DPBASE:     11;     /* R/W DMA Fixed Descriptor Base Address */
+        uint32_t    reserve_1:  21;     /* R   Reserved */
     } bit;
     uint32_t INT;
 } regRDMFIXDPBASE_t;

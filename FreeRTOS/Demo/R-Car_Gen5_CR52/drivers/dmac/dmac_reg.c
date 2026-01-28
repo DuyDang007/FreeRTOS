@@ -597,7 +597,13 @@ void R_RTDMAC_Update_RDMRS_ID(uint8_t dev, uint8_t ch, uint8_t Value)
  */
 void R_RTDMAC_Update_RDMDPBASE(uint8_t dev, uint8_t ch, uint64_t Value)
 {
-    R_RTDMAC_WriteReg32(dev, ch, RDMDPBASE, (uint32_t)(Value & DRV_RTDMAC_REG_MASK_LOWER_RDMDPBASE));
+    regRDMDPBASE_t rRDMDPBASE;
+
+    rRDMDPBASE.INT = (uint32_t)(Value & DRV_RTDMAC_REG_MASK_LOWER_RDMDPBASE);
+
+    /* Update RDMDPBASE.SEL to 1: External memory is used */
+    rRDMDPBASE.bit.SEL = 1U;
+    R_RTDMAC_WriteReg32(dev, ch, RDMDPBASE, rRDMDPBASE.INT);
     R_RTDMAC_WriteReg32(dev, ch, RDMFIXDPBASE, ((Value >> 32) & DRV_RTDMAC_REG_MASK_UPPER_RDMDPBASE));
 }
 
