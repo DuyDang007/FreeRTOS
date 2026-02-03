@@ -396,10 +396,7 @@ void R_RTDMAC_Update_RDMCHCR(uint8_t dev, uint8_t ch, rDmacCfg_t *cfg, rDmacDesc
         Value = DRV_DMAC_DMA_DESC_READOUT;
     }
 
-    if ((DRV_DMAC_DMA_DESC_READOUT == Value) && (0 == descCfg->mStateEndEnable))
-    {
-    }
-    else
+    if ((DRV_DMAC_DMA_DESC_READOUT != Value))
     {
         rRDMCHCR.bit.IE = DRV_RTDMAC_RDMCHCR_IE_ENABLE;
     }
