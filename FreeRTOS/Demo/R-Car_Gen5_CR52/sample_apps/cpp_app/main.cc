@@ -27,12 +27,10 @@
  *
  */
 
-extern "C" {
-    /* Scheduler include files. */
-    #include "FreeRTOS.h"
-    #include "task.h"
-    #include "interrupts.h"
-}
+/* Scheduler include files. */
+#include "FreeRTOS.h"
+#include "task.h"
+#include "interrupts.h"
 #include "stdio.h"
 
 #define main_Cpp_TASK_PRIORITY        ( tskIDLE_PRIORITY + 1 )
