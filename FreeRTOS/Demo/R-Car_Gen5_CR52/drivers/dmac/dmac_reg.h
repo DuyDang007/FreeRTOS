@@ -245,7 +245,10 @@ typedef union u_regRDMCHCRB {
         uint32_t    PRI:        4;    /* R/W Channel Request Priority Setting */
         uint32_t    SLM:        4;    /* R/W DMA Transfer Low-Speed Mode */
         uint32_t    DTS:        1;    /* R/W Total Size Transmission under Descriptor Control */
-        uint32_t    reserve_1:  6;    /* R   Reserved */
+        uint32_t    reserve_1:  1;    /* R   Reserved */
+        uint32_t    DSIEEN:     1;    /* R/W Descriptor DSIE Enable */
+        uint32_t    reserve_2:  3;    /* R   Reserved */
+        uint32_t    DREQOSEN:   1;    /* R/W DREQ Outstanding Enable */
         uint32_t    DRST:       1;    /* W   Descriptor Reset */
         uint32_t    DPTR:       8;    /* R   Descriptor Pointer */
         uint32_t    DCNT:       8;    /* R/W Number of Stages of Descriptor Memory */
