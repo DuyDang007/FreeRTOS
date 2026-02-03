@@ -130,9 +130,18 @@ file(GLOB SCMI_SRC_LIST
     )
 
 file(GLOB UCIE_SRC_LIST
-    ${BSP_DIR}/drivers/ucie/uciedrv.c
-	${BSP_DIR}/drivers/ucie/ucie_vdk/*.c
+    ${BSP_DIR}/drivers/ucie/ucie_vdk/*.c
+)
+
+if (BOARD STREQUAL "x5h_ironhide")
+    list(APPEND UCIE_SRC_LIST
+        ${BSP_DIR}/drivers/ucie/uciedrv.c
     )
+else()
+    list(APPEND UCIE_SRC_LIST
+        ${BSP_DIR}/drivers/ucie/ucie_rfs/uciedrv.c
+    )
+endif()
 
 set(bsp_source
     ${BSP_DIR}/common/boot.S
@@ -180,14 +189,8 @@ set(bsp_source
     ${BSP_DIR}/drivers/taud/r_taud_reg.c
     ${BSP_DIR}/drivers/taud/r_taud_api.c
     ${BSP_DIR}/drivers/ecm/r_ecm.c
+    ${UCIE_SRC_LIST}
 )
-
-# To do: Remove after adding UCIe build support for AI ACC.
-if(BOARD STREQUAL "x5h_ironhide" OR BOARD STREQUAL "x5h_rfs2")
-    list(APPEND bsp_source
-        ${UCIE_SRC_LIST}
-    )
-endif()
 
 if(ENABLE_OPENAMP)
     list(APPEND bsp_source
@@ -376,11 +379,8 @@ if(ENABLE_OPENAMP)
     add_subdirectory(sample_apps/virtio_iommu_backend_sample)
 endif()
 
-# To do: Remove after adding UCIe build support for AI ACC.
-if(BOARD STREQUAL "x5h_ironhide" OR BOARD STREQUAL "x5h_rfs2")
-    add_subdirectory(sample_apps/cxl_app)
-    add_subdirectory(sample_apps/ucie)
-endif()
+add_subdirectory(sample_apps/cxl_app)
+add_subdirectory(sample_apps/ucie)
 
 if(NOT BOARD STREQUAL "ai_acc")
     add_subdirectory(sample_apps/audio_app)
