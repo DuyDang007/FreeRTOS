@@ -263,6 +263,17 @@ uint32_t R_UCIE_HDMA_Stop(st_ucie_hdma_cfg_t *cfg);
  */
 uint32_t R_UCIE_IATU_SetRegion(st_ucie_iatu_cfg_t *cfg);
 
+/**
+ * @brief Unset UCIe iATU region.
+ *
+ * This function using for unset iATU region.
+ *
+ * @param[in] cfg Pointer to the instance iATU config structure.
+ *
+ * @return 0 if success, non-zero if error.
+ */
+uint32_t R_UCIE_IATU_UnsetRegion(st_ucie_iatu_cfg_t *cfg);
+
 #ifdef __cplusplus
 }
 #endif

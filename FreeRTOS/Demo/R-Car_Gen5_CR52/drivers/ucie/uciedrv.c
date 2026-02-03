@@ -1455,3 +1455,32 @@ uint32_t R_UCIE_IATU_SetRegion(st_ucie_iatu_cfg_t *cfg)
 
     return 0;
 }
+
+uint32_t R_UCIE_IATU_UnsetRegion(st_ucie_iatu_cfg_t *cfg)
+{
+    e_ucie_ch_t ucie_ch = cfg->ucie_ch;
+    e_ucie_iatu_region_t rgn = cfg->rgn;
+    e_ucie_iatu_type_t type = cfg->type;
+
+    uint32_t base;
+
+    if (ucie_ch != UCIE_CH0 && ucie_ch != UCIE_CH1) {
+        printf("ERROR: Invalid UCIe channel\n");
+        return 1;
+    }
+
+    if (rgn < IATU_RGN0 || rgn > IATU_RGN31) {
+        printf("ERROR: Invalid iATU region\n");
+        return 1;
+    }
+
+    if (type != IATU_OUTBOUND && type != IATU_INBOUND) {
+        printf("ERROR: Invalid iATU type\n");
+        return 1;
+    }
+
+    base = UCIE_AXI_BASE(ucie_ch) + PF0_ATU_CAP_BASE_ADD +
+                                   (type * IATU_INBOUND_OFFSET) + (rgn * IATU_BLOCK_SIZE);
+
+    mem_write32(base + IATU_REGION_CTRL_2_OFF, 0x00000000U);
+}
