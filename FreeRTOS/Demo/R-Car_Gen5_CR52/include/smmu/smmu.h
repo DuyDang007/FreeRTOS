@@ -9,6 +9,10 @@
 #ifndef R_SMMU_H_
 #define R_SMMU_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "stdbool.h"
 
 /**
@@ -289,5 +293,9 @@ int R_SMMU_IssueCommand(e_smmu_domain_t smmu_domain, bool is_secure, st_smmu_cmd
  * @return 0 if initialization is successful, non-zero if an error occurs.
  */
 int R_SMMU_Enable(e_smmu_domain_t smmu_domain, bool is_secure);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* R_SMMU_H_ */

@@ -20,6 +20,10 @@
  * It provides functions to open, close, set mode, run mode.
  */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /***********************************************************************************************************************
  * Includes
  **********************************************************************************************************************/
@@ -141,6 +145,10 @@ uint32_t R_CRC_Get_BufferSize(wcrc_sub_module_t module, wcrc_ctrl_t * const p_ct
  * @retval error code on failure.
  */
 int R_CRC_Wait_Operation(wcrc_ctrl_t * p_ctrl, uint32_t timeout);
+
+#ifdef __cplusplus
+}
+#endif
 
 /** @} */ // end of CRC_Module
 

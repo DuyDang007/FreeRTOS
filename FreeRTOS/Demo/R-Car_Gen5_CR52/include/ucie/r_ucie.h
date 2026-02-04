@@ -17,6 +17,10 @@
 #ifndef R_UCIE_H_
 #define R_UCIE_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief Enum representing different UCIe channel.
  *
@@ -258,6 +262,10 @@ uint32_t R_UCIE_HDMA_Stop(st_ucie_hdma_cfg_t *cfg);
  * @return 0 if success, non-zero if error.
  */
 uint32_t R_UCIE_IATU_SetRegion(st_ucie_iatu_cfg_t *cfg);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* R_UCIE_H_ */
 /** @} */  // end of file-level defgroup

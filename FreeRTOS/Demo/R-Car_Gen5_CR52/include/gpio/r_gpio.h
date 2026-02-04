@@ -17,6 +17,10 @@
  * It provides functions to open, close, configure, read, and write GPIO pins and ports.
  */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /***********************************************************************************************************************
  * Includes
  **********************************************************************************************************************/
@@ -688,6 +692,10 @@ int R_GPIO_PortRead(gpio_ctrl_t * const p_ctrl, gpio_port_t port, uint32_t * p_p
  * @retval error code on failure.
  */
 int R_GPIO_PortWrite(gpio_ctrl_t * const p_ctrl, gpio_port_t port, uint32_t value, uint32_t mask);
+
+#ifdef __cplusplus
+}
+#endif
 
 /** @} */ // end of GPIO_Module
 

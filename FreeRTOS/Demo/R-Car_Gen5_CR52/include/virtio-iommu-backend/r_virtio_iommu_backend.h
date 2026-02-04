@@ -34,6 +34,10 @@
  * locally, and returns execution results back to the frontend.
  */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /***********************************************************************************************************************
  * Includes
  **********************************************************************************************************************/
@@ -87,6 +91,10 @@ R_VIRTIO_IOMMU_Backend_Init(e_mfis_channel_t ch);
  */
 uint8_t
 R_VIRTIO_IOMMU_Backend_DeInit(virtio_iommu_instance_ctrl_t *p_inst);
+
+#ifdef __cplusplus
+}
+#endif
 
 /** @} */ /* end of VIRTIO_IOMMU_BACKEND */
 

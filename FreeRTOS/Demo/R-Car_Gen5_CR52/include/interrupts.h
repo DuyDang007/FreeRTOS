@@ -18,6 +18,10 @@
 #ifndef __INTERRUPTS_H_
 #define __INTERRUPTS_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define __FPU_PRESENT             1
 
 /***********************************************************************************************************************
@@ -468,6 +472,10 @@ int Irq_GetMergeStatReg(unsigned int id);
  * @retval 0 on success.
  */
 int Irq_SetIntType(unsigned int id, r_irq_type type);
+
+#ifdef __cplusplus
+}
+#endif
 
 /** @} */ // end of Interrupt_Controller
 

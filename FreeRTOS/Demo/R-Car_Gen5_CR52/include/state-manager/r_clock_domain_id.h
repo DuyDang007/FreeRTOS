@@ -9,6 +9,10 @@
 #ifndef _R_CLOCK_ID_H_
 #define _R_CLOCK_ID_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief X5H Clock Domain ID.
  */
@@ -1713,6 +1717,10 @@ typedef enum {
     X5H_CLOCK_ID_CLK_UFS_PERE_MAIN,
     X5H_CLOCK_ID_COUNT
 } e_x5h_clock_id_t;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _R_CLOCK_ID_H_ */
 

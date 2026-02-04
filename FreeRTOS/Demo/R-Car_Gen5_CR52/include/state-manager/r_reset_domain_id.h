@@ -9,6 +9,10 @@
 #ifndef _R_RESET_DOMAIN_ID_H_
 #define _R_RESET_DOMAIN_ID_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief X5H Reset Domain ID.
  */
@@ -831,6 +835,10 @@ typedef enum {
     X5H_RESET_DOMAIN_ID_GPIODM3,
     X5H_RESET_DOMAIN_ID_COUNT
 } e_x5h_reset_domain_id_t;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _R_RESET_DOMAIN_ID_H_ */
 

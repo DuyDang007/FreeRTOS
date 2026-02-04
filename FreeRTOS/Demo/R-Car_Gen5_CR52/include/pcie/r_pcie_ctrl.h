@@ -14,6 +14,10 @@
  * The PCIe module allows for the configuration and control of PCIe communication between devices.
  */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /***********************************************************************************************************************
  * Includes
  **********************************************************************************************************************/
@@ -154,6 +158,10 @@ uint32_t R_PCIE_ConfigRead(struct st_pcie_ctrl *ctrl, pcie_bdf_t bdf, uint32_t r
  * @param[in] data the value to write.
  */
 void R_PCIE_ConfigWrite(struct st_pcie_ctrl *ctrl, pcie_bdf_t bdf, uint32_t reg, uint32_t data);
+
+#ifdef __cplusplus
+}
+#endif
 
 /** @} */ // end of PCIE_Module
 

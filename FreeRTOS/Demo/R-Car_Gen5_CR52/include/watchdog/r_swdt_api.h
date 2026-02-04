@@ -15,6 +15,10 @@
  * System watchdog.
  */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /***********************************************************************************************************************
  * Includes
  **********************************************************************************************************************/
@@ -68,6 +72,10 @@ uint32_t R_SWDT_Start();
  * system and preventing it from triggering a reset.
  */
 uint32_t R_SWDT_Stop();
+
+#ifdef __cplusplus
+}
+#endif
 
 /** @} */ // end of SWDT_Module
 

@@ -9,6 +9,10 @@
 #ifndef _R_STATE_MANAGER_H_
 #define _R_STATE_MANAGER_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdbool.h>
 
 /**
@@ -174,6 +178,10 @@ int R_StateManager_ResetDeassert(int domain_id);
  * @return 0 if all went fine, else return appropriate error.
  */
 int R_StateManager_Reset(int domain_id);
+
+#ifdef __cplusplus
+}
+#endif
 
 /** @} */ // end of State_Manager
 

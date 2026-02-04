@@ -16,6 +16,10 @@
  *
  */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief X5H Power domain IDs.
  */
@@ -277,6 +281,10 @@ typedef enum {
     X5H_POWER_DOMAIN_ID_Q_APU_P07,
     X5H_POWER_DOMAIN_ID_COUNT
 } e_x5h_power_domain_id_t;
+
+#ifdef __cplusplus
+}
+#endif
 
 /** @} */ // end of Power_Domain_ID
 

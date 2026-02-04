@@ -13,6 +13,9 @@
  *
  * The PCIe host module allows for the configuration and control of PCIe communication between devices.
  */
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #include "pcie/r_pcie_ctrl.h"
 #include <stdbool.h>
@@ -738,6 +741,10 @@ void R_PCIE_Host_Outbound_ATU(uint16_t channel);
  * @brief define pcie
  */
 #define PCIE_MAX_FUNC (0xFFFFFFFFU & PCIE_BDF_FUNC_MASK)
+
+#ifdef __cplusplus
+}
+#endif
 
 /** @} */ // end of PCIE_Host_Module
 

@@ -8,6 +8,10 @@
 #ifndef _R_TAUD_H
 #define _R_TAUD_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /***********************************************************************************************************************
  * Includes
  **********************************************************************************************************************/
@@ -184,5 +188,9 @@ e_taud_err_t R_TAUD_PWM_CallbackSet(r_taud_ctrl_t * const p_ctrl,
                                 st_taud_irq_Cfg_t irg_cfg);
 
 e_taud_err_t R_TAUD_PWM_Close(r_taud_ctrl_t * const p_ctrl);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* R_TAUD_H*/

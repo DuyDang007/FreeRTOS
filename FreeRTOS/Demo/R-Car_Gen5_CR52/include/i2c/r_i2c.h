@@ -16,6 +16,11 @@
  * It provides functions to open, close, read, write, abort, slaveaddresset, statusget 
  * and manage I2C data transfer between master and slave devices.
  */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /***********************************************************************************************************************
  * Includes
  **********************************************************************************************************************/
@@ -287,6 +292,10 @@ int R_I2C_CallbackSet(i2c_master_ctrl_t * const          p_ctrl,
  * @retval 0 if successful.
  */
 int R_I2C_StatusGet(i2c_master_ctrl_t * const p_ctrl, i2c_master_status_t * p_status);
+
+#ifdef __cplusplus
+}
+#endif
 
 /** @} */ // end of I2C_Module
 

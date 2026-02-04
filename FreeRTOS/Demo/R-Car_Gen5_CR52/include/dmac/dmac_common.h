@@ -17,6 +17,10 @@
 *  It provides struct,enum to configure RDMAC.
 */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h>
@@ -275,6 +279,10 @@ typedef struct st_rDmacDescMemCfg {
         uint32_t TCR;   /**< Transfer Count */
         uint32_t CHCR;  /**< Channel Control Register */
 } __attribute__((aligned(16))) rDmacDescMemCfg_t;
+
+#ifdef __cplusplus
+}
+#endif
 
 /** @} */ // end of RTDMAC_Module
 

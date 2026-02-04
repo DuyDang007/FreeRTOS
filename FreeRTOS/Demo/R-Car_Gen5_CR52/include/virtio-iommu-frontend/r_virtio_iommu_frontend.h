@@ -39,6 +39,10 @@
  * hardware IOMMU/SMMU operations.
  */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /***********************************************************************************************************************
  * Includes
  **********************************************************************************************************************/
@@ -154,6 +158,10 @@ int R_VIRTIO_IOMMU_UnMap(st_smmu_streamid_instance_ctrl_t *p_ctrl,
  * @return Negative error code on failure.
  */
 int R_VIRTIO_IOMMU_Detach(st_smmu_streamid_instance_ctrl_t *p_ctrl);
+
+#ifdef __cplusplus
+}
+#endif
 
 /** @} */ /* end of VIRTIO_IOMMU_FRONTEND */
 

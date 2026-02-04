@@ -18,6 +18,10 @@
  *      1 WCRC contains 1 CRC sub-module and 1 KCRC sub-module.
  */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /***********************************************************************************************************************
  * Includes
  **********************************************************************************************************************/
@@ -285,6 +289,10 @@ typedef struct st_wcrc_instance_ctrl
     void             *  p_context[2];           ///< Pointer to context to be passed into callback.
     void             *  p_extend[2];            ///< Pointer to extend hardware configurations.
 } wcrc_instance_ctrl_t;
+
+#ifdef __cplusplus
+}
+#endif
 
 /** @} */ // end of CRC_Module
 

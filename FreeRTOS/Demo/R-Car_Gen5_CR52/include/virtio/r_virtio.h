@@ -15,6 +15,10 @@
 #ifndef R_VIRTIO_H
 #define R_VIRTIO_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /***********************************************************************************************************************
  * Includes
  **********************************************************************************************************************/
@@ -204,5 +208,9 @@ uint8_t R_VIRTIO_CreateEP(st_virtio_instance_ctrl_t *p_vdev_ctrl,
  * @return Non-zero value on failure.
  */
 uint8_t R_VIRTIO_ReleaseEP(st_virtio_endpoint_t * p_ept);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* R_VIRTIO_H */

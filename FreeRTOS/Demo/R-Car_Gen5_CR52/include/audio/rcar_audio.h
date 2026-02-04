@@ -8,6 +8,10 @@
 #ifndef _RCAR_AUDIO_H_
 #define _RCAR_AUDIO_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdint.h>
 
 /**
@@ -148,6 +152,10 @@ int R_Audio_Config(st_audio_instance_ctrl_t * const p_instance_ctrl);
  * @return Non-zero (FAIL) Initialization failed.
  */
 int R_Audio_Deinit(st_audio_instance_ctrl_t * const p_instance_ctrl);
+
+#ifdef __cplusplus
+}
+#endif
 
 /** @} */
 #endif

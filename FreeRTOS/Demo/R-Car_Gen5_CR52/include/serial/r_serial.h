@@ -16,6 +16,11 @@
  * The Serial module allows for the configuration and control serial devices.
  * It provides functions to init port, put string, get char, put char and close.
  */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /***********************************************************************************************************************
  * Includes
  **********************************************************************************************************************/
@@ -102,6 +107,10 @@ int32_t R_SERIAL_PutChar(unsigned char send_char);
  * 
  */
 int32_t R_SERIAL_Close();
+
+#ifdef __cplusplus
+}
+#endif
 
 /** @} */ // end of Serial_Module
 

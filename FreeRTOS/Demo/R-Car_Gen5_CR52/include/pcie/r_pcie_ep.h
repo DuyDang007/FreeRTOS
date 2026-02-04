@@ -15,6 +15,9 @@
  * The PCIe module allows for the configuration and control of PCIe EP communication between devices.
  */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 /***********************************************************************************************************************
  * Includes
  **********************************************************************************************************************/
@@ -263,4 +266,9 @@ void R_PCIE_EP_Inbound_ATU(struct st_pcie_ep *ep, uint16_t channel);
 * @brief Receiving test cmd from Host
 */
 void R_PCIE_EPF_Test_CmdHandler(struct st_pcie_ep *ep);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif

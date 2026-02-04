@@ -16,6 +16,10 @@
  * It provides functions to open, close, configure, read, and write of RT-DMAC.
  */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "dmac/dmac_common.h"
 
 /**
@@ -63,6 +67,10 @@ uint16_t R_SYSDMAC_RcarDmacStop(DMAC_t dev, uint8_t ch);
  * @retval error code on failure.
  */
 uint16_t R_SYSDMAC_RcarCallBackSet(dmac_ctrl_t * const p_ctrl, void ( *p_callback)(void *), void * const p_context);
+
+#ifdef __cplusplus
+}
+#endif
 
 /** @} */ // end of SYSDMAC_Module
 

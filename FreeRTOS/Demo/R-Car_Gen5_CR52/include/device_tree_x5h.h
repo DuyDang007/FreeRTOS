@@ -9,6 +9,10 @@
 #ifndef _DEVICE_TREE_X5H_H_
 #define _DEVICE_TREE_X5H_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdint.h>
 #include "board.h"
 
@@ -70,5 +74,9 @@ static inline st_module_config_t* getModuleConfigs() {
 
     return MODULE_CONFIG_LIST;
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // _DEVICE_TREE_X5H_H_
