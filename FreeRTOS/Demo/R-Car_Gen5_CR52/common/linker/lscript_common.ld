@@ -1,8 +1,8 @@
 MEMORY
 {
    sram_base_addr : ORIGIN = 0x00000000, LENGTH = 0x2000000
-   vram1_base_addr : ORIGIN = 0x10200000, LENGTH = 0xF00000
-   vram2_base_addr : ORIGIN = 0x11100000, LENGTH = 0xF00000
+   vram1_base_addr : ORIGIN = 0x10200000, LENGTH = 0x1400000
+   vram2_base_addr : ORIGIN = 0x11600000, LENGTH = 0xA00000
    vram3_base_addr : ORIGIN = 0x1160000, LENGTH = 0xA00000
    dram_base_addr : ORIGIN = 0x40000000, LENGTH = 0xA00000
    dram2_base_addr : ORIGIN = 0x4B000000, LENGTH = 0x100000
