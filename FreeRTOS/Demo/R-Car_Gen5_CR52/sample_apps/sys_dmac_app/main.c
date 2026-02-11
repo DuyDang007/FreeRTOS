@@ -60,6 +60,7 @@ static void prvSetupHardware( void );
 static void prvSYSDMACTask( void *pvParameters );
 
 SemaphoreHandle_t xSemaphore = NULL;
+#define DMA_WAIT_TIMEOUT_MS   (100U)
 
 /*------------------------- Configure mem-to-mem with Normal mode ----------------------------------*/
 /* Define configure DMA Controller */
@@ -152,7 +153,7 @@ rDmacDescCfg_t descCfg2 =
         .mTransCountUpdate = true,
     },
     .mDescRead1st = true,                       // Read descriptor first
-    .mStateEndEnable = false,                    // Trigger state end
+    .mStateEndEnable = false,                   // No Trigger state end
     .mDescCount = 4,                            // Descriptor count
     .mDescIndex = 0                             // Descriptor index
 };
@@ -184,7 +185,7 @@ rDmacDescMemCfg_t desc_mem3[] = {
     {       0x66000000,        0x70400000,        4,         0},
     {       0x66000000,        0x70500000,        4,         0},
     {       0x66000000,        0x70600000,        4,         0},
-    {       0x66000000,        0x70700000,        4,         0x30000004},
+    {       0x66000000,        0x70700000,        4,         0},
 };
 
 /* Define configure the DMA descriptor */
@@ -380,7 +381,6 @@ static void prvSYSDMACTask( void *pvParameters )
 
     R_SYSDMAC_RcarDmacStop(rDmacIrqHandler_t_irq.Unit, rDmacIrqHandler_t_irq.SubCh);
 
-
     printf("*************************************************************\r\n");
     printf("***TC2: SYS-DMAC mem-to-mem transfer in Descriptor Normal mode***\r\n");
     /* Device Driver Part */
@@ -407,10 +407,12 @@ static void prvSYSDMACTask( void *pvParameters )
     if (dmaStatus != 0)
         printf("DMA execution failed with status: %d\n", dmaStatus);
 
+    // Wait DMA to transfer data.
     if(xSemaphoreTake(xSemaphore, portMAX_DELAY) == pdTRUE)
     {
 
     }
+
     // Verify destination data
     total_transfer_size = 4;
     printf("Verify destination data\n");
@@ -458,9 +460,11 @@ static void prvSYSDMACTask( void *pvParameters )
     if (dmaStatus != 0)
         printf("DMA execution failed with status: %d\n", dmaStatus);
 
-    if(xSemaphoreTake(xSemaphore, portMAX_DELAY) == pdTRUE)
+    // Wait DMA to transfer data.
+    if (xSemaphoreTake(xSemaphore, pdMS_TO_TICKS(DMA_WAIT_TIMEOUT_MS)) != pdTRUE)
     {
-
+        printf("Timeout: no TE interrupt received\r\n");
+        R_RTDMAC_RcarDmacStop(rDmacIrqHandler_t_irq2.Unit, rDmacIrqHandler_t_irq2.SubCh);
     }
 
     total_transfer_size = 4;
@@ -523,6 +527,7 @@ static void prvSYSDMACTask( void *pvParameters )
     if (dmaStatus != 0)
         printf("DMA execution failed with status: %d\n", dmaStatus);
 
+    // Wait DMA to transfer data.
     if(xSemaphoreTake(xSemaphore, portMAX_DELAY) == pdTRUE)
     {
 
@@ -553,11 +558,10 @@ static void prvSYSDMACTask( void *pvParameters )
         printf("TC4 Result: Failed\n");
     }
 
-    R_SYSDMAC_RcarDmacStop(rDmacIrqHandler_t_irq3.Unit, rDmacIrqHandler_t_irq3.SubCh);
-
     printf("*************************************************************\r\n");
     printf("***TC5: SYS-DMAC mem-to-mem transfer in Descriptor Infinite Repeat mode***\r\n");
     /* Device Driver Part */
+    R_SYSDMAC_RcarDmacCtrlInit(SYS_DMAC0, DRV_RTDMAC_PRIO_FIX);
 
     for (int i = 0; i < desccfg4.mDescCount; i++)
     {
@@ -576,7 +580,7 @@ static void prvSYSDMACTask( void *pvParameters )
     if (dmaStatus != 0)
         printf("DMA execution failed with status: %d\n", dmaStatus);
 
-    vTaskDelay(10000);
+    vTaskDelay(1000);
 
     total_transfer_size = 4;
     printf("Verify destination data!\n");
@@ -646,23 +650,23 @@ void dmacUserCallback2(void *data) {
         desc_mem2[i].DAR += 0x00100000;
     }
     repeat -= 1;
-    
 }
 
+volatile int count_irq_sysdmac_read_out = 0;
 void dmacUserCallback3(void *data) {
     rDmacIrqCfg_t * instance_ctrl = (rDmacIrqCfg_t *) data;
-
-    if(desccfg3.mDescIndex == 2)
+    count_irq_sysdmac_read_out++;
+    if(count_irq_sysdmac_read_out == 1)
     {
         desccfg3.mDescIndex = 6;
-        BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-        xSemaphoreGiveFromISR(xSemaphore, &xHigherPriorityTaskWoken);
-        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
     }
-    else if (desccfg3.mDescIndex == 6)
+    else if (count_irq_sysdmac_read_out == 2)
     {
         desccfg3.mDescIndex = 1;
-        desccfg3.mDescUpdate.mCHCRUpdate = true;
+    }
+    else
+    {
+        R_SYSDMAC_RcarDmacStop(rDmacIrqHandler_t_irq3.Unit, rDmacIrqHandler_t_irq3.SubCh);
         BaseType_t xHigherPriorityTaskWoken = pdFALSE;
         xSemaphoreGiveFromISR(xSemaphore, &xHigherPriorityTaskWoken);
         portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
