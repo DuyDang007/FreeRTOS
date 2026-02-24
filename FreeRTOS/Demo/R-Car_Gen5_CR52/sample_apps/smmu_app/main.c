@@ -132,6 +132,8 @@ static void prvSMMUTask( void *pvParameters )
 		}
 	}
 
+    uint64_t data_size = 0x5000000;
+
     st_smmu_streamid_instance_ctrl_t smmu_ctrl = {
         .stream_id = 0x50001,
         .smmu_domain = SMMU_PERW,
@@ -167,7 +169,7 @@ static void prvSMMUTask( void *pvParameters )
         printf("Result: Failed\r\n");
     }
 
-    R_SMMU_Map(&smmu_ctrl, cfg.mSrcAddr, cfg.mSrcAddr + SOURCE_OFFSET_MAPPING, 0x5006000, ATTR_DEVICE_NGNRNE_EL1_RW_EL0_RW);
+    R_SMMU_Map(&smmu_ctrl, cfg.mSrcAddr, cfg.mSrcAddr + SOURCE_OFFSET_MAPPING, data_size, ATTR_DEVICE_NGNRNE_EL1_RW_EL0_RW);
 
     printf("**********************************************\r\n");
 
@@ -204,6 +206,7 @@ static void prvSMMUTask( void *pvParameters )
     while(!isr_flag) {
         __asm__ volatile("nop");
     }
+    isr_flag = false;
 
     // Verify destination data
     uint32_t total_transfer_size = 4;
@@ -221,6 +224,76 @@ static void prvSMMUTask( void *pvParameters )
             printf ("DMAC worked without SMMU.\n");
         }
     }
+
+    printf("* Test case 6: R_SMMU_Unmap. *\r\n");
+    
+    R_SMMU_Unmap(&smmu_ctrl, cfg.mSrcAddr, cfg.mSrcAddr + SOURCE_OFFSET_MAPPING, data_size);
+
+    R_SYSDMAC_RcarDmacStop(SYS_DMAC3, DMAC_CH1);
+
+    *(volatile uint32_t *)pa_src_ptr = 0x111;
+    *(volatile uint32_t *)cfg.mSrcAddr = 0x222;
+    *(volatile uint32_t *)pa_dst_ptr = 0x555; // Value goes to cache; DMA may miss it if dont invalidate cache
+    printf("Before DMA: pa dst address: 0x%lx, dst data: 0x%lx\n",pa_dst_ptr, *(volatile uint32_t *)pa_dst_ptr);
+    dmaStatus = R_SYSDMAC_RcarDmacExec(SYS_DMAC3, DMAC_CH1, &cfg, 0);
+
+    while(!isr_flag) {
+        __asm__ volatile("nop");
+    }
+    isr_flag = false;
+
+    // Verify destination data
+    total_transfer_size = 4;
+	destData = R_UTILS_ReadMemForDMA((void*)pa_dst_ptr, total_transfer_size);
+
+    printf("After DMA: pa dst address: 0x%lx, dst data: 0x%lx\n",pa_dst_ptr, destData );
+    printf("Source Info: pa src address: 0x%lx, src data: 0x%lx\n",pa_src_ptr, *(volatile uint32_t *)pa_src_ptr );
+    if (destData == (*(volatile uint32_t *)pa_src_ptr)) {
+        printf("Result: Passed\n");
+    } else {
+        printf("Result: Failed\n");
+        if ((*(volatile uint32_t *)cfg.mSrcAddr == *(volatile uint32_t *)cfg.mDestAddr) && *(volatile uint32_t *)cfg.mSrcAddr != 0) {
+            printf("After DMA: va src address: 0x%lx, src data: 0x%lx\n", cfg.mSrcAddr, *(volatile uint32_t *)cfg.mSrcAddr );
+            printf("After DMA: va dst address: 0x%lx, dst data: 0x%lx\n", cfg.mDestAddr, *(volatile uint32_t *)cfg.mDestAddr);
+            printf ("DMAC worked without SMMU.\n");
+        }
+    }
+    printf("**********************************************\r\n");
+
+    
+    printf("* Test case 7: R_SMMU_Map(Re-map after unmap for verification). *\r\n");
+    
+    R_SMMU_Map(&smmu_ctrl, cfg.mSrcAddr, cfg.mSrcAddr + SOURCE_OFFSET_MAPPING, data_size, ATTR_DEVICE_NGNRNE_EL1_RW_EL0_RW);
+    R_SYSDMAC_RcarDmacStop(SYS_DMAC3, DMAC_CH1);
+
+    *(volatile uint32_t *)pa_src_ptr = 0x123;
+    *(volatile uint32_t *)cfg.mSrcAddr = 0x456;
+    *(volatile uint32_t *)pa_dst_ptr = 0x777; // Value goes to cache; DMA may miss it if dont invalidate cache
+    printf("Before DMA: pa dst address: 0x%lx, dst data: 0x%lx\n",pa_dst_ptr, *(volatile uint32_t *)pa_dst_ptr);
+    dmaStatus = R_SYSDMAC_RcarDmacExec(SYS_DMAC3, DMAC_CH1, &cfg, 0);
+
+    while(!isr_flag) {
+        __asm__ volatile("nop");
+    }
+    isr_flag = false;
+
+    // Verify destination data
+    total_transfer_size = 4;
+	destData = R_UTILS_ReadMemForDMA((void*)pa_dst_ptr, total_transfer_size);
+
+    printf("After DMA: pa dst address: 0x%lx, dst data: 0x%lx\n",pa_dst_ptr, destData );
+    printf("Source Info: pa src address: 0x%lx, src data: 0x%lx\n",pa_src_ptr, *(volatile uint32_t *)pa_src_ptr );
+    if (destData == (*(volatile uint32_t *)pa_src_ptr)) {
+        printf("Result: Passed\n");
+    } else {
+        printf("Result: Failed\n");
+        if ((*(volatile uint32_t *)cfg.mSrcAddr == *(volatile uint32_t *)cfg.mDestAddr) && *(volatile uint32_t *)cfg.mSrcAddr != 0) {
+            printf("After DMA: va src address: 0x%lx, src data: 0x%lx\n", cfg.mSrcAddr, *(volatile uint32_t *)cfg.mSrcAddr );
+            printf("After DMA: va dst address: 0x%lx, dst data: 0x%lx\n", cfg.mDestAddr, *(volatile uint32_t *)cfg.mDestAddr);
+            printf ("DMAC worked without SMMU.\n");
+        }
+    }
+
     printf("**********************************************\r\n");
 
     for (;;)

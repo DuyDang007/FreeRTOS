@@ -59,7 +59,7 @@ int main( void )
 	prvSetupHardware();
     
     
-    xTaskCreate( prvSMMU_RT_Task, "SMMU_RT_Task", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1, NULL );
+    xTaskCreate( prvSMMU_RT_Task, "SMMU_RT_Task", configMINIMAL_STACK_SIZE * 10, NULL, tskIDLE_PRIORITY + 1, NULL );
     /* Start the tasks and timer running. */
     vTaskStartScheduler();
     for( ;; )
@@ -159,11 +159,34 @@ static void prvSMMU_RT_Task( void *pvParameters )
 
     *(uint32_t *)0x90000000 = 0x7012;
     *(uint32_t *)0x70000000 = 0x123;
-    *(uint32_t *)0x80000000 = *(uint32_t *)0x90000000;
 
     vTaskDelay(10);
-    printf("Value at VA 0x70000000 - PA 0x90000000:   0x%x\n", *(uint32_t *)0x90000000);
-    printf("Value at VA 0x80000000 - PA 0x1840000000: 0x%x\n", *(uint32_t *)0x80000000);
+    printf("Value at VA 0x70000000 - PA 0x90000000:   0x%x\n", *(uint32_t *)0x70000000);
+    printf("Value at VA 0x90000000 - PA 0x90000000:   0x%x\n", *(uint32_t *)0x90000000);
+
+    if (*(uint32_t *)0x70000000 == *(uint32_t *)0x90000000) {
+        printf("Result: Passed\r\n");
+    }
+    else {
+        printf("Result: Failed\r\n");
+    }
+
+    printf("* Test case 7: SMMU-UnMap *\r\n");
+
+    for (uint8_t i = 0; i < sizeof(streamId[coreid])/sizeof(uint32_t); i ++) {
+        smmu_ctrl.stream_id = streamId[coreid][i];
+
+        R_SMMU_Unmap(&smmu_ctrl, 0x70000000, 0x90000000, 0x1000000);
+        R_SMMU_Unmap(&smmu_ctrl, 0x90000000, 0x90000000, 0x1000000);
+    }
+
+
+    *(uint32_t *)0x90000000 = 0x1111;
+    *(uint32_t *)0x70000000 = 0x2222;
+
+    vTaskDelay(10);
+    printf("Value at VA 0x70000000 - PA 0x90000000:   0x%x\n", *(uint32_t *)0x70000000);
+    printf("Value at VA 0x90000000 - PA 0x90000000:   0x%x\n", *(uint32_t *)0x90000000);
 
     if (*(uint32_t *)0x70000000 == *(uint32_t *)0x90000000) {
         printf("Result: Passed\r\n");
@@ -174,7 +197,7 @@ static void prvSMMU_RT_Task( void *pvParameters )
 
     printf("**********************************************\r\n");
 
-    printf("* Test case 7: Test Read only permission *\r\n");
+    printf("* Test case 8: Test Read only permission *\r\n");
     *(uint32_t *)0xA0000000 = 0xBEFFBEFF;
     printf("Result: Failed\r\n");
     printf("**********************************************\r\n");
