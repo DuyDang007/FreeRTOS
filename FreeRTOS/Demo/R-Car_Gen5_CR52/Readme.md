@@ -49,7 +49,7 @@ CMake options for the project:
   - `x5h_vdk`: For X5H on VDK
   - `x5h_rfs2`: For X5H on RFS2
   - `x5h_ironhide`: For X5H Ironhide board
-  - `ai-acc`: For AI Accelerator, (**requires `-DRAM_REGION=5`**)
+  - `ai_acc`: For AI Accelerator, (**requires `-DRAM_REGION=5`**)
 
 ## Output
 
