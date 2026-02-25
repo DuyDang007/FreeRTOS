@@ -49,10 +49,10 @@ target_link_options(${ep_main}
         -Wl,-Map=${CMAKE_CURRENT_BINARY_DIR}/${ep_main}.map
 )
 
-set(app_name "ucie_mdp_rc")
+set(app_name "ucie_mdp_x5h")
 
 add_executable(${app_name}
-    ucie_mdp_rc.c
+    ucie_mdp_x5h.c
 )
 
 target_compile_definitions(${app_name}
@@ -72,10 +72,10 @@ target_link_options(${app_name}
 
 convert_bin_to_srec(${app_name})
 
-set(app_name "ucie_mdp_ep")
+set(app_name "ucie_mdp_aiaccl")
 
 add_executable(${app_name}
-    ucie_mdp_ep.c
+    ucie_mdp_aiaccl.c
 )
 
 target_compile_definitions(${app_name}
@@ -95,3 +95,26 @@ target_link_options(${app_name}
 
 convert_bin_to_srec(${app_name})
 
+
+set(app_name "ucie_mdp_aiaccr")
+
+add_executable(${app_name}
+    ucie_mdp_aiaccr.c
+)
+
+target_compile_definitions(${app_name}
+    PUBLIC
+)
+
+# Essential libraries to link with
+target_link_libraries(${app_name}
+    freertos_bsp m
+)
+
+# Add output program address map file
+target_link_options(${app_name}
+    PUBLIC
+        -Wl,-Map=${CMAKE_CURRENT_BINARY_DIR}/${app_name}.map
+)
+
+convert_bin_to_srec(${app_name})

@@ -129,17 +129,17 @@ file(GLOB SCMI_SRC_LIST
     ${BSP_DIR}/drivers/firmware/scmi/src/*.c
     )
 
-file(GLOB UCIE_SRC_LIST
-    ${BSP_DIR}/drivers/ucie/ucie_vdk/*.c
-)
-
 if (BOARD STREQUAL "x5h_ironhide")
-    list(APPEND UCIE_SRC_LIST
+    set(UCIE_SRC_LIST
         ${BSP_DIR}/drivers/ucie/uciedrv.c
     )
-else()
-    list(APPEND UCIE_SRC_LIST
+elseif (BOARD STREQUAL "x5h_rfs2" OR BOARD STREQUAL "ai_acc")
+    set(UCIE_SRC_LIST 
         ${BSP_DIR}/drivers/ucie/ucie_rfs/uciedrv.c
+    )
+elseif (BOARD STREQUAL "x5h_vdk")
+    file(GLOB UCIE_SRC_LIST
+         ${BSP_DIR}/drivers/ucie/ucie_vdk/*.c
     )
 endif()
 
@@ -379,8 +379,11 @@ if(ENABLE_OPENAMP)
     add_subdirectory(sample_apps/virtio_iommu_backend_sample)
 endif()
 
-add_subdirectory(sample_apps/cxl_app)
-add_subdirectory(sample_apps/ucie)
+if (BOARD STREQUAL "x5h_vdk")
+    add_subdirectory(sample_apps/cxl_app)
+elseif (BOARD STREQUAL "x5h_ironhide" OR BOARD STREQUAL "x5h_rfs2" OR BOARD STREQUAL "ai_acc")
+    add_subdirectory(sample_apps/ucie)
+endif()
 
 if(NOT BOARD STREQUAL "ai_acc")
     add_subdirectory(sample_apps/audio_app)

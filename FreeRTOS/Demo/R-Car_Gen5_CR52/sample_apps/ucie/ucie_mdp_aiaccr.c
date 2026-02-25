@@ -43,8 +43,12 @@
 #define main_ucie_TASK_PRIORITY        (tskIDLE_PRIORITY + 1)
 #define UCIE_EP_SIZE (configMINIMAL_STACK_SIZE * 20)
 
-#define PIO_RC_WRITE_DATA   0xFFCCFFCC
-#define PIO_EP_WRITE_DATA   0x68686868
+#define PIO_X5H_RC0_WRITE_DATA      0xFFCCFFCC
+#define PIO_AIACCL_EP0_WRITE_DATA   0x68686868
+#define PIO_X5H_RC1_WRITE_DATA      0x12345678
+#define PIO_AIACCR_EP0_WRITE_DATA   0x87654321
+#define PIO_AIACCL_RC1_WRITE_DATA   0x11111111
+#define PIO_AIACCR_EP1_WRITE_DATA   0x22222222
 
 /*-----------------------------------------------------------*/
 
@@ -96,8 +100,16 @@ static void ucie_comm_task(void *pvParameters)
 
     uint32_t ret = 0;
     uint32_t timeout;
+    uint32_t timer_freq = R_UTILS_GetTimerFrequency();
+    uint64_t start;
+    uint64_t x5h_rc0_addr    =  0x90000000;
+    uint64_t aiaccl_ep0_addr =  0x63800000;
+    uint64_t x5h_rc1_addr    =  0x90001000;
+    uint64_t aiaccr_ep0_addr =  0x63801000;
+    uint64_t aiaccl_rc1_addr =  0x90005000;
+    uint64_t aiaccr_ep1_addr =  0x63805000;
 
-    printf("<----- [EP] TC1: UCIE LINKUP ----->\n");
+    printf("<----- [AIACCR-EP0] TC1: UCIE0 LINKUP ----->\n");
     ret = R_UCIE_Setup(UCIE_CH0, UCIE_MODE_EP, LINKSPEED_16GTPS);
     if (ret == LINKUP_TIMEOUT) {
         printf("The first time linkup timeout. Retry 30 times\n");
@@ -111,27 +123,67 @@ static void ucie_comm_task(void *pvParameters)
         printf("Result: PASSED\n");
     }
 
-    printf("<----- [EP] TC2: Verify data written by RC ----->\n");
-    uint64_t rc_addr = 0x90000000;
-    uint64_t ep_addr = 0x90000000;
-
-    timeout = 1000000;
-    while (*(volatile uint32_t*)(uintptr_t)ep_addr != PIO_RC_WRITE_DATA) {
-        timeout--;
+    printf("<----- [AIACCR-EP1] TC2: UCIE1 LINKUP ----->\n");
+    ret = R_UCIE_Setup(UCIE_CH1, UCIE_MODE_EP, LINKSPEED_16GTPS);
+    if (ret == LINKUP_TIMEOUT) {
+        printf("The first time linkup timeout. Retry 30 times\n");
+        ret = R_UCIE_Retry_Linkup(UCIE_CH1, UCIE_MODE_EP, LINKSPEED_16GTPS, 30);
     }
 
-    printf("Value at 0x%llX: 0x%X\n", ep_addr, *(volatile uint32_t*)(uintptr_t)ep_addr);
-    if (timeout) {
-        printf("Result: PASSED\n");
-    }
-    else {
+    if (ret) {
         printf("Result: FAILED\n");
     }
+    else {
+        printf("Result: PASSED\n");
+    }
 
-    printf("EP write 0x%X to share mem region\n", PIO_EP_WRITE_DATA);
-    *(volatile uint32_t*)(uintptr_t)ep_addr = PIO_EP_WRITE_DATA;
+    printf("<----- [AIACCR-EP0] TC3: Verify data written by RC ----->\n");
 
-    printf("<----- [EP] END TEST ----->\n");
+    ret = 1;
+    start = R_UTILS_GetTimerCounter();
+    while ((R_UTILS_GetTimerCounter() - start)/timer_freq < 3) {
+        if (*(volatile uint32_t*)(uintptr_t)aiaccr_ep0_addr == PIO_X5H_RC1_WRITE_DATA) {
+            ret = 0;
+            break;
+        }
+    }
+
+    printf("Value at 0x%llX: 0x%X\n", aiaccr_ep0_addr, *(volatile uint32_t*)(uintptr_t)aiaccr_ep0_addr);
+    if (ret) {
+        printf("Result: FAILED\n");
+    }
+    else {
+        printf("Result: PASSED\n");
+    }
+
+    printf("AIACCR-EP0 write 0x%X to share mem region\n", PIO_AIACCR_EP0_WRITE_DATA);
+    *(volatile uint32_t*)(uintptr_t)aiaccr_ep0_addr = PIO_AIACCR_EP0_WRITE_DATA;
+
+    printf("<----- [AIACCR-EP1] TC4: Verify data written by RC ----->\n");
+
+    ret = 1;
+    start = R_UTILS_GetTimerCounter();
+    while ((R_UTILS_GetTimerCounter() - start)/timer_freq < 3) {
+        if (*(volatile uint32_t*)(uintptr_t)aiaccr_ep1_addr == PIO_AIACCL_RC1_WRITE_DATA) {
+            ret = 0;
+            break;
+        }
+    }
+
+    printf("Value at 0x%llX: 0x%X\n", aiaccr_ep1_addr, *(volatile uint32_t*)(uintptr_t)aiaccr_ep1_addr);
+
+    if (ret) {
+        printf("Result: FAILED\n");
+    }
+    else {
+        printf("Result: PASSED\n");
+    }
+
+    printf("AIACCR-EP1 write 0x%X to share mem region\n", PIO_AIACCR_EP1_WRITE_DATA);
+    *(volatile uint32_t*)(uintptr_t)aiaccr_ep1_addr = PIO_AIACCR_EP1_WRITE_DATA;
+
+    printf("<----- [AIACCR] END TEST ----->\n");
+
     for(;;) {
         __asm__ volatile("nop");
     }
