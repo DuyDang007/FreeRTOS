@@ -194,7 +194,6 @@ if(ENABLE_OPENAMP)
         ${BSP_DIR}/drivers/virtio/platform_rcar.c
         ${BSP_DIR}/drivers/virtio/remoteproc_rcar.c
         ${BSP_DIR}/drivers/virtio/rsc_table.c
-        ${BSP_DIR}/drivers/virtio/rsc_table_parser.c
         ${BSP_DIR}/drivers/virtio/r_virtio.c
         ${BSP_DIR}/drivers/virtio-iommu-backend/r_virtio_iommu_backend.c
         ${BSP_DIR}/drivers/virtio-iommu-frontend/r_virtio_iommu_frontend.c

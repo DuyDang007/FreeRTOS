@@ -15,7 +15,6 @@
 
 #include <openamp/remoteproc.h>
 #include <openamp/rpmsg_virtio.h>
-#include "rsc_table_parser.h"
 
 /* Define shared DRAM area for each channel. */
 #define SHARED_CH_RAM_BASE (0x40000000UL)
@@ -30,6 +29,7 @@
  * notification operation and remote processor managementi operations. */
 extern const struct remoteproc_ops x5h_r_a_proc_ops;
 
+extern size_t find_rsc(void *rsc_table, unsigned int rsc_type, unsigned int index);
 /* RPMsg virtio shared buffer pool */
 
 static struct remoteproc * platform_create_proc(struct remoteproc_priv *rproc_priv, int rsc_index);
