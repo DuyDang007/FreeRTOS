@@ -10,14 +10,19 @@ set(MACHINE                 "metal" CACHE STRING "")
 
 
 # Define TOOLCHAIN: COMPILER, ASSEMBLER, ACHIVER, LINKER
-set (CROSS_PREFIX                   "arm-none-eabi-" CACHE STRING "")
-find_program(CMAKE_C_COMPILER       NAMES "gcc")
-find_program(CMAKE_CXX_COMPILER     NAMES "g++")
-find_program(CMAKE_ASM_COMPILER     NAMES "gcc")
-find_program(CMAKE_AR               NAMES "gcc-ar")
-find_program(CMAKE_LINKER           NAMES "gcc")
-find_program(CMAKE_OBJCOPY          NAMES "objcopy")
-find_program(CMAKE_BIN_CONVERTER    NAMES "objcopy")
+find_program(CMAKE_C_COMPILER       NAMES "arm-none-eabi-gcc")
+find_program(CMAKE_CXX_COMPILER     NAMES "arm-none-eabi-g++")
+find_program(CMAKE_ASM_COMPILER     NAMES "arm-none-eabi-gcc")
+find_program(CMAKE_AR               NAMES "arm-none-eabi-gcc-ar")
+find_program(CMAKE_LINKER           NAMES "arm-none-eabi-gcc")
+find_program(CMAKE_OBJCOPY          NAMES "arm-none-eabi-objcopy")
+find_program(CMAKE_BIN_CONVERTER    NAMES "arm-none-eabi-objcopy")
+
+if(CMAKE_C_COMPILER)
+    string(REGEX REPLACE "gcc$" "" CROSS_PREFIX "${CMAKE_C_COMPILER}")
+else()
+    message(FATAL_ERROR "Compiler not found!")
+endif()
 
 # Set build rule
 set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
