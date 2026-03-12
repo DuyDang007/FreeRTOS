@@ -641,42 +641,10 @@ int wcrc_set_callback(wcrc_sub_module_t module, wcrc_instance_ctrl_t * const p_i
         printf("%s: Invalid module\n", __func__);
     }
 
-    p_instance_ctrl->p_callback[module] = p_callback;
-    p_instance_ctrl->p_context[module]  = p_context;
-
-    return ret;
-}
-
-static int wcrc_start_e2e(wcrc_instance_ctrl_t * const p_instance_ctrl,
-                         uint8_t module,
-                         void (* p_callback)(void *),
-                         void * p_context)
-{
-    int ret = 0;
     wcrc_cfg_dma_t * p_cfg_dma[E2E_CRC_USE_2_DMA_CHAN];
-    uint8_t rtdma_unit[E2E_CRC_USE_2_DMA_CHAN], rtdma_ch[E2E_CRC_USE_2_DMA_CHAN];
     rDmacIrqCfg_t * irq_cfg[E2E_CRC_USE_2_DMA_CHAN];
-    rDmacCfg_t * rtdma_cfg[E2E_CRC_USE_2_DMA_CHAN];
     Context_t * p_usr_context[E2E_CRC_USE_2_DMA_CHAN];
     void * p_usr_temp;
-
-    /* 3. WCRC setups DMA */
-    p_instance_ctrl->p_extend[module]    = pvPortMalloc(sizeof(wcrc_cfg_dma_t) * E2E_CRC_USE_2_DMA_CHAN);
-
-    if (p_instance_ctrl->p_extend[module] == NULL) {
-        printf("%s: Allocate p_extend FAILED!", __func__);
-        return -1;
-    }
-
-    p_cfg_dma[E2E_PORT_DATA]    = p_instance_ctrl->p_extend[module];
-    p_cfg_dma[E2E_PORT_RESULT]  = p_cfg_dma[E2E_PORT_DATA] + 1;
-
-    /* DMA TX: E2E_PORT_DATA */
-    ret |= wcrc_set_rtdma(module, p_instance_ctrl, p_cfg_dma[E2E_PORT_DATA],
-                         PORT_DATA(module), MEM_TO_DEV, E2E_PORT_DATA_USE_RTDMA_INDEX_0);
-    /* DMA RX: E2E_PORT_RESULT */
-    ret |= wcrc_set_rtdma(module, p_instance_ctrl, p_cfg_dma[E2E_PORT_RESULT],
-                         PORT_RES(module), DEV_TO_MEM, E2E_PORT_RESULT_USE_RTDMA_INDEX_1);
 
     /* 4. WCRC setups user context */
     p_usr_temp                          = p_context;
@@ -695,44 +663,59 @@ static int wcrc_start_e2e(wcrc_instance_ctrl_t * const p_instance_ctrl,
     p_cfg_dma[E2E_PORT_DATA]    = p_instance_ctrl->p_extend[module];
     p_cfg_dma[E2E_PORT_RESULT]  = p_cfg_dma[E2E_PORT_DATA] + 1;
 
-    /* DMA TX direction */
-    rtdma_unit[E2E_PORT_DATA]   =  p_cfg_dma[E2E_PORT_DATA]->irq.Unit;
-    rtdma_ch[E2E_PORT_DATA]     =  p_cfg_dma[E2E_PORT_DATA]->irq.SubCh;
-    irq_cfg[E2E_PORT_DATA]      = &p_cfg_dma[E2E_PORT_DATA]->irq;
-    rtdma_cfg[E2E_PORT_DATA]    = &p_cfg_dma[E2E_PORT_DATA]->cfg;
-    // Store user context in pointer irq_cfg[E2E_PORT_DATA].
+    irq_cfg[E2E_PORT_DATA]            = &p_cfg_dma[E2E_PORT_DATA]->irq;
     irq_cfg[E2E_PORT_DATA]->p_context = NULL;
-    // Store pointer irq_cfg[E2E_PORT_DATA] to context of IRQ.
     p_usr_context[E2E_PORT_DATA]->ctx = irq_cfg[E2E_PORT_DATA];
 
-    /* DMA RX direction */
-    rtdma_unit[E2E_PORT_RESULT] =  p_cfg_dma[E2E_PORT_RESULT]->irq.Unit;
-    rtdma_ch[E2E_PORT_RESULT]   =  p_cfg_dma[E2E_PORT_RESULT]->irq.SubCh;
-    irq_cfg[E2E_PORT_RESULT]    = &p_cfg_dma[E2E_PORT_RESULT]->irq;
-    rtdma_cfg[E2E_PORT_RESULT]  = &p_cfg_dma[E2E_PORT_RESULT]->cfg;
-    // Store user context in pointer irq_cfg[E2E_PORT_RESULT].
+    irq_cfg[E2E_PORT_RESULT]            = &p_cfg_dma[E2E_PORT_RESULT]->irq;
     irq_cfg[E2E_PORT_RESULT]->p_context = p_usr_temp;
-    // Store pointer irq_cfg[E2E_PORT_RESULT] to context of IRQ.
     p_usr_context[E2E_PORT_RESULT]->ctx = irq_cfg[E2E_PORT_RESULT];
 
-    /* 5. WCRC: start DMA TX */
+    /* 4.1. DMA TX: E2E_PORT_DATA */
     ret  = R_DMAC_RcarCallBackSet(irq_cfg[E2E_PORT_DATA],
                                  NULL,
                                  p_usr_context[E2E_PORT_DATA]);
 
-    ret |= R_DMAC_RcarDmacExec(rtdma_unit[E2E_PORT_DATA],
-                              rtdma_ch[E2E_PORT_DATA],
-                              rtdma_cfg[E2E_PORT_DATA], NULL);
-
-    /* 6. WCRC: start DMA RX */
+    /* 4.2. DMA RX: E2E_PORT_RESULT */
     ret |= R_DMAC_RcarCallBackSet(irq_cfg[E2E_PORT_RESULT],
                                  p_callback,
                                  p_usr_context[E2E_PORT_RESULT]);
 
+    return ret;
+}
+
+static int wcrc_start_e2e(wcrc_instance_ctrl_t * const p_instance_ctrl,
+                         uint8_t module)
+{
+    int ret = 0;
+    wcrc_cfg_dma_t * p_cfg_dma[E2E_CRC_USE_2_DMA_CHAN];
+    uint8_t rtdma_unit[E2E_CRC_USE_2_DMA_CHAN], rtdma_ch[E2E_CRC_USE_2_DMA_CHAN];
+    rDmacCfg_t * rtdma_cfg[E2E_CRC_USE_2_DMA_CHAN];
+
+    p_cfg_dma[E2E_PORT_DATA]    = p_instance_ctrl->p_extend[module];
+    p_cfg_dma[E2E_PORT_RESULT]  = p_cfg_dma[E2E_PORT_DATA] + 1;
+
+    /* DMA TX direction */
+    rtdma_unit[E2E_PORT_DATA]   =  p_cfg_dma[E2E_PORT_DATA]->irq.Unit;
+    rtdma_ch[E2E_PORT_DATA]     =  p_cfg_dma[E2E_PORT_DATA]->irq.SubCh;
+    rtdma_cfg[E2E_PORT_DATA]    = &p_cfg_dma[E2E_PORT_DATA]->cfg;
+
+    /* DMA RX direction */
+    rtdma_unit[E2E_PORT_RESULT] =  p_cfg_dma[E2E_PORT_RESULT]->irq.Unit;
+    rtdma_ch[E2E_PORT_RESULT]   =  p_cfg_dma[E2E_PORT_RESULT]->irq.SubCh;
+    rtdma_cfg[E2E_PORT_RESULT]  = &p_cfg_dma[E2E_PORT_RESULT]->cfg;
+
+    /* 5. WCRC: start DMA */
+    /* 5.1. Start DMA TX: E2E_PORT_DATA */
+    ret |= R_DMAC_RcarDmacExec(rtdma_unit[E2E_PORT_DATA],
+                              rtdma_ch[E2E_PORT_DATA],
+                              rtdma_cfg[E2E_PORT_DATA], NULL);
+
+    /* 5.2. Start DMA RX: E2E_PORT_RESULT */
     ret |= R_DMAC_RcarDmacExec(rtdma_unit[E2E_PORT_RESULT],
                               rtdma_ch[E2E_PORT_RESULT],
                               rtdma_cfg[E2E_PORT_RESULT], NULL);
-start_err:
+
     return ret;
 }
 
@@ -740,32 +723,18 @@ static int wcrcStartE2eCrcMode(wcrc_instance_ctrl_t * const p_instance_ctrl)
 {
     int ret = 0;
     wcrc_cfg_t const * const p_cfg = p_instance_ctrl->p_cfg;
-    void (* p_callback)(void *);
-    void  * p_context;
 
     switch (p_cfg->sub_module) {   
         case CRC_SUB_MODULE:
-            p_callback  = p_instance_ctrl->p_callback[CRC_SUB_MODULE];
-            p_context   = p_instance_ctrl->p_context[CRC_SUB_MODULE];
-            ret = wcrc_start_e2e(p_instance_ctrl, CRC_SUB_MODULE,
-                                p_callback, p_context);
+            ret = wcrc_start_e2e(p_instance_ctrl, CRC_SUB_MODULE);
             break;
         case KCRC_SUB_MODULE:
-            p_callback  = p_instance_ctrl->p_callback[KCRC_SUB_MODULE];
-            p_context   = p_instance_ctrl->p_context[KCRC_SUB_MODULE];
-            ret = wcrc_start_e2e(p_instance_ctrl, KCRC_SUB_MODULE,
-                                p_callback, p_context);
+            ret = wcrc_start_e2e(p_instance_ctrl, KCRC_SUB_MODULE);
             break;
         case CRC_KCRC_SUB_MODULE:
-            p_callback  = p_instance_ctrl->p_callback[CRC_SUB_MODULE];
-            p_context   = p_instance_ctrl->p_context[CRC_SUB_MODULE];
-            ret = wcrc_start_e2e(p_instance_ctrl, CRC_SUB_MODULE,
-                                p_callback, p_context);
+            ret = wcrc_start_e2e(p_instance_ctrl, CRC_SUB_MODULE);
 
-            p_callback  = p_instance_ctrl->p_callback[KCRC_SUB_MODULE];
-            p_context   = p_instance_ctrl->p_context[KCRC_SUB_MODULE];
-            ret |= wcrc_start_e2e(p_instance_ctrl, KCRC_SUB_MODULE,
-                                 p_callback, p_context);
+            ret |= wcrc_start_e2e(p_instance_ctrl, KCRC_SUB_MODULE);
             break;
         default:
             printf("%s: Invalid module\n", __func__);
@@ -1023,11 +992,18 @@ static int get_width_input(wcrc_sub_module_t module, wcrc_cfg_t const * const p_
     return each_data_size;
 }
 
+static void wcrc_update_dest_dma_addr(wcrc_cfg_dma_t * p_cfg_dma, void* addr)
+{
+
+    p_cfg_dma->cfg.mDestAddr = (uintptr_t)addr;
+}
+
 int wcrcSetBufferAddress(uint8_t module, wcrc_instance_ctrl_t * const p_instance_ctrl,
                         uint32_t addr)
 {
     int ret = 0;
     crc_output_t *p_crc_data;
+    wcrc_cfg_t const * p_cfg = p_instance_ctrl->p_cfg;
 
     switch(module) {
     case CRC_SUB_MODULE:
@@ -1043,6 +1019,30 @@ int wcrcSetBufferAddress(uint8_t module, wcrc_instance_ctrl_t * const p_instance
     }
 
     p_crc_data->p_output_buffer = (void *)addr;
+
+    /* Mode uses DMA needs to update destination address from user input buffer address.
+     * (Refer Note1)
+     */
+    if (p_cfg->mode == E2E_CRC_MODE)
+    {
+        wcrc_cfg_dma_t * p_cfg_dma[E2E_CRC_USE_2_DMA_CHAN];
+
+        p_cfg_dma[E2E_PORT_DATA]    = p_instance_ctrl->p_extend[module];
+        p_cfg_dma[E2E_PORT_RESULT]  = p_cfg_dma[E2E_PORT_DATA] + 1;
+        wcrc_update_dest_dma_addr(p_cfg_dma[E2E_PORT_RESULT], (void *)addr);
+    }
+    else if (p_cfg->mode == DATA_THROUGH_MODE)
+    {
+
+    }
+    else if (p_cfg->mode == E2E_DATA_THROUGH_MODE)
+    {
+
+    }
+    else if (p_cfg->mode == COMPARING_CRC_RESULT_MODE)
+    {
+
+    }
 
     return ret;
 }
@@ -1146,6 +1146,23 @@ static int wcrc_prepare_e2e(uint8_t module, wcrc_instance_ctrl_t * const p_insta
         return -1;
     }
 
+    /* 3. WCRC setups DMA */
+    p_instance_ctrl->p_extend[module]    = pvPortMalloc(sizeof(wcrc_cfg_dma_t) * E2E_CRC_USE_2_DMA_CHAN);
+
+    if (p_instance_ctrl->p_extend[module] == NULL) {
+        printf("%s: Allocate p_extend FAILED!", __func__);
+        return -1;
+    }
+
+    p_cfg_dma[E2E_PORT_DATA]    = p_instance_ctrl->p_extend[module];
+    p_cfg_dma[E2E_PORT_RESULT]  = p_cfg_dma[E2E_PORT_DATA] + 1;
+
+    /* 3.1. DMA TX: E2E_PORT_DATA */
+    ret |= wcrc_set_rtdma(module, p_instance_ctrl, p_cfg_dma[E2E_PORT_DATA],
+                         PORT_DATA(module), MEM_TO_DEV, E2E_PORT_DATA_USE_RTDMA_INDEX_0);
+    /* 3.2. DMA RX: E2E_PORT_RESULT */
+    ret |= wcrc_set_rtdma(module, p_instance_ctrl, p_cfg_dma[E2E_PORT_RESULT],
+                         PORT_RES(module), DEV_TO_MEM, E2E_PORT_RESULT_USE_RTDMA_INDEX_1);
     return ret;
 }
 
@@ -1556,7 +1573,12 @@ static int wcrc_set_rtdma(uint8_t module, wcrc_instance_ctrl_t * const p_instanc
     } else if (dma_direction == DEV_TO_MEM) {
         p_data = &p_instance_ctrl->crc_data[module];
         p_wcrc_cfg_dma->cfg.mSrcAddr        = port_addr;
-        p_wcrc_cfg_dma->cfg.mDestAddr       = (uintptr_t)p_data->p_output_buffer;
+        /* Note1:
+         * Because this func is called at device open but user calls API set buffer after device open.
+         * -> Use wcrc_update_dest_dma_addr() at wcrcSetBufferAddress()
+         * to update DMA destination address p_wcrc_cfg_dma->cfg.mDestAddr.
+         */
+        //p_wcrc_cfg_dma->cfg.mDestAddr       = (uintptr_t)p_data->p_output_buffer;
         p_wcrc_cfg_dma->cfg.mTransferCount  = p_data->num_data * each_data_size / dma_rx_unit;
         p_wcrc_cfg_dma->cfg.mDMAMode        = DRV_DMAC_DMA_NO_DESCRIPTOR;
         p_wcrc_cfg_dma->cfg.mSrcAddrMode    = DRV_RTDMAC_ADDR_FIXED;
