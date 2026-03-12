@@ -124,7 +124,7 @@ static void prvSetupHardware( void )
 
 static void prvVIOMMUFETask( void *pvParameters )
 {
-
+    uint32_t cpu_id = R_UTILS_GetCpuID();
     st_memory_t region = R_UTILS_GetMemoryRegionInfo(OSAL, 0);
     cfg.mSrcAddr = region.base_address;
     cfg.mDestAddr = region.base_address + DESTINATION_OFFSET;
@@ -145,17 +145,32 @@ static void prvVIOMMUFETask( void *pvParameters )
         .is_secure = false,
     };
 
-    vTaskDelay(1000);
-    printf("VIRTIO IOMMU Frontend:  * Test case 1: Test R_VIRTIO_IOMMU_Init\n");
-    ret = R_VIRTIO_IOMMU_Init();
-    vTaskDelay(1000);
-    if(ret == 0)
+    virtio_iommu_frontend_instance_ctrl_t *virtio_iommu_inst;
+    e_mfis_channel_t mfis_ch;
+    if (cpu_id == 0)
     {
-        printf("VIRTIO IOMMU Frontend:  Result: Passed\r\n");
+        mfis_ch = MFIS_CR_TO_CA_CH1;
+    }
+    else if(cpu_id == 1)
+    {
+        mfis_ch = MFIS_CR_TO_CA_CH0;
     }
     else
     {
+        printf("VIRTIO IOMMU Frontend:  MFIS Channel not support\r\n");
+    }
+
+    vTaskDelay(1000);
+    printf("VIRTIO IOMMU Frontend:  * Test case 1: Test R_VIRTIO_IOMMU_Init\n");
+    virtio_iommu_inst = R_VIRTIO_IOMMU_Init(mfis_ch);
+    vTaskDelay(1000);
+    if(virtio_iommu_inst == NULL)
+    {
         printf("VIRTIO IOMMU Frontend:  Result: Failed\r\n");
+    }
+    else
+    {
+        printf("VIRTIO IOMMU Frontend:  Result: Passed\r\n");
     };
     
     printf("VIRTIO IOMMU Frontend:  * Test case 2: Test R_VIRTIO_IOMMU_Attach\n");
@@ -168,7 +183,7 @@ static void prvVIOMMUFETask( void *pvParameters )
     }
 
     printf("VIRTIO IOMMU Frontend:  * Test case 3: Test R_VIRTIO_IOMMU_Map\n");
-    ret = R_VIRTIO_IOMMU_Map(&smmu_ctrl, cfg.mSrcAddr, cfg.mSrcAddr + SOURCE_OFFSET_MAPPING, 0x5006000, ATTR_DEVICE_NGNRNE_EL1_RW_EL0_RW);
+    ret = R_VIRTIO_IOMMU_Map(&smmu_ctrl, cfg.mSrcAddr, cfg.mSrcAddr + SOURCE_OFFSET_MAPPING, 0x5000000, ATTR_DEVICE_NGNRNE_EL1_RW_EL0_RW);
     vTaskDelay(1000);
     if (ret == 0) {
         printf("VIRTIO IOMMU Frontend:  Result: Passed\r\n");
@@ -198,6 +213,7 @@ static void prvVIOMMUFETask( void *pvParameters )
     while(!isr_flag) {
         __asm__ volatile("nop");
     }
+    isr_flag = false;
 
     // Verify destination data
     uint32_t total_transfer_size = 4;
@@ -208,13 +224,90 @@ static void prvVIOMMUFETask( void *pvParameters )
     if (destData == (*(volatile uint32_t *)pa_src_ptr)) {
         printf("VIRTIO IOMMU Frontend:  Result: Passed\n");
     } else {
-        printf("VIRTIO IOMMU Frontend:  Result: Failed\n");
         if ((*(volatile uint32_t *)cfg.mSrcAddr == *(volatile uint32_t *)cfg.mDestAddr) && *(volatile uint32_t *)cfg.mSrcAddr != 0) {
             printf("VIRTIO IOMMU Frontend:  After DMA: va src address: 0x%lx, src data: 0x%lx\n", cfg.mSrcAddr, *(volatile uint32_t *)cfg.mSrcAddr );
             printf("VIRTIO IOMMU Frontend:  After DMA: va dst address: 0x%lx, dst data: 0x%lx\n", cfg.mDestAddr, *(volatile uint32_t *)cfg.mDestAddr);
             printf("VIRTIO IOMMU Frontend:  DMAC worked without VIRTIO IOMMU.\n");
         }
+        printf("VIRTIO IOMMU Frontend:  Result: Failed\n");
     }
+    
+    printf("VIRTIO IOMMU Frontend:  * Test case 5: Test R_VIRTIO_IOMMU_UnMap\n");
+    ret = R_VIRTIO_IOMMU_UnMap(&smmu_ctrl, cfg.mSrcAddr, cfg.mSrcAddr + SOURCE_OFFSET_MAPPING, 0x5000000);
+    vTaskDelay(1000);
+    if (ret == 0) {
+        R_SYSDMAC_RcarDmacStop(SYS_DMAC3, DMAC_CH1);
+
+        *(volatile uint32_t *)pa_src_ptr = 0x111;
+        *(volatile uint32_t *)cfg.mSrcAddr = 0x222;
+        *(volatile uint32_t *)pa_dst_ptr = 0x555; // Value goes to cache; DMA may miss it if dont invalidate cache
+        printf("VIRTIO IOMMU Frontend:  Before DMA: pa dst address: 0x%lx, dst data: 0x%lx\n",pa_dst_ptr, *(volatile uint32_t *)pa_dst_ptr);
+        dmaStatus = R_SYSDMAC_RcarDmacExec(SYS_DMAC3, DMAC_CH1, &cfg, 0);
+
+        while(!isr_flag) {
+            __asm__ volatile("nop");
+        }
+        isr_flag = false;
+
+        // Verify destination data
+        total_transfer_size = 4;
+        destData = R_UTILS_ReadMemForDMA((void*)pa_dst_ptr, total_transfer_size);
+
+        printf("VIRTIO IOMMU Frontend:  After DMA: pa dst address: 0x%lx, dst data: 0x%lx\n",pa_dst_ptr, destData );
+        printf("VIRTIO IOMMU Frontend:  Source Info: pa src address: 0x%lx, src data: 0x%lx\n",pa_src_ptr, *(volatile uint32_t *)pa_src_ptr );
+        if (destData == (*(volatile uint32_t *)pa_src_ptr)) {
+            printf("VIRTIO IOMMU Frontend:  Result: Failed\n");
+        } else {
+            if ((*(volatile uint32_t *)cfg.mSrcAddr == *(volatile uint32_t *)cfg.mDestAddr) && *(volatile uint32_t *)cfg.mSrcAddr != 0) {
+                printf("VIRTIO IOMMU Frontend:  After DMA: va src address: 0x%lx, src data: 0x%lx\n", cfg.mSrcAddr, *(volatile uint32_t *)cfg.mSrcAddr );
+                printf("VIRTIO IOMMU Frontend:  After DMA: va dst address: 0x%lx, dst data: 0x%lx\n", cfg.mDestAddr, *(volatile uint32_t *)cfg.mDestAddr);
+                printf("VIRTIO IOMMU Frontend:  DMAC worked without SMMU.\n");
+            }
+            printf("VIRTIO IOMMU Frontend:  Result: Passed\n");
+        }
+    } else {
+        printf("VIRTIO IOMMU Frontend:  Result: Failed\r\n");
+    }
+    
+    printf("VIRTIO IOMMU Frontend:  * Test case 6: R_SMMU_Map(Re-map after unmap for verification). *\r\n");
+    
+    ret = R_VIRTIO_IOMMU_Map(&smmu_ctrl, cfg.mSrcAddr, cfg.mSrcAddr + SOURCE_OFFSET_MAPPING, 0x5000000, ATTR_DEVICE_NGNRNE_EL1_RW_EL0_RW);
+    vTaskDelay(1000);
+    if (ret == 0) {
+        R_SYSDMAC_RcarDmacStop(SYS_DMAC3, DMAC_CH1);
+
+        *(volatile uint32_t *)pa_src_ptr = 0x123;
+        *(volatile uint32_t *)cfg.mSrcAddr = 0x456;
+        *(volatile uint32_t *)pa_dst_ptr = 0x777; // Value goes to cache; DMA may miss it if dont invalidate cache
+        printf("VIRTIO IOMMU Frontend:  Before DMA: pa dst address: 0x%lx, dst data: 0x%lx\n",pa_dst_ptr, *(volatile uint32_t *)pa_dst_ptr);
+        dmaStatus = R_SYSDMAC_RcarDmacExec(SYS_DMAC3, DMAC_CH1, &cfg, 0);
+
+        while(!isr_flag) {
+            __asm__ volatile("nop");
+        }
+        isr_flag = false;
+
+        // Verify destination data
+        total_transfer_size = 4;
+        destData = R_UTILS_ReadMemForDMA((void*)pa_dst_ptr, total_transfer_size);
+
+        printf("VIRTIO IOMMU Frontend:  After DMA: pa dst address: 0x%lx, dst data: 0x%lx\n",pa_dst_ptr, destData );
+        printf("VIRTIO IOMMU Frontend:  Source Info: pa src address: 0x%lx, src data: 0x%lx\n",pa_src_ptr, *(volatile uint32_t *)pa_src_ptr );
+        if (destData == (*(volatile uint32_t *)pa_src_ptr)) {
+            printf("VIRTIO IOMMU Frontend:  Result: Passed\n");
+        } else {
+            if ((*(volatile uint32_t *)cfg.mSrcAddr == *(volatile uint32_t *)cfg.mDestAddr) && *(volatile uint32_t *)cfg.mSrcAddr != 0) {
+                printf("VIRTIO IOMMU Frontend:  After DMA: va src address: 0x%lx, src data: 0x%lx\n", cfg.mSrcAddr, *(volatile uint32_t *)cfg.mSrcAddr );
+                printf("VIRTIO IOMMU Frontend:  After DMA: va dst address: 0x%lx, dst data: 0x%lx\n", cfg.mDestAddr, *(volatile uint32_t *)cfg.mDestAddr);
+                printf("VIRTIO IOMMU Frontend:  DMAC worked without SMMU.\n");
+            }
+            printf("VIRTIO IOMMU Frontend:  Result: Failed\n");
+        }
+    } else {
+        printf("VIRTIO IOMMU Frontend:  Result: Failed\r\n");
+    }
+
+    
     printf("VIRTIO IOMMU Frontend:  **********************************************\r\n");
 
     for( ;; )

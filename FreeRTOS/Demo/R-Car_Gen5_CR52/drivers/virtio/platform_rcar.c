@@ -59,7 +59,7 @@ static struct remoteproc * platform_create_proc(struct remoteproc_priv *rproc_pr
         /* Initialize the resource table on shared memory */
         if(rproc_priv->type == VIRTIO_BACK_END)
         {
-            init_resource_table();
+            init_resource_table(rsc_index);
             rsc_table = get_resource_table(rsc_index, &rsc_size);
         }
         else

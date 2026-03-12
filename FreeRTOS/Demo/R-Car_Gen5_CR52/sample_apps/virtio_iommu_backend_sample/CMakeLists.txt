@@ -59,7 +59,7 @@ if(NOT DEFINED MFIS_CHAN)
 
         target_link_options(${app_name}
             PRIVATE
-            -T${BSP_DIR}/common/linker/lscript_rsc_table_vram${VRAM_REGION}.ld
+            -T${BSP_DIR}/common/linker/lscript_rsc_table_virtio.ld
         )
 
         target_link_options(${app_name} BEFORE
@@ -114,7 +114,7 @@ else()
 
         target_link_options(${app_name}
             PRIVATE
-            -T${BSP_DIR}/common/linker/lscript_rsc_table_vram${RAM_REGION}.ld
+            -T${BSP_DIR}/common/linker/lscript_rsc_table_virtio.ld
         )
 
         target_link_options(${app_name} BEFORE

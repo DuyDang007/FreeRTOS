@@ -21,12 +21,12 @@
 
 #define RPMSG_SERV_NAME "virtio-iommu"
 
-#define RSC_MEM_PA         0x96600000UL
-#define RSC_MEM_SIZE       0x1000UL
-#define VRING_MEM_PA       0x96601000UL
-#define VRING_MEM_OFFSET   0x4000UL
-#define SHARED_BUF_PA      0x96609000UL
-#define SHARED_BUF_SIZE    0x40000UL
+#define RSC_MEM_PA_OFFSET           0x0000UL
+#define RSC_MEM_SIZE                0x1000UL
+#define VRING_MEM_PA_OFFSET         0x1000UL
+#define VRING_MEM_OFFSET            0x4000UL
+#define SHARED_BUF_PA_OFFSET        0x9000UL
+#define SHARED_BUF_SIZE             0x40000UL
 
 
 /* Globals */
@@ -37,26 +37,36 @@ static int rpmsg_endpoint_cb(struct rpmsg_endpoint *ept, void *data, size_t len,
                  uint32_t src, void *priv);
 static void rpmsg_service_unbind(struct rpmsg_endpoint *ept);
 
-int R_VIRTIO_IOMMU_Init(void)
+virtio_iommu_frontend_instance_ctrl_t * R_VIRTIO_IOMMU_Init(e_mfis_channel_t ch)
 {
-    int ret = 0;
+    virtio_iommu_frontend_instance_ctrl_t *result = NULL;
+    uintptr_t rsc_table_address;
+    int rsc_size = 0;
+
+    rsc_table_address = (uintptr_t)get_resource_table(ch, &rsc_size);
+
     st_rsc_table_info_t rsc_table = {
-        .rsc_mem_pa         = RSC_MEM_PA,
+        .rsc_mem_pa         = rsc_table_address + RSC_MEM_PA_OFFSET,
         .rsc_mem_size       = RSC_MEM_SIZE,
-        .vring_mem_pa       = VRING_MEM_PA,
+        .vring_mem_pa       = rsc_table_address + VRING_MEM_PA_OFFSET,
         .vring_mem_offset   = VRING_MEM_OFFSET,
-        .shared_buf_pa      = SHARED_BUF_PA,
+        .shared_buf_pa      = rsc_table_address + SHARED_BUF_PA_OFFSET,
         .shared_buf_size    = SHARED_BUF_SIZE,
     };
+
     st_virtio_instance_ctrl_t *virtio_inst = NULL;
     lept = ( struct rpmsg_endpoint * ) pvPortMalloc( sizeof( struct rpmsg_endpoint ) );
-    virtio_inst = R_VIRTIO_FE_Create(MFIS_CR_TO_CA_CH0, &rsc_table);
+    virtio_inst = R_VIRTIO_FE_Create(ch, &rsc_table);
     if(virtio_inst != NULL)
     {
-        ret = R_VIRTIO_CreateEP(virtio_inst, lept, RPMSG_SERV_NAME, rpmsg_endpoint_cb, rpmsg_service_unbind, NULL);
+        int ret = R_VIRTIO_CreateEP(virtio_inst, lept, RPMSG_SERV_NAME, rpmsg_endpoint_cb, rpmsg_service_unbind, NULL);
+        if( ret == 0)
+        {
+            result = (virtio_iommu_frontend_instance_ctrl_t *)virtio_inst;
+        }
     }
 
-    return ret;
+    return result;
 }
 
 int R_VIRTIO_IOMMU_DeInit(void)

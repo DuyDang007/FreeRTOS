@@ -46,8 +46,23 @@ extern "C" {
 /***********************************************************************************************************************
  * Includes
  **********************************************************************************************************************/
+#include <stdbool.h>
 #include <stdint.h>
+#include "virtio/r_virtio.h"
 #include "smmu/smmu.h"
+
+/***********************************************************************************************************************
+ * Typedef definitions
+ **********************************************************************************************************************/
+/**
+ * @typedef virtio_iommu_instance_ctrl_t
+ * @brief Opaque control structure for the Virtio IOMMU frontend instance.
+ *
+ * This type represents an internal Virtio IOMMU frontend context.
+ * The actual structure definition is private to the frontend
+ * implementation and hidden from the user.
+ */
+typedef void virtio_iommu_frontend_instance_ctrl_t;
 
 /***********************************************************************************************************************
  * Public API Functions
@@ -64,7 +79,7 @@ extern "C" {
  * @return 0 on success.
  * @return Negative error code on failure.
  */
-int R_VIRTIO_IOMMU_Init(void);
+virtio_iommu_frontend_instance_ctrl_t * R_VIRTIO_IOMMU_Init(e_mfis_channel_t ch);
 
 /**
  * @brief Deinitialize the Virtio IOMMU frontend.

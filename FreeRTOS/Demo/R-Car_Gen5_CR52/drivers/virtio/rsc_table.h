@@ -37,7 +37,7 @@ struct remote_resource_table {
 	struct fw_rsc_vdev_vring rpmsg_vring1;
 }__attribute__((packed, aligned(0x100)));
 
-void init_resource_table(void);
+void init_resource_table(uint8_t src_index);
 void *get_resource_table (int rsc_id, int *len);
 
 #if defined __cplusplus
