@@ -328,7 +328,11 @@ function(convert_bin_to_srec app_name)
 
     add_custom_command(
         OUTPUT ${SREC_FILE}
-        COMMAND ${CMAKE_OBJCOPY} -O srec --srec-forceS3 --remove-section .resource_table ${BIN_FILE} ${SREC_FILE}
+        COMMAND ${CMAKE_OBJCOPY} -O srec --srec-forceS3
+                --remove-section .resource_table
+                --remove-section .resource_table1
+                --remove-section .resource_table2
+                ${BIN_FILE} ${SREC_FILE}
         DEPENDS ${app_name}
         COMMENT "Converting ${BIN_FILE} to SREC format"
         VERBATIM

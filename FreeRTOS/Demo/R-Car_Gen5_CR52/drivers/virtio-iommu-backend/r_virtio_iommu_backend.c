@@ -49,11 +49,6 @@ uint32_t VirtIO_SMMU_Handler(st_virtio_msg_t *msg);
  **********************************************************************************************************************/
 virtio_iommu_instance_ctrl_t * R_VIRTIO_IOMMU_Backend_Init(e_mfis_channel_t ch)
 {
-    /*----- Init and enable SMMU -----*/
-    R_SMMU_Init(SMMU_PERW, false);
-    R_SMMU_InvalidateTLB(SMMU_PERW, false);
-    R_SMMU_Enable(SMMU_PERW, false);
-
     virtio_iommu_instance_ctrl_t *result = NULL;
     st_virtio_instance_ctrl_t *virtio_inst = NULL;
     st_virtio_endpoint_t *lept = ( struct rpmsg_endpoint * ) pvPortMalloc( sizeof( struct rpmsg_endpoint ) );
@@ -137,6 +132,10 @@ uint32_t VirtIO_SMMU_Handler(st_virtio_msg_t *msg) {
 static int virtio_smmu_attach(st_virtio_smmu_payload_req_t* data)
 {
     int ret = 0;
+    /*----- Init and enable SMMU -----*/
+    R_SMMU_Init(SMMU_PERW, false);
+    R_SMMU_InvalidateTLB(SMMU_PERW, false);
+    R_SMMU_Enable(SMMU_PERW, false);
     st_smmu_streamid_instance_ctrl_t *p_ctrl = &(data->p_ctrl);
     ret = R_SMMU_Attach(&(data->p_ctrl));
     return ret;

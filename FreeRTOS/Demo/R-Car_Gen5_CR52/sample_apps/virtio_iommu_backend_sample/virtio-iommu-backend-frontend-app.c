@@ -38,6 +38,7 @@
 #include <errno.h>
 #include "pfc/r_pfc_api.h"
 #include "virtio-iommu-frontend/r_virtio_iommu_frontend.h"
+#include "virtio-iommu-backend/r_virtio_iommu_backend.h"
 #include "serial/r_serial.h"
 #include "rcar_utils.h"
 #include "dmac/dmac_common.h"
@@ -50,6 +51,7 @@
 
 /* smmu app config */
 #define main_SMMU_TASK_PRIORITY        ( tskIDLE_PRIORITY + 1 )
+#define SOURCE_OFFSET                  0x1000000
 #define DESTINATION_OFFSET             0x01000000
 #define SOURCE_OFFSET_MAPPING          0x10000000
 #define DESTINATION_OFFSET_MAPPING     0x11000000
@@ -76,8 +78,8 @@ rDmacCfg_t cfg =
 rDmacIrqCfg_t rDmacIrqHandler_t_irq =
 {
     .Unit = SYS_DMAC3,
-    .SubCh = DMAC_CH1,
-    .irq_channel = INTID_SYSDMA3_CH1
+    .SubCh = DMAC_CH2,
+    .irq_channel = INTID_SYSDMA3_CH2
 };
 
 bool isr_flag = false;
@@ -93,15 +95,23 @@ void dmacUserCallback(void *data)
  */
 static void prvSetupHardware( void );
 
+static void prvVIOMMUBEMgrTask( void *pvParameters );
+static void prvVIOMMUBETask0( void *pvParameters );
+static void prvVIOMMUBETask1( void *pvParameters );
 static void prvVIOMMUFETask( void *pvParameters );
 
+TaskHandle_t xTaskHandle[2] = {NULL};
 /*-----------------------------------------------------------*/
 
 int main( void )
 {
     /* Configure the hardware ready to run the demo. */
     prvSetupHardware();
-    xTaskCreate( prvVIOMMUFETask, "VIRTIO_MMU_FE", configMINIMAL_STACK_SIZE*10, NULL, main_VIOMMUFE_TASK_PRIORITY, NULL );
+    xTaskCreate( prvVIOMMUFETask, "VIRTIO_MMU_FE", configMINIMAL_STACK_SIZE*10, NULL, main_VIOMMUFE_TASK_PRIORITY + 2, NULL );
+    xTaskCreate( prvVIOMMUBEMgrTask, "prvVIOMMUBEMgrTask", configMINIMAL_STACK_SIZE*10, NULL, main_VIOMMUFE_TASK_PRIORITY + 2, NULL );
+    xTaskCreate( prvVIOMMUBETask0, "VIRTIO_MMU_BE0", configMINIMAL_STACK_SIZE*10, NULL, main_VIOMMUFE_TASK_PRIORITY , &xTaskHandle[0] );
+    xTaskCreate( prvVIOMMUBETask1, "VIRTIO_MMU_BE1", configMINIMAL_STACK_SIZE*10, NULL, main_VIOMMUFE_TASK_PRIORITY , &xTaskHandle[1] );
+    
     /* Start the tasks and timer running. */
     vTaskStartScheduler();
     for( ;; )
@@ -124,12 +134,107 @@ static void prvSetupHardware( void )
     (void)pfcInitModules(getModuleConfigs());
 }
 
+static void prvVIOMMUBEMgrTask( void *pvParameters )
+{
+    int num_task = 2;
+    for (int i = 0; ; i++)
+    {
+        for (int j = 0; j < num_task; j++)
+        {
+            vTaskSuspend(xTaskHandle[j]);
+        }
+        vTaskResume(xTaskHandle[i%num_task]);
+        vTaskDelay(100);
+    }
+    
+}
+
+void prvVIOMMUBETask0( void *pvParameters )
+{
+    /* Remove compiler warning about unused parameter. */
+    ( void ) pvParameters;
+    // vTaskPrioritySet(NULL, main_VIOMMUFE_TASK_PRIORITY);
+    uint32_t cpu_id = R_UTILS_GetCpuID();
+    int ret;
+    printf("VIRTIO IOMMU Backend:  Starting Virtio 0 sample\r\n");
+    virtio_iommu_instance_ctrl_t *virtio_iommu_inst;
+    e_mfis_channel_t mfis_ch;
+    if (cpu_id == 0)
+    {
+        mfis_ch = MFIS_CR_TO_CA_CH0;
+    }
+    else if(cpu_id == 1)
+    {
+        mfis_ch = MFIS_CR_TO_CA_CH1;
+    }
+    else
+    {
+        printf("VIRTIO IOMMU Frontend:  MFIS Channel not support\r\n");
+    }
+
+    printf("VIRTIO IOMMU Backend:  TC1: Virtio IOMMU Create. Waiting for connection ...\r\n");
+    virtio_iommu_inst = R_VIRTIO_IOMMU_Backend_Init(mfis_ch);
+    if(virtio_iommu_inst == NULL)
+    {
+        printf("VIRTIO IOMMU Backend:  Result: Failed\r\n");
+    }
+    else
+    {
+        printf("VIRTIO IOMMU Backend:  Result: Passed\r\n");
+    };
+
+    for( ;; )
+    {
+        vTaskDelay(1);
+    }
+}
+
+void prvVIOMMUBETask1( void *pvParameters )
+{
+    /* Remove compiler warning about unused parameter. */
+    ( void ) pvParameters;
+    // vTaskPrioritySet(NULL, main_VIOMMUFE_TASK_PRIORITY);
+    uint32_t cpu_id = R_UTILS_GetCpuID();
+    int ret;
+    printf("VIRTIO IOMMU Backend:  Starting Virtio 1 sample\r\n");
+    virtio_iommu_instance_ctrl_t *virtio_iommu_inst;
+    e_mfis_channel_t mfis_ch;
+    if (cpu_id == 0)
+    {
+        mfis_ch = MFIS_CR_TO_CA_CH1;
+    }
+    else if(cpu_id == 1)
+    {
+        mfis_ch = MFIS_CR_TO_CA_CH0;
+    }
+    else
+    {
+        printf("VIRTIO IOMMU Frontend:  MFIS Channel not support\r\n");
+    }
+
+    printf("VIRTIO IOMMU Backend:  TC1: Virtio IOMMU Create. Waiting for connection ...\r\n");
+    virtio_iommu_inst = R_VIRTIO_IOMMU_Backend_Init(mfis_ch);
+    if(virtio_iommu_inst == NULL)
+    {
+        printf("VIRTIO IOMMU Backend:  Result: Failed\r\n");
+    }
+    else
+    {
+        printf("VIRTIO IOMMU Backend:  Result: Passed\r\n");
+    };
+
+    for( ;; )
+    {
+        vTaskDelay(1);
+    }
+}
+
 static void prvVIOMMUFETask( void *pvParameters )
 {
     uint32_t cpu_id = R_UTILS_GetCpuID();
     st_memory_t region = R_UTILS_GetMemoryRegionInfo(OSAL, 0);
-    cfg.mSrcAddr = region.base_address;
-    cfg.mDestAddr = region.base_address + DESTINATION_OFFSET;
+    cfg.mSrcAddr = region.base_address + SOURCE_OFFSET;
+    cfg.mDestAddr = cfg.mSrcAddr + DESTINATION_OFFSET;
     if (cfg.mDestAddr > region.base_address + region.size)
     {
         printf("VIRTIO IOMMU Frontend:  Failed: Destination address 0x%08X exceeds memory region (end at 0x%08X)\n", cfg.mDestAddr, region.base_address + region.size);
@@ -142,7 +247,7 @@ static void prvVIOMMUFETask( void *pvParameters )
     ( void ) pvParameters;
     int ret = 0;
     st_smmu_streamid_instance_ctrl_t smmu_ctrl = {
-        .stream_id = 0x50001,
+        .stream_id = 0x50002,
         .smmu_domain = SMMU_PERW,
         .is_secure = false,
     };
@@ -162,7 +267,8 @@ static void prvVIOMMUFETask( void *pvParameters )
         printf("VIRTIO IOMMU Frontend:  MFIS Channel not support\r\n");
     }
 
-    vTaskDelay(1000);
+    vTaskDelay(10000);
+    printf("VIRTIO IOMMU Frontend:  * Test multi Frontend \n");
     printf("VIRTIO IOMMU Frontend:  * Test case 1: Test R_VIRTIO_IOMMU_Init\n");
     virtio_iommu_inst = R_VIRTIO_IOMMU_Init(mfis_ch);
     vTaskDelay(1000);
@@ -195,7 +301,7 @@ static void prvVIOMMUFETask( void *pvParameters )
     /*----------------------------------------------------------*/
 
     /*SYSDMA setup*/
-    R_SYSDMAC_RcarDmacCtrlInit(SYS_DMAC3, DRV_RTDMAC_PRIO_FIX);
+    R_SYSDMAC_RcarDmacCtrlInit(rDmacIrqHandler_t_irq.Unit, DRV_RTDMAC_PRIO_FIX);
     volatile uint32_t *pa_src_ptr = (volatile uint32_t *)(cfg.mSrcAddr + SOURCE_OFFSET_MAPPING);
     volatile uint32_t *pa_dst_ptr = (volatile uint32_t *)(cfg.mSrcAddr + DESTINATION_OFFSET_MAPPING);
     *(volatile uint32_t *)pa_src_ptr = 0x7012;
@@ -210,7 +316,7 @@ static void prvVIOMMUFETask( void *pvParameters )
     printf("VIRTIO IOMMU Frontend:  Before DMA: pa dst address: 0x%lx, dst data: 0x%lx\n",pa_dst_ptr, *(volatile uint32_t *)pa_dst_ptr);
     ret = R_SYSDMAC_RcarCallBackSet(&rDmacIrqHandler_t_irq, dmacUserCallback, &usr_context);
 
-    int dmaStatus = R_SYSDMAC_RcarDmacExec(SYS_DMAC3, DMAC_CH1, &cfg, 0);
+    int dmaStatus = R_SYSDMAC_RcarDmacExec(rDmacIrqHandler_t_irq.Unit, rDmacIrqHandler_t_irq.SubCh, &cfg, 0);
 
     while(!isr_flag) {
         __asm__ volatile("nop");
@@ -226,25 +332,25 @@ static void prvVIOMMUFETask( void *pvParameters )
     if (destData == (*(volatile uint32_t *)pa_src_ptr)) {
         printf("VIRTIO IOMMU Frontend:  Result: Passed\n");
     } else {
+        printf("VIRTIO IOMMU Frontend:  Result: Failed\n");
         if ((*(volatile uint32_t *)cfg.mSrcAddr == *(volatile uint32_t *)cfg.mDestAddr) && *(volatile uint32_t *)cfg.mSrcAddr != 0) {
             printf("VIRTIO IOMMU Frontend:  After DMA: va src address: 0x%lx, src data: 0x%lx\n", cfg.mSrcAddr, *(volatile uint32_t *)cfg.mSrcAddr );
             printf("VIRTIO IOMMU Frontend:  After DMA: va dst address: 0x%lx, dst data: 0x%lx\n", cfg.mDestAddr, *(volatile uint32_t *)cfg.mDestAddr);
             printf("VIRTIO IOMMU Frontend:  DMAC worked without VIRTIO IOMMU.\n");
         }
-        printf("VIRTIO IOMMU Frontend:  Result: Failed\n");
     }
     
     printf("VIRTIO IOMMU Frontend:  * Test case 5: Test R_VIRTIO_IOMMU_UnMap\n");
     ret = R_VIRTIO_IOMMU_UnMap(&smmu_ctrl, cfg.mSrcAddr, cfg.mSrcAddr + SOURCE_OFFSET_MAPPING, 0x5000000);
     vTaskDelay(1000);
     if (ret == 0) {
-        R_SYSDMAC_RcarDmacStop(SYS_DMAC3, DMAC_CH1);
+        R_SYSDMAC_RcarDmacStop(rDmacIrqHandler_t_irq.Unit, rDmacIrqHandler_t_irq.SubCh);
 
         *(volatile uint32_t *)pa_src_ptr = 0x111;
         *(volatile uint32_t *)cfg.mSrcAddr = 0x222;
         *(volatile uint32_t *)pa_dst_ptr = 0x555; // Value goes to cache; DMA may miss it if dont invalidate cache
         printf("VIRTIO IOMMU Frontend:  Before DMA: pa dst address: 0x%lx, dst data: 0x%lx\n",pa_dst_ptr, *(volatile uint32_t *)pa_dst_ptr);
-        dmaStatus = R_SYSDMAC_RcarDmacExec(SYS_DMAC3, DMAC_CH1, &cfg, 0);
+        dmaStatus = R_SYSDMAC_RcarDmacExec(rDmacIrqHandler_t_irq.Unit, rDmacIrqHandler_t_irq.SubCh, &cfg, 0);
 
         while(!isr_flag) {
             __asm__ volatile("nop");
@@ -276,13 +382,13 @@ static void prvVIOMMUFETask( void *pvParameters )
     ret = R_VIRTIO_IOMMU_Map(&smmu_ctrl, cfg.mSrcAddr, cfg.mSrcAddr + SOURCE_OFFSET_MAPPING, 0x5000000, ATTR_DEVICE_NGNRNE_EL1_RW_EL0_RW);
     vTaskDelay(1000);
     if (ret == 0) {
-        R_SYSDMAC_RcarDmacStop(SYS_DMAC3, DMAC_CH1);
+        R_SYSDMAC_RcarDmacStop(rDmacIrqHandler_t_irq.Unit, rDmacIrqHandler_t_irq.SubCh);
 
         *(volatile uint32_t *)pa_src_ptr = 0x123;
         *(volatile uint32_t *)cfg.mSrcAddr = 0x456;
         *(volatile uint32_t *)pa_dst_ptr = 0x777; // Value goes to cache; DMA may miss it if dont invalidate cache
         printf("VIRTIO IOMMU Frontend:  Before DMA: pa dst address: 0x%lx, dst data: 0x%lx\n",pa_dst_ptr, *(volatile uint32_t *)pa_dst_ptr);
-        dmaStatus = R_SYSDMAC_RcarDmacExec(SYS_DMAC3, DMAC_CH1, &cfg, 0);
+        dmaStatus = R_SYSDMAC_RcarDmacExec(rDmacIrqHandler_t_irq.Unit, rDmacIrqHandler_t_irq.SubCh, &cfg, 0);
 
         while(!isr_flag) {
             __asm__ volatile("nop");

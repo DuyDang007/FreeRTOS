@@ -153,6 +153,41 @@ static struct remote_resource_table __attribute__((section(".resource_table2")))
     {RING_RX, VRING_ALIGN, VRING_SIZE, 2, 0},
 };
 
+static const struct remote_resource_table resources_data = {
+    /* Version */
+    1,
+
+    /* NUmber of table entries */
+    NUM_TABLE_ENTRIES,
+    /* reserved fields */
+    {
+        0,
+        0,
+    },
+
+    /* Offsets of rsc entries */
+    {
+        offsetof(struct remote_resource_table, rpmsg_vdev),
+    },
+
+    /* Virtio device entry */
+    {
+        RSC_VDEV,
+        VIRTIO_ID_RPMSG_,
+        31,
+        RPMSG_VDEV_DFEATURES,
+        0,
+        0,
+        0,
+        NUM_VRINGS,
+        {0, 0},
+    },
+
+    /* Vring rsc entry - part of vdev rsc entry */
+    {RING_TX, VRING_ALIGN, VRING_SIZE, 1, 0},
+    {RING_RX, VRING_ALIGN, VRING_SIZE, 2, 0},
+};
+
 void init_resource_table(uint8_t src_index)
 {
     size_t len;
@@ -161,19 +196,19 @@ void init_resource_table(uint8_t src_index)
     case 0:
         len = (size_t)(&__resource_table_end - &__resource_table_start);
 
-        (void)memcpy((void *)&__resource_table_start, &resources, len);
+        (void)memcpy((void *)&__resource_table_start, &resources_data, len);
         break;
 
     case 1:
         len = (size_t)(&__resource_table1_end - &__resource_table1_start);
 
-        (void)memcpy((void *)&__resource_table1_start, &resources1, len);
+        (void)memcpy((void *)&__resource_table1_start, &resources_data, len);
         break;
 
     case 2:
         len = (size_t)(&__resource_table2_end - &__resource_table2_start);
 
-        (void)memcpy((void *)&__resource_table2_start, &resources2, len);
+        (void)memcpy((void *)&__resource_table2_start, &resources_data, len);
         break;
     default:
         break;
@@ -186,9 +221,9 @@ void *get_resource_table(int rsc_id, int *len)
     switch (rsc_id )
     {
     case 0:
-        *len = (int)(&__resource_table_end - &__resource_table_start);
+    *len = (int)(&__resource_table_end - &__resource_table_start);
 
-        return (void *)&__resource_table_start;
+    return (void *)&__resource_table_start;
         break;
 
     case 1:
