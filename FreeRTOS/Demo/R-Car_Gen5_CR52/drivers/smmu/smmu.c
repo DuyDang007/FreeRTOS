@@ -116,8 +116,15 @@ static bool cmdq_has_space(st_smmu_cmdq_t cmdq);
 static bool cmdq_consumed(st_smmu_cmdq_t cmdq, uint32_t cur_rd, uint8_t cur_wrap);
 
 static void smmu_disable(e_smmu_domain_t smmu_domain, bool is_secure);
+static bool is_smmu_initialized(e_smmu_domain_t smmu_domain, bool is_secure);
 
 int R_SMMU_Init(e_smmu_domain_t smmu_domain, bool is_secure) {
+
+    if (is_smmu_initialized(smmu_domain, is_secure) == true)
+    {
+        return 0;
+    }
+    
     volatile st_smmu_cr0_t *reg_cr0;
     volatile st_smmu_cr0_t *reg_cr0ack;
     volatile st_smmu_strtab_cfg_t *strtab_cfg;
@@ -432,6 +439,24 @@ static void smmu_disable(e_smmu_domain_t smmu_domain, bool is_secure)
     reg_cr0->SMMUEN = DISABLE;
 }
 
+static bool is_smmu_initialized(e_smmu_domain_t smmu_domain, bool is_secure)
+{
+    volatile st_smmu_strtab_t *smmu_strtab;
+    bool ret = false;
+    uint32_t base = smmu_base_addresses[smmu_domain];
+    if (is_secure) {
+        base += SMMU_SECURE_REGION_OFFSET;
+    }
+    
+    smmu_strtab = (st_smmu_strtab_t *)(base + SMMU_STRTAB_OFFSET);
+
+    if(smmu_strtab->ADDR != 0)
+    {
+        ret = true;
+    }
+
+    return ret;
+}
 
 static inline void write32(uintptr_t addr, uint32_t value) {
     *(volatile uint32_t *)addr = value;
