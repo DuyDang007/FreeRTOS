@@ -194,6 +194,7 @@ set(bsp_source
 
 if(ENABLE_OPENAMP)
     list(APPEND bsp_source
+        ${BSP_DIR}/common/libmetal/metal/cpu.c
         ${BSP_DIR}/drivers/virtio/platform_rcar.c
         ${BSP_DIR}/drivers/virtio/remoteproc_rcar.c
         ${BSP_DIR}/drivers/virtio/rsc_table.c

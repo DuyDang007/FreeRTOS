@@ -6,14 +6,22 @@
 
 include(ExternalProject)
 
+get_target_property(libmetal_install_include libmetal INTERFACE_INCLUDE_DIRECTORIES)
+list(GET libmetal_install_include -1 libmetal_include_dir)
+
+set(LIBMETAL_IFLAGS "")
+foreach(dir ${libmetal_install_include})
+    set(LIBMETAL_IFLAGS "${LIBMETAL_IFLAGS} -I${dir}")
+endforeach()
+
 set (C_FLAGS
         "-mfloat-abi=soft -mcpu=cortex-r52 -Os -flto \
         -I${BSP_DIR}/include \
         -I${BSP_DIR}/common/ARM_CR52 \
-        -I${KERNEL_DIR}/include"
+        -I${KERNEL_DIR}/include \
+        ${LIBMETAL_IFLAGS}"
 )
 
-get_target_property(libmetal_include_dir libmetal INTERFACE_INCLUDE_DIRECTORIES)
 get_target_property(libmetal_lib libmetal IMPORTED_LOCATION)
 
 ExternalProject_Add(openamp_build

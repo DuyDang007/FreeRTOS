@@ -39,11 +39,12 @@ add_dependencies(libmetal libmetal_build)
 set_target_properties(libmetal PROPERTIES
     IMPORTED_LOCATION ${CMAKE_CURRENT_BINARY_DIR}/install/usr/local/lib/libmetal.a
     INTERFACE_INCLUDE_DIRECTORIES
-        ${CMAKE_CURRENT_BINARY_DIR}/install/usr/local/include
+        "${BSP_DIR}/common/libmetal;${CMAKE_CURRENT_BINARY_DIR}/install/usr/local/include"
 )
 # Workaround to avoid error: Imported target "libmetal" includes non-existent path
 # The path does not exist at configuration time, but after build
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/install/usr/local/include)
+file(MAKE_DIRECTORY ${BSP_DIR}/common/libmetal/metal)
 
 install(
     DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/install/usr
