@@ -225,6 +225,8 @@ static void prvSMMUTask( void *pvParameters )
         }
     }
 
+    printf("**********************************************\r\n");
+
     printf("* Test case 6: R_SMMU_Unmap. *\r\n");
     
     R_SMMU_Unmap(&smmu_ctrl, cfg.mSrcAddr, cfg.mSrcAddr + SOURCE_OFFSET_MAPPING, data_size);
@@ -249,18 +251,16 @@ static void prvSMMUTask( void *pvParameters )
     printf("After DMA: pa dst address: 0x%lx, dst data: 0x%lx\n",pa_dst_ptr, destData );
     printf("Source Info: pa src address: 0x%lx, src data: 0x%lx\n",pa_src_ptr, *(volatile uint32_t *)pa_src_ptr );
     if (destData == (*(volatile uint32_t *)pa_src_ptr)) {
-        printf("Result: Passed\n");
-    } else {
         printf("Result: Failed\n");
+    } else {
         if ((*(volatile uint32_t *)cfg.mSrcAddr == *(volatile uint32_t *)cfg.mDestAddr) && *(volatile uint32_t *)cfg.mSrcAddr != 0) {
             printf("After DMA: va src address: 0x%lx, src data: 0x%lx\n", cfg.mSrcAddr, *(volatile uint32_t *)cfg.mSrcAddr );
             printf("After DMA: va dst address: 0x%lx, dst data: 0x%lx\n", cfg.mDestAddr, *(volatile uint32_t *)cfg.mDestAddr);
             printf ("DMAC worked without SMMU.\n");
+            printf("Result: Passed\n");
         }
     }
     printf("**********************************************\r\n");
-
-    
     printf("* Test case 7: R_SMMU_Map(Re-map after unmap for verification). *\r\n");
     
     R_SMMU_Map(&smmu_ctrl, cfg.mSrcAddr, cfg.mSrcAddr + SOURCE_OFFSET_MAPPING, data_size, ATTR_DEVICE_NGNRNE_EL1_RW_EL0_RW);
