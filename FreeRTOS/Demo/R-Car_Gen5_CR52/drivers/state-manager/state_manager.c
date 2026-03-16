@@ -15,6 +15,7 @@
 #include "scmi/inc/clock.h"
 #include "scmi/inc/reset.h"
 #include "scmi/inc/system.h"
+#include "scmi/inc/vendor-rcar.h"
 #include "state-manager/r_state_manager.h"
 #include "state-manager/r_power_domain_id.h"
 #include "state-manager/r_clock_domain_id.h"
@@ -183,6 +184,12 @@ int R_StateManager_ResetDeassert(int domain_id)
 int R_StateManager_Reset(int domain_id)
 {
     return 0;
+}
+
+int R_StateManager_Reset_Status_Get(int domain_id, e_reset_domain_status_t *status) {
+	(void) domain_id;
+	(void) status;
+	return 0;
 }
 
 #else
@@ -612,5 +619,22 @@ int R_StateManager_Reset(int domain_id)
 	}
 
 	return 0;
+}
+
+int R_StateManager_Reset_Status_Get(int domain_id, e_reset_domain_status_t *status) {
+    struct scmi_vendor_request_config rst_cfg = {0};
+    int ret = RET_OK;
+
+    VALIDATE_ID(domain_id, max_resetdomain_num);
+    rst_cfg.domain_id = domain_id;
+    
+    ret = scmi_vendor_reset_domain_status_get(&rst_cfg);
+    if (ret != RET_OK) {
+        printf("Failed to get status of reset domain ID %d (%d)\r\n", domain_id, ret);
+    } else {
+        *status = (rst_cfg.reset_status == 0 ? RESET_DOMAIN_ASSERTED : RESET_DOMAIN_RELEASED);
+    }
+
+    return ret;
 }
 #endif //if (BOARD == X5H_RFS2)

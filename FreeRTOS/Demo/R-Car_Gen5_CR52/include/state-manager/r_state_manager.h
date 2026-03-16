@@ -30,9 +30,18 @@ extern "C" {
 /**
  * @brief Power States.
  */
+typedef enum 
+{
+    RESET_DOMAIN_ASSERTED = 0, 
+    RESET_DOMAIN_RELEASED = 1
+} e_reset_domain_status_t;
+
+/**
+ * @brief Power States.
+ */
 typedef enum {
-	POWER_ON = 0,
-	POWER_OFF,
+    POWER_ON = 0,
+    POWER_OFF,
 } e_power_state_t;
 
 /**
@@ -75,8 +84,8 @@ int R_StateManager_SysPowerOff(void);
  *
  * @param[in] domain_id Power Domain ID
  * @param[out] state Current power state can be:
- *				   - POWER_ON
- *				   - POWER_OFF
+ *                   - POWER_ON
+ *                   - POWER_OFF
  *
  * @return 0 if all went fine, else return appropriate error.
  */
@@ -178,6 +187,16 @@ int R_StateManager_ResetDeassert(int domain_id);
  * @return 0 if all went fine, else return appropriate error.
  */
 int R_StateManager_Reset(int domain_id);
+
+/**
+ * @brief This function get reset status of domain id
+ *
+ * @param[in]   domain_id Domain ID
+ * @param[out]  status Reset status of the Domain ID
+ *
+ * @return 0 if all went fine, else return appropriate error from SCMI.
+ */
+int R_StateManager_Reset_Status_Get(int domain_id, e_reset_domain_status_t *status);
 
 #ifdef __cplusplus
 }

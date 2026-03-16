@@ -14,6 +14,9 @@
 #define SCMI_SHORT_NAME_MAX_SIZE    16
 #define SCMI_BASE_DISCOVER_MAX_PROTOCOLS 24
 
+#define RET_OK 0
+#define RET_NOT_OK 1
+
 struct scmi_message;
 struct scmi_protocol;
 
