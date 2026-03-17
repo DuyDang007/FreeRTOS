@@ -51,8 +51,8 @@ static bool initialized = false;
 static const char* agentid2str(int agent_id)
 {
 	switch (agent_id) {
-		case SCMI_AGENT_ID_CA:
-			return "Xen/Linux (CA)";
+		case SCMI_AGENT_ID_FRTOS_1ST:
+			return "Main FreeRTOS (CR)";
 
 		case SCMI_AGENT_ID_FRTOS_2ND:
 			return "Secondary FreeRTOS (CR)";
@@ -60,8 +60,26 @@ static const char* agentid2str(int agent_id)
 		case SCMI_AGENT_ID_AUTOSAR:
 			return "Classic Autosar (CR)";
 
-		case SCMI_AGENT_ID_FRTOS_1ST:
-			return "Main FreeRTOS (CR)";
+        case SCMI_AGENT_ID_CA_PSCI:
+            return "PSCI (BL31)";
+
+        case SCMI_AGENT_ID_CA_OSPM_HV:
+            return "Hypervisor";
+
+        case SCMI_AGENT_ID_CA_OSPM_A:
+            return "OSPM_A";
+
+        case SCMI_AGENT_ID_CA_OSPM_B:
+            return "OSPM_B";
+
+        case SCMI_AGENT_ID_CA_OSPM_C:
+            return "OSPM_C";
+
+        case SCMI_AGENT_ID_CA_OSPM_D:
+            return "OSPM_D";
+
+        case SCMI_AGENT_ID_CA_OSPM_E:
+            return "OSPM_E";
 
 		default:
 			break;
@@ -88,8 +106,10 @@ static void system_notification(void *data)
 	if (((SYSTEM_STATE_SUSPEND == notifier->system_state) ||
 		(SYSTEM_STATE_SHUTDOWN == notifier->system_state)) &&
 		(SCMI_AGENT_ID_FRTOS_1ST != notifier->agent_id)) {
-		/* Prepare shutdown or suspend */
-		ret = scmi_system_power_state_set(notifier->flags, notifier->system_state);
+		/* Send suspend command to SCP FW
+         * FreeRTOS agents other than the main one.
+         */
+		ret = scmi_system_power_state_set(notifier->flags, SYSTEM_STATE_SHUTDOWN);
 		if (ret) {
 			SM_LOG_ERR("Error: Failed to request system notification %d (ret %d).\r\n",
 					notifier->system_state, ret);

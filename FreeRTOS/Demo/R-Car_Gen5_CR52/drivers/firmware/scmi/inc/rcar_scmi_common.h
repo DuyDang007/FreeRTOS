@@ -11,10 +11,16 @@
 #include "cmsis_rcar_gen5.h"
 //#define S2R_DRAFT_FLOW
 
-#define SCMI_AGENT_ID_CA		10
-#define SCMI_AGENT_ID_FRTOS_1ST	2
-#define SCMI_AGENT_ID_FRTOS_2ND 3
-#define SCMI_AGENT_ID_AUTOSAR	4
+#define SCMI_AGENT_ID_FRTOS_1ST	  2
+#define SCMI_AGENT_ID_FRTOS_2ND   3
+#define SCMI_AGENT_ID_AUTOSAR	  4
+#define SCMI_AGENT_ID_CA_PSCI     8
+#define SCMI_AGENT_ID_CA_OSPM_HV  9
+#define SCMI_AGENT_ID_CA_OSPM_A   10
+#define SCMI_AGENT_ID_CA_OSPM_B   11
+#define SCMI_AGENT_ID_CA_OSPM_C   12
+#define SCMI_AGENT_ID_CA_OSPM_D   13
+#define SCMI_AGENT_ID_CA_OSPM_E   14
 
 /* Describe R-Car X5H Specific transport using shared memory
  * and MFIS Mailbox 
