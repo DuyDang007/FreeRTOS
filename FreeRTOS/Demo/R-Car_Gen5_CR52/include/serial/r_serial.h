@@ -56,6 +56,13 @@ typedef enum e_serial_devices {
     HSCIF3,                ///< HSCIF channel 3.
 } e_serial_devices_t;
 
+/**
+ * @brief Serial log output control states.
+ */
+typedef enum e_log_state {
+    LOG_OFF,        /**< Disable serial log output. */
+    LOG_ON          /**< Enable serial log output. */
+} e_log_state_t;
 /***********************************************************************************************************************
  * Public APIs
  **********************************************************************************************************************/
@@ -107,6 +114,14 @@ int32_t R_SERIAL_PutChar(unsigned char send_char);
  * 
  */
 int32_t R_SERIAL_Close();
+
+/**
+ * @brief Control the serial log output state at runtime.
+ * 
+ * @param state LOG_ON (Enable output), LOG_OFF (Mute output).
+ * @return int32_t 0 if success
+ */
+int32_t R_SERIAL_SetLogState(e_log_state_t state);
 
 #ifdef __cplusplus
 }

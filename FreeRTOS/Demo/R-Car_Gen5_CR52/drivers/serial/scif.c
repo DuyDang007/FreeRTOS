@@ -10,6 +10,12 @@
 
 static uint32_t scif_base;
 
+/* * Log output control constants. 
+ * Used to toggle console_putc functionality. 
+ */
+#define SCIF_LOG_STATE_OFF              (0U)
+#define SCIF_LOG_STATE_ON               (1U)
+
 /* Registers */
 #define SCSMR           0x00    /* Serial Mode Register */
 #define SCBRR           0x04    /* Bit Rate Register */
@@ -90,6 +96,7 @@ static uint32_t scif_base;
 #define HSCIF_HSSRR_SRCYC8      (uint16_t)(7U << 0U)    /* Sampling rate 8-1 */
 #define HSCIF_HSSRR_VAL         (uint16_t)(HSCIF_HSSRR_SRE | HSCIF_HSSRR_SRCYC8)
 
+static uint8_t is_log_enable = SCIF_LOG_STATE_ON;
 
 void wait(uint32_t count)
 {
@@ -375,8 +382,15 @@ static void uart_rcar_poll_out(unsigned char out_char)
 	/* TODO: Remove spinlock here */
 }
 
+void console_apply_log_state(uint8_t enable) {
+	is_log_enable = enable ? SCIF_LOG_STATE_ON : SCIF_LOG_STATE_OFF;
+}
+
 void console_putc(char c) {
-	uart_rcar_poll_out(c);
+	/* Runtime API check logs state */
+	if (is_log_enable == SCIF_LOG_STATE_ON) {
+		uart_rcar_poll_out(c);
+	}
 }
 
 int console_getc(unsigned char *p_char) {

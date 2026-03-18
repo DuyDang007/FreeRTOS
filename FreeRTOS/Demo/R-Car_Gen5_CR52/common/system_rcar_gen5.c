@@ -20,6 +20,7 @@
 #include "pfc/r_pfc_api.h"
 
 #define CNTCR_ADDR   ((volatile uint32_t *)0x1C000000) // Counter Control Register
+#define SILENT_CONSOLE_ON (1U)
 
 extern const unsigned int __bss_start__;
 extern const unsigned int __bss_end__;
@@ -33,6 +34,7 @@ extern uint32_t __tcm_start__, __tcm_end__;
 extern const uint32_t __kernel_region_start__, __kernel_region_end__;
 static int is_linker_tcm_symbols_define = 0;
 
+extern uint32_t __CONFIG_SILENT_CONSOLE__ __attribute__((weak)); /* Weak linker symbol for log control, NULL if not defined in linker script */
 extern uint32_t _Reset;
 uint32_t resource_table;
 #if ETHER_ENABLE
@@ -253,6 +255,10 @@ void SystemInit(void)
 
     /* Init UART */
     (void)R_SERIAL_PortInit(UART_ID);
+    if ((uint32_t)&__CONFIG_SILENT_CONSOLE__ == SILENT_CONSOLE_ON)
+    {
+        R_SERIAL_SetLogState(LOG_OFF);
+    }
 
     Irq_Setup();
     if (R_StateManager_Init()) {

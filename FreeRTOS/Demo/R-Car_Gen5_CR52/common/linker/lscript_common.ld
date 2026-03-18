@@ -12,4 +12,8 @@ MEMORY
    remote_proc_rsc_table_2 : ORIGIN = 0x966a0000, LENGTH = 0x1000
 }
 
+/* --- BSP Configuration Symbols --- */
+/* 0 = Enable logs output (Default), 1 = Disable logs output */
+__CONFIG_SILENT_CONSOLE__ = 0;
+
 ENTRY(_Reset)

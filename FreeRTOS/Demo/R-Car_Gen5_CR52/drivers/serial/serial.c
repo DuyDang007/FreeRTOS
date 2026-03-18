@@ -180,6 +180,12 @@ int32_t R_SERIAL_Close(void)
 	return 0;
 }
 
+int32_t R_SERIAL_SetLogState(e_log_state_t state)
+{
+	console_apply_log_state(state);
+	return 0;
+}
+
 /* Override std C lib output for printf, fprintf */
 int _write(int file, char *ptr, int len)
 {
