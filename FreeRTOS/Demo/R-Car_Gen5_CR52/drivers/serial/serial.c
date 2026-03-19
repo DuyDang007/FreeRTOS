@@ -68,6 +68,8 @@ static void outbyte(char c);
 
 static void uart_rcar_pfc_init(void);
 
+static int uart_set_pfc(e_serial_devices_t device);
+
 int32_t R_SERIAL_PortInit(e_serial_devices_t device)
 {
 	int ret = 0;
@@ -86,8 +88,61 @@ int32_t R_SERIAL_PortInit(e_serial_devices_t device)
 		
 	}
 
+	ret = uart_set_pfc(device);
+
 	return ret;
 }
+
+#if (BOARD == X5H_IRONHIDE)
+static int uart_set_pfc(e_serial_devices_t device)
+{
+    int ret = 0;
+    st_module_config_t uart_module;
+
+    uart_module.is_enabled = 1;
+
+    switch (device) {
+        case SCIF0:
+            uart_module.module_id = MODULE_SCIF0;
+            break;
+        case SCIF1:
+            uart_module.module_id = MODULE_SCIF1;
+            break;
+        case SCIF3:
+            uart_module.module_id = MODULE_SCIF3;
+            break;
+        case SCIF4:
+            uart_module.module_id = MODULE_SCIF4;
+            break;
+        case HSCIF0:
+            uart_module.module_id = MODULE_HSCIF0;
+            break;
+        case HSCIF1:
+            uart_module.module_id = MODULE_HSCIF1;
+            break;
+        case HSCIF2:
+            uart_module.module_id = MODULE_HSCIF2;
+            break;
+        case HSCIF3:
+            uart_module.module_id = MODULE_HSCIF3;
+            break;
+        case SCIF2_UNSUPPORTED:
+        default:
+            ret = -1;
+            goto end_set_pfc;
+    }
+
+    ret = pfcInitModule(uart_module);
+
+end_set_pfc:
+    return ret;
+}
+#else
+static int uart_set_pfc(e_serial_devices_t device)
+{
+    return 0;
+}
+#endif //#if (BOARD == X5H_IRONHIDE)
 
 int32_t R_SERIAL_PutString(const unsigned char *buffer, unsigned short length)
 {

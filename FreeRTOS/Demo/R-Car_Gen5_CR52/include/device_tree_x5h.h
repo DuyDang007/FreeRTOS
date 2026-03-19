@@ -25,8 +25,8 @@ typedef enum {
     MODULE_INVALID = 0,     ///< Invalid module ID.
     MODULE_SCIF0,           ///< Module ID: SCIF0.
     MODULE_SCIF1,           ///< Module ID: SCIF1.
-    MODULE_SCIF2,           ///< Module ID: SCIF2.
     MODULE_SCIF3,           ///< Module ID: SCIF3.
+    MODULE_SCIF4,           ///< Module ID: SCIF4.
     MODULE_HSCIF0,          ///< Module ID: HSCIF0.
     MODULE_HSCIF1,          ///< Module ID: HSCIF1.
     MODULE_HSCIF2,          ///< Module ID: HSCIF2.

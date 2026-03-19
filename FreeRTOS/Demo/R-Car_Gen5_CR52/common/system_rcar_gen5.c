@@ -16,6 +16,8 @@
 #include "state-manager/r_state_manager.h"
 #include "memory_map/memory_map.h"
 #include "tcm.h"
+#include "serial/r_serial.h"
+#include "pfc/r_pfc_api.h"
 
 #define CNTCR_ADDR   ((volatile uint32_t *)0x1C000000) // Counter Control Register
 
@@ -248,6 +250,10 @@ void SystemInit(void)
     __libc_init_array();
     portDISABLE_INTERRUPTS();
     *CNTCR_ADDR = 1;    /* enable system counter */
+
+    /* Init UART */
+    (void)R_SERIAL_PortInit(UART_ID);
+
     Irq_Setup();
     if (R_StateManager_Init()) {
         printf("Error: Failed to init State Manager.\r\n");
