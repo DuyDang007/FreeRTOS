@@ -62,7 +62,7 @@ extern "C" {
  * The actual structure definition is private to the frontend
  * implementation and hidden from the user.
  */
-typedef void virtio_iommu_frontend_instance_ctrl_t;
+typedef struct virtio_iommu_frontend_instance_ctrl virtio_iommu_frontend_instance_ctrl_t;
 
 /***********************************************************************************************************************
  * Public API Functions

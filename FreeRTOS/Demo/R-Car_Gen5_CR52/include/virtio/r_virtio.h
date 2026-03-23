@@ -24,6 +24,7 @@ extern "C" {
  **********************************************************************************************************************/
 #include <stdbool.h>
 #include <stdint.h>
+#include "semphr.h"
 #include "r_virtio_msg.h"
 
 /***********************************************************************************************************************
@@ -73,6 +74,15 @@ typedef struct st_rsc_table_info
 	uintptr_t shared_buf_pa; /**< Shared buffer physical address */
 	size_t shared_buf_size; /**< Size of the shared buffer */
 } st_rsc_table_info_t;
+
+typedef struct st_virtio_context
+{
+    SemaphoreHandle_t   sem; /* using for R_VIRTIO_SendDataSync */
+    uint32_t            s_seq_counter;
+    uint32_t            seq_id;
+    st_virtio_msg_t     *resp_buf;
+    void * p_context;
+} st_virtio_context_t;
 
 /**
  * @brief Forward declaration of Virtio instance control structure.
@@ -170,7 +180,7 @@ uint8_t R_VIRTIO_CreateEP(st_virtio_instance_ctrl_t *p_vdev_ctrl,
                           const char *name,
                           virtio_ept_cb ept_cb,
                           virtio_ns_unbind_cb unbind_cb,
-                          void *priv);
+                          st_virtio_context_t *priv);
 
 /**
  * @brief Release an RPMsg endpoint.
@@ -194,6 +204,54 @@ uint8_t R_VIRTIO_ReleaseEP(st_virtio_endpoint_t * p_ept);
  * @return 0 on success, negative value on error.
  */
 uint8_t R_VIRTIO_SendData(struct rpmsg_endpoint *ept, const void *data, int len);
+
+/**
+ * @brief Send a request and block until a response is received from the backend.
+ *
+ * This function fills hdr.seq_id and hdr.msg_type automatically, sends
+ * the request frame, then suspends the calling task until the backend
+ * sends back a response frame with a matching seq_id, or until timeout.
+ *
+ * The frontend endpoint passed here must have been created with
+ * R_VIRTIO_FE_ResponseCb as its receive callback.
+ *
+ * @param[in]  ept        Frontend RPMsg endpoint.
+ * @param[in]  req        Request frame; hdr.driver_id and payload must be filled
+ *                        by the caller before this call.
+ * @param[out] resp       Buffer to receive the response frame (may be NULL if
+ *                        the caller only needs the return status code).
+ * @param[in]  timeout_ms Timeout in milliseconds; 0 uses VIRTIO_SEND_TIMEOUT_MS.
+ *
+ * @return  0          Success; resp->hdr.status holds the backend result.
+ * @return -ETIMEDOUT  Backend did not reply within the timeout period.
+ * @return -ENOMEM     Concurrent request limit (VIRTIO_PENDING_MAX) exceeded.
+ * @return -EINVAL     ept or req is NULL.
+ */
+int R_VIRTIO_SendDataSync(struct rpmsg_endpoint *ept,
+                          st_virtio_msg_t       *req,
+                          st_virtio_msg_t       *resp,
+                          uint32_t               timeout_ms);
+
+/**
+ * @brief RPMsg receive callback to register on the frontend endpoint.
+ *
+ * This function matches incoming RESPONSE frames to pending
+ * R_VIRTIO_SendDataSync callers by seq_id and unblocks them.
+ *
+ * Pass this as the ept_cb argument when calling R_VIRTIO_CreateEP
+ * on the frontend side. Do NOT use this callback on the backend endpoint.
+ *
+ * @param[in] ept   Pointer to the RPMsg endpoint (unused).
+ * @param[in] data  Pointer to received data buffer.
+ * @param[in] len   Length of received data in bytes.
+ * @param[in] src   Source address (unused).
+ * @param[in] priv  Private user data (unused).
+ *
+ * @return RPMSG_SUCCESS always.
+ */
+int R_VIRTIO_ResponseCb(struct rpmsg_endpoint *ept,
+                            void *data, size_t len,
+                            uint32_t src, void *priv);
 
 /**
  * @brief Dispatch an incoming request message to the appropriate driver handler.

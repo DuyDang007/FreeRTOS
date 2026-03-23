@@ -15,6 +15,7 @@
 #include <stdio.h>
 
 #include "FreeRTOS.h"
+#include "semphr.h"
 #include "virtio/r_virtio.h"
 #include "platform_rcar.h"
 #include "rsc_table.h"
@@ -180,7 +181,7 @@ uint8_t R_VIRTIO_Release(st_virtio_instance_ctrl_t * p_ctrl)
 }
 
 uint8_t R_VIRTIO_CreateEP(st_virtio_instance_ctrl_t *p_vdev_ctrl, st_virtio_endpoint_t * p_ept,
-		    const char *name, virtio_ept_cb ept_cb, virtio_ns_unbind_cb unbind_cb, void *priv)
+		    const char *name, virtio_ept_cb ept_cb, virtio_ns_unbind_cb unbind_cb, st_virtio_context_t *priv)
 {
     int ret;
     p_ept->priv = priv;
@@ -201,6 +202,75 @@ uint8_t R_VIRTIO_SendData(struct rpmsg_endpoint *ept, const void *data, int len)
 {
     int ret = rpmsg_send(ept, data, len);
     return ret;
+}
+
+int R_VIRTIO_SendDataSync(struct rpmsg_endpoint *ept,
+                          st_virtio_msg_t       *req,
+                          st_virtio_msg_t       *resp,
+                          uint32_t               timeout_ms)
+{
+    if (ept == NULL || req == NULL)
+    {
+        return -EINVAL;
+    }
+    st_virtio_context_t *p_context = ept->priv;
+    /* Fill request header fields managed by the virtio layer */
+    req->hdr.msg_type = (uint8_t)VIRTIO_MSG_REQUEST;
+    req->hdr.status   = 0;
+
+    
+        req->hdr.seq_id       = p_context->s_seq_counter ++;
+        p_context->seq_id   = req->hdr.seq_id;
+        p_context->resp_buf = resp;
+        /* Ensure the binary semaphore starts in the taken state */
+        xSemaphoreTake(p_context->sem, 0);
+
+    
+
+    /* Send the request frame */
+    int ret = rpmsg_send(ept, req, sizeof(st_virtio_msg_t));
+
+    /* Block until R_VIRTIO_FE_ResponseCb gives the semaphore or timeout */
+    TickType_t ticks = (timeout_ms == 0U)
+        ? pdMS_TO_TICKS(VIRTIO_SEND_TIMEOUT_MS)
+        : pdMS_TO_TICKS(timeout_ms);
+
+    ret = (xSemaphoreTake(p_context->sem, ticks) == pdTRUE) ? 0 : -ETIMEDOUT;
+
+    return ret;
+}
+
+int R_VIRTIO_ResponseCb(struct rpmsg_endpoint *ept,
+                            void *data, size_t len,
+                            uint32_t src, void *priv)
+{
+    (void)ept;
+    (void)src;
+    st_virtio_context_t *p_context = ept->priv;
+
+    if (len < sizeof(st_virtio_msg_header_t))
+    {
+        return RPMSG_SUCCESS;
+    }
+
+    const st_virtio_msg_t *msg = (const st_virtio_msg_t *)data;
+    if (msg->hdr.msg_type != (uint8_t)VIRTIO_MSG_RESPONSE)
+    {
+        return RPMSG_SUCCESS;
+    }
+
+    /* Find the pending slot whose seq_id matches this response */
+
+    if (p_context->resp_buf != NULL)
+        {
+            size_t copy_len = (len < sizeof(st_virtio_msg_t)) ? len : sizeof(st_virtio_msg_t);
+            memcpy(p_context->resp_buf, msg, copy_len);
+        }
+        /* Unblock the SendDataSync caller */
+        xSemaphoreGive(p_context->sem);
+    
+
+    return RPMSG_SUCCESS;
 }
 
 /***********************************************************************************************************************

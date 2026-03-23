@@ -141,13 +141,13 @@ static void prvVIOMMUFETask( void *pvParameters )
     /* Remove compiler warning about unused parameter. */
     ( void ) pvParameters;
     int ret = 0;
+    virtio_iommu_frontend_instance_ctrl_t *virtio_iommu_inst = NULL;
     st_smmu_streamid_instance_ctrl_t smmu_ctrl = {
         .stream_id = 0x50001,
         .smmu_domain = SMMU_PERW,
         .is_secure = false,
     };
 
-    virtio_iommu_frontend_instance_ctrl_t *virtio_iommu_inst;
     e_mfis_channel_t mfis_ch;
     if (cpu_id == 0)
     {
@@ -165,6 +165,7 @@ static void prvVIOMMUFETask( void *pvParameters )
     vTaskDelay(1000);
     printf("VIRTIO IOMMU Frontend:  * Test case 1: Test R_VIRTIO_IOMMU_Init\n");
     virtio_iommu_inst = R_VIRTIO_IOMMU_Init(mfis_ch);
+    smmu_ctrl.p_context = virtio_iommu_inst;
     vTaskDelay(1000);
     if(virtio_iommu_inst == NULL)
     {
@@ -177,7 +178,6 @@ static void prvVIOMMUFETask( void *pvParameters )
     
     printf("VIRTIO IOMMU Frontend:  * Test case 2: Test R_VIRTIO_IOMMU_Attach\n");
     ret = R_VIRTIO_IOMMU_Attach(&smmu_ctrl);
-    vTaskDelay(1000);
     if (ret == 0) {
         printf("VIRTIO IOMMU Frontend:  Result: Passed\r\n");
     } else {
@@ -186,7 +186,6 @@ static void prvVIOMMUFETask( void *pvParameters )
 
     printf("VIRTIO IOMMU Frontend:  * Test case 3: Test R_VIRTIO_IOMMU_Map\n");
     ret = R_VIRTIO_IOMMU_Map(&smmu_ctrl, cfg.mSrcAddr, cfg.mSrcAddr + SOURCE_OFFSET_MAPPING, 0x5000000, ATTR_DEVICE_NGNRNE_EL1_RW_EL0_RW);
-    vTaskDelay(1000);
     if (ret == 0) {
         printf("VIRTIO IOMMU Frontend:  Result: Passed\r\n");
     } else {
@@ -236,7 +235,6 @@ static void prvVIOMMUFETask( void *pvParameters )
     
     printf("VIRTIO IOMMU Frontend:  * Test case 5: Test R_VIRTIO_IOMMU_UnMap\n");
     ret = R_VIRTIO_IOMMU_UnMap(&smmu_ctrl, cfg.mSrcAddr, cfg.mSrcAddr + SOURCE_OFFSET_MAPPING, 0x5000000);
-    vTaskDelay(1000);
     if (ret == 0) {
         R_SYSDMAC_RcarDmacStop(SYS_DMAC3, DMAC_CH1);
 
@@ -274,7 +272,6 @@ static void prvVIOMMUFETask( void *pvParameters )
     printf("VIRTIO IOMMU Frontend:  * Test case 6: R_SMMU_Map(Re-map after unmap for verification). *\r\n");
     
     ret = R_VIRTIO_IOMMU_Map(&smmu_ctrl, cfg.mSrcAddr, cfg.mSrcAddr + SOURCE_OFFSET_MAPPING, 0x5000000, ATTR_DEVICE_NGNRNE_EL1_RW_EL0_RW);
-    vTaskDelay(1000);
     if (ret == 0) {
         R_SYSDMAC_RcarDmacStop(SYS_DMAC3, DMAC_CH1);
 

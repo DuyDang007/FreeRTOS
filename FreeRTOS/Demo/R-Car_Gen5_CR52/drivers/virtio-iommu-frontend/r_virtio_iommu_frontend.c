@@ -34,18 +34,34 @@
 #define SHARED_BUF_PA_OFFSET        0x9000UL
 #define SHARED_BUF_SIZE             0x40000UL
 
-
-/* Globals */
-st_virtio_endpoint_t *lept;
-
-
-static int rpmsg_endpoint_cb(struct rpmsg_endpoint *ept, void *data, size_t len,
-                 uint32_t src, void *priv);
+/***********************************************************************************************************************
+ * Private function prototypes
+ **********************************************************************************************************************/
 static void rpmsg_service_unbind(struct rpmsg_endpoint *ept);
 
+/***********************************************************************************************************************
+ * ISR prototypes
+ **********************************************************************************************************************/
+
+/***********************************************************************************************************************
+ * Private global variables
+ **********************************************************************************************************************/
+struct virtio_iommu_frontend_instance_ctrl
+{
+    st_virtio_instance_ctrl_t *p_virtio_inst;
+    st_virtio_endpoint_t *p_ept;
+};
+
+/***********************************************************************************************************************
+ * Global Variables
+ **********************************************************************************************************************/
+
+/***********************************************************************************************************************
+ * Functions
+ **********************************************************************************************************************/
 virtio_iommu_frontend_instance_ctrl_t * R_VIRTIO_IOMMU_Init(e_mfis_channel_t ch)
 {
-    virtio_iommu_frontend_instance_ctrl_t *result = NULL;
+    virtio_iommu_frontend_instance_ctrl_t *result = ( virtio_iommu_frontend_instance_ctrl_t * ) pvPortMalloc( sizeof( virtio_iommu_frontend_instance_ctrl_t ) );
     uintptr_t rsc_table_address;
     int rsc_size = 0;
 
@@ -61,15 +77,35 @@ virtio_iommu_frontend_instance_ctrl_t * R_VIRTIO_IOMMU_Init(e_mfis_channel_t ch)
     };
 
     st_virtio_instance_ctrl_t *virtio_inst = NULL;
-    lept = ( struct rpmsg_endpoint * ) pvPortMalloc( sizeof( struct rpmsg_endpoint ) );
+    
     virtio_inst = R_VIRTIO_FE_Create(ch, &rsc_table);
     if(virtio_inst != NULL)
     {
-        int ret = R_VIRTIO_CreateEP(virtio_inst, lept, RPMSG_SERV_NAME, rpmsg_endpoint_cb, rpmsg_service_unbind, NULL);
-        if( ret == 0)
+        st_virtio_context_t *p_comtext = ( st_virtio_context_t * ) pvPortMalloc( sizeof( st_virtio_context_t ) );
+        p_comtext->sem = xSemaphoreCreateBinary();
+        if (p_comtext->sem != NULL)
         {
-            result = (virtio_iommu_frontend_instance_ctrl_t *)virtio_inst;
+            p_comtext->s_seq_counter = 0;
+            result->p_ept = ( struct rpmsg_endpoint * ) pvPortMalloc( sizeof( struct rpmsg_endpoint ) );
+            int ret = R_VIRTIO_CreateEP(virtio_inst, result->p_ept, RPMSG_SERV_NAME, R_VIRTIO_ResponseCb, rpmsg_service_unbind, (void*)p_comtext);
+            if( ret == 0)
+            {
+                result->p_virtio_inst = virtio_inst;
+            }
+            else
+            {
+                vPortFree(result->p_ept);
+                vPortFree(result);
+            }
         }
+        else
+        {
+            vPortFree(p_comtext);
+        }
+    }
+    else
+    {
+        vPortFree(result);
     }
 
     return result;
@@ -92,9 +128,8 @@ int R_VIRTIO_IOMMU_Attach(st_smmu_streamid_instance_ctrl_t *p_ctrl)
     /* Use memcpy to copy p_ctrl because some members may be const-qualified */
     memcpy(&smmu->p_ctrl, p_ctrl, sizeof(st_smmu_streamid_instance_ctrl_t));
     
-    int ret = R_VIRTIO_SendData(lept, &req, sizeof(st_virtio_msg_t));
-
-    return 0;
+    int ret = R_VIRTIO_SendDataSync(p_virtio_fe->p_ept, &req, &resp, 0);
+    return (ret == 0) ? (int)resp.hdr.status : ret;
 }
 
 int R_VIRTIO_IOMMU_Map(st_smmu_streamid_instance_ctrl_t *p_ctrl,
@@ -115,9 +150,8 @@ int R_VIRTIO_IOMMU_Map(st_smmu_streamid_instance_ctrl_t *p_ctrl,
     smmu->size = size;
     smmu->attr = attr;
     
-    int ret = R_VIRTIO_SendData(lept, &req, sizeof(st_virtio_msg_t));
-
-    return 0;
+    int ret = R_VIRTIO_SendDataSync(p_virtio_fe->p_ept, &req, &resp, 0);
+    return (ret == 0) ? (int)resp.hdr.status : ret;
 }
 
 int R_VIRTIO_IOMMU_UnMap(st_smmu_streamid_instance_ctrl_t *p_ctrl,
@@ -137,9 +171,8 @@ int R_VIRTIO_IOMMU_UnMap(st_smmu_streamid_instance_ctrl_t *p_ctrl,
     smmu->pa   = pa;
     smmu->size = size;
 
-    int ret = R_VIRTIO_SendData(lept, &req, sizeof(st_virtio_msg_t));
-
-    return 0;
+    int ret = R_VIRTIO_SendDataSync(p_virtio_fe->p_ept, &req, &resp, 0);
+    return (ret == 0) ? (int)resp.hdr.status : ret;
 }
 
 int R_VIRTIO_IOMMU_Detach(st_smmu_streamid_instance_ctrl_t *p_ctrl)
@@ -155,24 +188,13 @@ int R_VIRTIO_IOMMU_Detach(st_smmu_streamid_instance_ctrl_t *p_ctrl)
     /* Use memcpy to copy p_ctrl because some members may be const-qualified */
     memcpy(&smmu->p_ctrl, p_ctrl, sizeof(st_smmu_streamid_instance_ctrl_t));
 
-    int ret = R_VIRTIO_SendData(lept, &req, sizeof(st_virtio_msg_t));
-
-    return 0;
+    int ret = R_VIRTIO_SendDataSync(p_virtio_fe->p_ept, &req, &resp, 0);
+    return (ret == 0) ? (int)resp.hdr.status : ret;
 }
 
-static int rpmsg_endpoint_cb(struct rpmsg_endpoint *ept, void *data, size_t len,
-			     uint32_t src, void *priv)
-{
-	char payload[RPMSG_BUFFER_SIZE];
-    (void)priv;
-    (void)src;
-
-    memset(payload, 0, RPMSG_BUFFER_SIZE);
-    memcpy(payload, data, len);
-
-    return RPMSG_SUCCESS;
-}
-
+/***********************************************************************************************************************
+ * Private Functions
+ **********************************************************************************************************************/
 static void rpmsg_service_unbind(struct rpmsg_endpoint *ept)
 {
     (void)ept;

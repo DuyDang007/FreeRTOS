@@ -267,10 +267,11 @@ static void prvVIOMMUFETask( void *pvParameters )
         printf("VIRTIO IOMMU Frontend:  MFIS Channel not support\r\n");
     }
 
-    vTaskDelay(10000);
+    vTaskDelay(3000);
     printf("VIRTIO IOMMU Frontend:  * Test multi Frontend \n");
     printf("VIRTIO IOMMU Frontend:  * Test case 1: Test R_VIRTIO_IOMMU_Init\n");
     virtio_iommu_inst = R_VIRTIO_IOMMU_Init(mfis_ch);
+    smmu_ctrl.p_context = virtio_iommu_inst;
     vTaskDelay(1000);
     if(virtio_iommu_inst == NULL)
     {
@@ -283,7 +284,6 @@ static void prvVIOMMUFETask( void *pvParameters )
     
     printf("VIRTIO IOMMU Frontend:  * Test case 2: Test R_VIRTIO_IOMMU_Attach\n");
     ret = R_VIRTIO_IOMMU_Attach(&smmu_ctrl);
-    vTaskDelay(1000);
     if (ret == 0) {
         printf("VIRTIO IOMMU Frontend:  Result: Passed\r\n");
     } else {
@@ -292,7 +292,6 @@ static void prvVIOMMUFETask( void *pvParameters )
 
     printf("VIRTIO IOMMU Frontend:  * Test case 3: Test R_VIRTIO_IOMMU_Map\n");
     ret = R_VIRTIO_IOMMU_Map(&smmu_ctrl, cfg.mSrcAddr, cfg.mSrcAddr + SOURCE_OFFSET_MAPPING, 0x5000000, ATTR_DEVICE_NGNRNE_EL1_RW_EL0_RW);
-    vTaskDelay(1000);
     if (ret == 0) {
         printf("VIRTIO IOMMU Frontend:  Result: Passed\r\n");
     } else {
@@ -342,7 +341,6 @@ static void prvVIOMMUFETask( void *pvParameters )
     
     printf("VIRTIO IOMMU Frontend:  * Test case 5: Test R_VIRTIO_IOMMU_UnMap\n");
     ret = R_VIRTIO_IOMMU_UnMap(&smmu_ctrl, cfg.mSrcAddr, cfg.mSrcAddr + SOURCE_OFFSET_MAPPING, 0x5000000);
-    vTaskDelay(1000);
     if (ret == 0) {
         R_SYSDMAC_RcarDmacStop(rDmacIrqHandler_t_irq.Unit, rDmacIrqHandler_t_irq.SubCh);
 
@@ -380,7 +378,6 @@ static void prvVIOMMUFETask( void *pvParameters )
     printf("VIRTIO IOMMU Frontend:  * Test case 6: R_SMMU_Map(Re-map after unmap for verification). *\r\n");
     
     ret = R_VIRTIO_IOMMU_Map(&smmu_ctrl, cfg.mSrcAddr, cfg.mSrcAddr + SOURCE_OFFSET_MAPPING, 0x5000000, ATTR_DEVICE_NGNRNE_EL1_RW_EL0_RW);
-    vTaskDelay(1000);
     if (ret == 0) {
         R_SYSDMAC_RcarDmacStop(rDmacIrqHandler_t_irq.Unit, rDmacIrqHandler_t_irq.SubCh);
 
