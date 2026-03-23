@@ -197,6 +197,12 @@ uint8_t R_VIRTIO_ReleaseEP(st_virtio_endpoint_t * p_ept)
     return 0;
 }
 
+uint8_t R_VIRTIO_SendData(struct rpmsg_endpoint *ept, const void *data, int len)
+{
+    int ret = rpmsg_send(ept, data, len);
+    return ret;
+}
+
 /***********************************************************************************************************************
  * Private Functions
  **********************************************************************************************************************/
@@ -223,12 +229,16 @@ static uint32_t virtio_default_handler (st_virtio_msg_t *msg) {
 
 extern uint32_t VirtIO_SMMU_Handler(st_virtio_msg_t *msg);
 
-const VirtIO_Handler VirtIO_Handler_tbl[] = {
+static const VirtIO_Handler VirtIO_Handler_tbl[] = {
     [VIRTIO_SMMU_ID]    = VirtIO_SMMU_Handler,
     [VIRTIO_GPIO_ID]    = virtio_default_handler,
     [VIRTIO_I2C_ID]     = virtio_default_handler,
 };
 
 uint32_t VirtIO_driver_handler(st_virtio_msg_t *msg) {
-    VirtIO_Handler_tbl[msg->driver_id](msg);
+    if (msg->hdr.driver_id >= (uint8_t)(sizeof(VirtIO_Handler_tbl) / sizeof(VirtIO_Handler_tbl[0])))
+    {
+        return 1U;
+    }
+    return VirtIO_Handler_tbl[msg->hdr.driver_id](msg);
 }

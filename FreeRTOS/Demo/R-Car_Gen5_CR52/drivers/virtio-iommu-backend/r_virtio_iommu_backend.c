@@ -77,15 +77,18 @@ uint8_t R_VIRTIO_IOMMU_Backend_DeInit(virtio_iommu_instance_ctrl_t * p_inst)
 static int rpmsg_endpoint_cb(struct rpmsg_endpoint *ept, void *data, size_t len,
                  uint32_t src, void *priv)
 {
-    char payload[RPMSG_BUFFER_SIZE];
     (void)priv;
     (void)src;
 
-    memset(payload, 0, RPMSG_BUFFER_SIZE);
-    memcpy(payload, data, len);
-    VirtIO_SMMU_Handler((st_virtio_msg_t *)payload);
-    
-    rpmsg_send(ept, hello_msg, strlen(hello_msg));
+    st_virtio_msg_t *req = (st_virtio_msg_t *)data;
+
+    /* Dispatch to the appropriate driver handler; result stored in req->hdr.status */
+    VirtIO_driver_handler(req);
+
+    /* Build response in-place: flip msg_type, keep seq_id unchanged for FE matching */
+    req->hdr.msg_type = (uint8_t)VIRTIO_MSG_RESPONSE;
+
+    R_VIRTIO_SendData(ept, req, sizeof(st_virtio_msg_t));
 
     return RPMSG_SUCCESS;
 }
@@ -105,7 +108,7 @@ static int virtio_smmu_probe(st_virtio_smmu_payload_req_t* data);
 
 typedef int (*virtio_smmu_hdl)(st_virtio_smmu_payload_req_t*);
 
-const virtio_smmu_hdl virtio_smmu_handler_tbl[] = {
+static const virtio_smmu_hdl virtio_smmu_handler_tbl[] = {
     [VIRTIO_IOMMU_T_ATTACH] = virtio_smmu_attach,
     [VIRTIO_IOMMU_T_DETACH] = virtio_smmu_detach,
     [VIRTIO_IOMMU_T_MAP]    = virtio_smmu_map,
@@ -117,14 +120,15 @@ uint32_t VirtIO_SMMU_Handler(st_virtio_msg_t *msg) {
     uint32_t ret;
     st_virtio_smmu_payload_req_t *smmu_payload = (st_virtio_smmu_payload_req_t*)(msg->payload);
 
-    if (msg->driver_id != VIRTIO_SMMU_ID || smmu_payload->type > VIRTIO_IOMMU_T_PROBE) {
+    if (msg->hdr.driver_id != VIRTIO_SMMU_ID || smmu_payload->type > VIRTIO_IOMMU_T_PROBE) {
         ret = 1;
     }
     else {
         ret = virtio_smmu_handler_tbl[smmu_payload->type](smmu_payload);
     }
 
-    ((st_virtio_smmu_payload_resp_t*)msg->payload)->result = ret;
+    /* Write result into the message header for the generic response path */
+    msg->hdr.status = ret;
 
     return ret;
 }

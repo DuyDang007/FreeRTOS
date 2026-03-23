@@ -24,41 +24,16 @@ extern "C" {
  **********************************************************************************************************************/
 #include <stdbool.h>
 #include <stdint.h>
+#include "r_virtio_msg.h"
 
 /***********************************************************************************************************************
  * Macro definitions
  **********************************************************************************************************************/
-/* None */
+#define VIRTIO_SEND_TIMEOUT_MS   500U
 
 /***********************************************************************************************************************
  * Typedef definitions
  **********************************************************************************************************************/
-
-/**
- * @brief Identifier for supported virtio drivers.
- *
- * This enumeration defines driver IDs used to identify and dispatch
- * virtio driver requests. Each value represents a specific virtio-based device driver.
- */
-typedef enum e_virtio_driver_id {
-    VIRTIO_SMMU_ID,
-    VIRTIO_GPIO_ID,
-    VIRTIO_I2C_ID,
-} e_driver_id_t;
-
-struct st_virtio_smmu_payload_req;
-struct st_virtio_smmu_payload_resp;
-/**
- * @brief Virtio message structure.
- *
- * This structure represents a generic virtio message used to transfer
- * driver-specific requests. The driver_id field identifies the target
- * virtio driver, while the payload contains driver-dependent data.
- */
-typedef struct st_virtio_msg {
-    e_driver_id_t driver_id;
-    uint8_t payload[128] __attribute__((aligned(8)));
-} st_virtio_msg_t;
 
 /**
  * @enum e_mfis_channel
@@ -209,6 +184,29 @@ uint8_t R_VIRTIO_CreateEP(st_virtio_instance_ctrl_t *p_vdev_ctrl,
  */
 uint8_t R_VIRTIO_ReleaseEP(st_virtio_endpoint_t * p_ept);
 
+/**
+ * @brief Send data over an RPMsg endpoint (non-blocking, fire-and-forget).
+ *
+ * @param[in] ept  Pointer to the RPMsg endpoint.
+ * @param[in] data Pointer to the data buffer to send.
+ * @param[in] len  Length of data in bytes.
+ *
+ * @return 0 on success, negative value on error.
+ */
+uint8_t R_VIRTIO_SendData(struct rpmsg_endpoint *ept, const void *data, int len);
+
+/**
+ * @brief Dispatch an incoming request message to the appropriate driver handler.
+ *
+ * Called by the backend endpoint callback. Routes the message to the
+ * correct handler based on msg->hdr.driver_id.
+ *
+ * @param[in,out] msg Pointer to the virtio message. The handler writes
+ *                    its result into msg->hdr.status.
+ *
+ * @return Result code from the invoked driver handler.
+ */
+uint32_t VirtIO_driver_handler(st_virtio_msg_t *msg);
 #ifdef __cplusplus
 }
 #endif

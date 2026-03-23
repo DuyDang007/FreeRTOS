@@ -5,6 +5,9 @@
  *
  */
 
+/***********************************************************************************************************************
+ * Includes
+ **********************************************************************************************************************/
 #include <openamp/open_amp.h>
 #include <openamp/version.h>
 #include <metal/alloc.h>
@@ -19,6 +22,9 @@
 #include "virtio-iommu-frontend/r_virtio_iommu_frontend.h"
 #include "r_virtio_iommu.h"
 
+/***********************************************************************************************************************
+ * Macro definitions
+ **********************************************************************************************************************/
 #define RPMSG_SERV_NAME "virtio-iommu"
 
 #define RSC_MEM_PA_OFFSET           0x0000UL
@@ -76,22 +82,17 @@ int R_VIRTIO_IOMMU_DeInit(void)
 
 int R_VIRTIO_IOMMU_Attach(st_smmu_streamid_instance_ctrl_t *p_ctrl)
 {
-    int ret;
-    st_virtio_msg_t msg;
-    const st_virtio_msg_t *p_msg = &msg;
-    msg.driver_id = VIRTIO_SMMU_ID;
-    st_virtio_smmu_payload_req_t smmu_req = {
-        .type = VIRTIO_IOMMU_T_ATTACH,
-        .p_ctrl = {
-            .stream_id = p_ctrl->stream_id,
-            .smmu_domain = p_ctrl->smmu_domain,
-            .is_secure = p_ctrl->is_secure,
-        },
-    };
+    st_virtio_msg_t req  = {0};
+    st_virtio_msg_t resp = {0};
+    virtio_iommu_frontend_instance_ctrl_t *p_virtio_fe = (virtio_iommu_frontend_instance_ctrl_t *)p_ctrl->p_context;
+    req.hdr.driver_id = (uint8_t)VIRTIO_SMMU_ID;
 
-    memcpy(msg.payload, &smmu_req, sizeof(st_virtio_smmu_payload_req_t));
-
-    ret = rpmsg_send(lept, p_msg, sizeof(st_virtio_msg_t));
+    st_virtio_smmu_payload_req_t *smmu = (st_virtio_smmu_payload_req_t *)req.payload;
+    smmu->type = VIRTIO_IOMMU_T_ATTACH;
+    /* Use memcpy to copy p_ctrl because some members may be const-qualified */
+    memcpy(&smmu->p_ctrl, p_ctrl, sizeof(st_smmu_streamid_instance_ctrl_t));
+    
+    int ret = R_VIRTIO_SendData(lept, &req, sizeof(st_virtio_msg_t));
 
     return 0;
 }
@@ -99,78 +100,62 @@ int R_VIRTIO_IOMMU_Attach(st_smmu_streamid_instance_ctrl_t *p_ctrl)
 int R_VIRTIO_IOMMU_Map(st_smmu_streamid_instance_ctrl_t *p_ctrl,
                         uint64_t va, uint64_t pa, uint64_t size, uint64_t attr)
 {
-    int ret;
-    st_virtio_msg_t msg;
-    const st_virtio_msg_t *p_msg = &msg;
-    msg.driver_id = VIRTIO_SMMU_ID;
-    st_virtio_smmu_payload_req_t smmu_req = {
-        .type = VIRTIO_IOMMU_T_MAP,
-        .p_ctrl = {
-            .stream_id = p_ctrl->stream_id,
-            .smmu_domain = p_ctrl->smmu_domain,
-            .is_secure = p_ctrl->is_secure,
-        },
-    };
+    st_virtio_msg_t req  = {0};
+    st_virtio_msg_t resp = {0};
+    virtio_iommu_frontend_instance_ctrl_t *p_virtio_fe = (virtio_iommu_frontend_instance_ctrl_t *)p_ctrl->p_context;
 
-    msg.driver_id = VIRTIO_SMMU_ID;
-    smmu_req.type = VIRTIO_IOMMU_T_MAP;
-    smmu_req.va = va;
-    smmu_req.pa = pa;
-    smmu_req.size = size;
-    smmu_req.attr = attr;
+    req.hdr.driver_id = (uint8_t)VIRTIO_SMMU_ID;
 
-    memcpy(msg.payload, &smmu_req, sizeof(st_virtio_smmu_payload_req_t));
-
-    ret = rpmsg_send(lept, p_msg, sizeof(st_virtio_msg_t));
+    st_virtio_smmu_payload_req_t *smmu = (st_virtio_smmu_payload_req_t *)req.payload;
+    smmu->type = VIRTIO_IOMMU_T_MAP;
+    /* Use memcpy to copy p_ctrl because some members may be const-qualified */
+    memcpy(&smmu->p_ctrl, p_ctrl, sizeof(st_smmu_streamid_instance_ctrl_t));
+    smmu->va   = va;
+    smmu->pa   = pa;
+    smmu->size = size;
+    smmu->attr = attr;
+    
+    int ret = R_VIRTIO_SendData(lept, &req, sizeof(st_virtio_msg_t));
 
     return 0;
 }
 
 int R_VIRTIO_IOMMU_UnMap(st_smmu_streamid_instance_ctrl_t *p_ctrl,
-                        uint64_t va, uint64_t pa, uint64_t size)
+                          uint64_t va, uint64_t pa, uint64_t size)
 {
-    int ret;
-    st_virtio_msg_t msg;
-    msg.driver_id = VIRTIO_SMMU_ID;
-    st_virtio_smmu_payload_req_t smmu_req = {
-        .type = VIRTIO_IOMMU_T_UNMAP,
-        .p_ctrl = {
-            .stream_id = p_ctrl->stream_id,
-            .smmu_domain = p_ctrl->smmu_domain,
-            .is_secure = p_ctrl->is_secure,
-        },
-    };
+    st_virtio_msg_t req  = {0};
+    st_virtio_msg_t resp = {0};
+    virtio_iommu_frontend_instance_ctrl_t *p_virtio_fe = (virtio_iommu_frontend_instance_ctrl_t *)p_ctrl->p_context;
 
-    msg.driver_id = VIRTIO_SMMU_ID;
-    smmu_req.type = VIRTIO_IOMMU_T_UNMAP;
-    smmu_req.va = va;
-    smmu_req.pa = pa;
-    smmu_req.size = size;
+    req.hdr.driver_id = (uint8_t)VIRTIO_SMMU_ID;
 
-    memcpy(msg.payload, &smmu_req, sizeof(st_virtio_smmu_payload_req_t));
+    st_virtio_smmu_payload_req_t *smmu = (st_virtio_smmu_payload_req_t *)req.payload;
+    smmu->type = VIRTIO_IOMMU_T_UNMAP;
+    /* Use memcpy to copy p_ctrl because some members may be const-qualified */
+    memcpy(&smmu->p_ctrl, p_ctrl, sizeof(st_smmu_streamid_instance_ctrl_t));
+    smmu->va   = va;
+    smmu->pa   = pa;
+    smmu->size = size;
 
-    ret = rpmsg_send(lept, (const void*)&msg, sizeof(st_virtio_msg_t));
+    int ret = R_VIRTIO_SendData(lept, &req, sizeof(st_virtio_msg_t));
 
     return 0;
 }
 
 int R_VIRTIO_IOMMU_Detach(st_smmu_streamid_instance_ctrl_t *p_ctrl)
 {
-    int ret;
-    st_virtio_msg_t msg;
-    msg.driver_id = VIRTIO_SMMU_ID;
-    st_virtio_smmu_payload_req_t smmu_req = {
-        .type = VIRTIO_IOMMU_T_DETACH,
-        .p_ctrl = {
-            .stream_id = p_ctrl->stream_id,
-            .smmu_domain = p_ctrl->smmu_domain,
-            .is_secure = p_ctrl->is_secure,
-        },
-    };
+    st_virtio_msg_t req  = {0};
+    st_virtio_msg_t resp = {0};
+    virtio_iommu_frontend_instance_ctrl_t *p_virtio_fe = (virtio_iommu_frontend_instance_ctrl_t *)p_ctrl->p_context;
 
-    memcpy(msg.payload, &smmu_req, sizeof(st_virtio_smmu_payload_req_t));
+    req.hdr.driver_id = (uint8_t)VIRTIO_SMMU_ID;
 
-    ret = rpmsg_send(lept, (const void*)&msg, sizeof(st_virtio_msg_t));
+    st_virtio_smmu_payload_req_t *smmu = (st_virtio_smmu_payload_req_t *)req.payload;
+    smmu->type = VIRTIO_IOMMU_T_DETACH;
+    /* Use memcpy to copy p_ctrl because some members may be const-qualified */
+    memcpy(&smmu->p_ctrl, p_ctrl, sizeof(st_smmu_streamid_instance_ctrl_t));
+
+    int ret = R_VIRTIO_SendData(lept, &req, sizeof(st_virtio_msg_t));
 
     return 0;
 }
@@ -190,7 +175,7 @@ static int rpmsg_endpoint_cb(struct rpmsg_endpoint *ept, void *data, size_t len,
 
 static void rpmsg_service_unbind(struct rpmsg_endpoint *ept)
 {
-	(void)ept;
+    (void)ept;
 }
 
 
