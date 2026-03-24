@@ -182,14 +182,14 @@ void R_WWDT_Init(wwdt_unit_t unit, wwdt_wsize_t wsize, uint32_t timeout_msec, bo
                printf("Error: Failed to DeassertReset clock id %d.\r\n", clock_id_1);
 
 	clk_rate = (wwdt_base_addr == 0xC1380000) ? CLK_LSIOSC : RCLK;
-	val = r_wwdt_read(wwdt_base_addr + WDTA0MD);
+	val = r_wwdt_read8(wwdt_base_addr + WDTA0MD);
 	if (!err_mode)
 		val &= ~WDTA0ERM;
 	val |= WDTA0OVF(TIMEOUT_TO_X(timeout_msec, wwdt_base_addr)) | WSIZE(wsize);
 	if (irq_75p)
 		val |= WDTA0WIE;
 
-	r_wwdt_write(wwdt_base_addr + WDTA0MD, val);
+	r_wwdt_write8(wwdt_base_addr + WDTA0MD, val);
 
 	/* Enable Generating internal reset when WWDT overflow */
 	r_wwdt_write(RST_DM0_BASE + RST_RESKCPROT0, RST_KCPROT_DIS);
@@ -202,7 +202,7 @@ uint32_t R_WWDT_Refresh(wwdt_unit_t unit)
 	uintptr_t wwdt_base_addr = R_WWDT_PRV_GetRegbase(unit);
 
 	r_wdt_wait_cycles(3);
-	r_wwdt_write(wwdt_base_addr + WDTA0WDTE, WDTA0RUN);
+	r_wwdt_write8(wwdt_base_addr + WDTA0WDTE, WDTA0RUN);
 
 	return 0;
 }

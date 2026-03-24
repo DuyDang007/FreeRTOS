@@ -51,6 +51,8 @@
 
 uintptr_t R_WWDT_PRV_GetRegbase(wwdt_unit_t unit);
 void r_wwdt_write(uintptr_t Addr, uint32_t val);
+void r_wwdt_write8(uintptr_t Addr, uint8_t val);
 uint32_t r_wwdt_read(uintptr_t Addr);
+uint8_t r_wwdt_read8(uintptr_t Addr);
 
 #endif /* R_WWDT_REGS_H_ */
