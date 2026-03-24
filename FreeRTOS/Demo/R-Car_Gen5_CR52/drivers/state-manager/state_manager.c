@@ -221,7 +221,7 @@ int R_StateManager_Init(void)
 	uint32_t attributes;
 
     if (initialized) {
-        SM_LOG_INFO("State Manager is initialized already!\r\n");
+        SCMI_LOG_INFO("State Manager is initialized already!\r\n");
         return 0;
     }
 
@@ -236,7 +236,7 @@ int R_StateManager_Init(void)
 		SM_LOG_ERR("Error: Failed to get scmi base protocol version.\r\n");
 		return ret;
 	}
-	SM_LOG_INFO("SCMI protocol version=0x%x", version);
+	SCMI_LOG_INFO("SCMI protocol version=0x%x", version);
 
 	ret = scmi_power_protocol_attributes(&attributes);
 	if (ret) {
@@ -244,7 +244,7 @@ int R_StateManager_Init(void)
 		return ret;
 	}
 	max_powerdomain_num = attributes;
-	SM_LOG_INFO("Number of supported power domains: %d", max_powerdomain_num);
+	SCMI_LOG_INFO("Number of supported power domains: %d", max_powerdomain_num);
 
 	ret = scmi_clock_protocol_attributes(&attributes);
 	if (ret) {
@@ -252,7 +252,7 @@ int R_StateManager_Init(void)
 		return ret;
 	}
 	max_clockdomain_num = attributes;
-	SM_LOG_INFO("Number of supported clock domains: %d", max_clockdomain_num);
+	SCMI_LOG_INFO("Number of supported clock domains: %d", max_clockdomain_num);
 
 	ret = scmi_reset_protocol_attributes(&attributes);
 	if (ret) {
@@ -260,7 +260,7 @@ int R_StateManager_Init(void)
 		return ret;
 	}
 	max_resetdomain_num = attributes;
-	SM_LOG_INFO("Number of supported reset domains: %d", max_resetdomain_num);
+	SCMI_LOG_INFO("Number of supported reset domains: %d", max_resetdomain_num);
 
 	ret = scmi_system_request_notify(true);
 	if (ret) {
