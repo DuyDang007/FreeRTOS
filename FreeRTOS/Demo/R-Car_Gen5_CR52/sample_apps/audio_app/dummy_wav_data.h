@@ -8,8 +8,13 @@
 #ifndef _DUMMY_WAV_DATA
 #define _DUMMY_WAV_DATA
 #include <string.h>
+#include <board.h>
 
-#define REPEAT_TIME 15 // sec
+#if (BOARD == X5H_RFS2)
+    #define REPEAT_TIME 1 // sec
+#else
+    #define REPEAT_TIME 15 // sec
+#endif
 
 #define WAV_HEADER_SIZE 44
 #define WAV_LEN     480
