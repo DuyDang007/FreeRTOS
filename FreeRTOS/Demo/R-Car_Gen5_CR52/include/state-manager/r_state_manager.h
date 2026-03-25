@@ -16,7 +16,7 @@ extern "C" {
 #include <stdbool.h>
 
 /**
- * @defgroup State_Manager Module
+ * @defgroup State_Manager State Manager Module
  * @{
  * @brief This module provides typedef to configure State Manager.
  *
@@ -28,7 +28,7 @@ extern "C" {
  */
 
 /**
- * @brief Power States.
+ * @brief Reset Domain Status.
  */
 typedef enum 
 {

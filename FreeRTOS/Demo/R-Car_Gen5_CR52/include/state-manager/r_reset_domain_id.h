@@ -14,9 +14,16 @@ extern "C" {
 #endif
 
 /**
- * @brief X5H Reset Domain ID.
+ * @defgroup X5H_Reset_Domain_ID X5H Reset Domain ID
+ * @{
+ * @brief This module provides typedef of X5H Reset Domain ID.
+ *
+ * The full list of X5H Reset Domain IDs is defined in SCP Firmware. Only reference this enum for compatibility with the driver interface.
  */
 
+/**
+ * @brief X5H Reset Domain ID.
+ */
 typedef enum {
     X5H_RESET_DOMAIN_ID_VIPN_FCPCS0,
     X5H_RESET_DOMAIN_ID_VIPN_FCPCS1,
@@ -839,6 +846,6 @@ typedef enum {
 #ifdef __cplusplus
 }
 #endif
-
+/** @} */ // end of X5H_Reset_Domain_ID
 #endif /* _R_RESET_DOMAIN_ID_H_ */
 

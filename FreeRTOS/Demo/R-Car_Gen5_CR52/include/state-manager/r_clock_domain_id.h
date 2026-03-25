@@ -14,9 +14,16 @@ extern "C" {
 #endif
 
 /**
- * @brief X5H Clock Domain ID.
+ * @defgroup X5H_Clock_Domain_ID X5H Clock Domain ID
+ * @{
+ * @brief Clock domain ID list for X5H platform.
+ *
+ * The full list of clock IDs is defined in SCP Firmware. Only reference this enum for compatibility with the driver interface.
  */
 
+/**
+* @brief X5H Clock Domain ID.
+*/
 typedef enum {
     X5H_CLOCK_ID_MDLC_VIPN_FCPCS0,
     X5H_CLOCK_ID_MDLC_VIPN_FCPCS1,
@@ -1721,6 +1728,6 @@ typedef enum {
 #ifdef __cplusplus
 }
 #endif
-
+/** @} */  /* end of X5H_Clock_Domain_ID */
 #endif /* _R_CLOCK_ID_H_ */
 

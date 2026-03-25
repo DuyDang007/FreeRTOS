@@ -10,10 +10,11 @@
 #define _R_POWER_DOMAIN_ID_H_
 
 /**
- * @defgroup Power_Domain_ID enum
+ * @defgroup X5H_Power_Domain_ID X5H Power Domain ID
  * @{
  * @brief This module provides typedef of Power Domain ID.
  *
+ * The full list of Power Domain IDs is defined in SCP Firmware. Only reference this enum for compatibility with the driver interface.
  */
 
 #ifdef __cplusplus
@@ -286,7 +287,7 @@ typedef enum {
 }
 #endif
 
-/** @} */ // end of Power_Domain_ID
+/** @} */ // end of X5H_Power_Domain_ID
 
 #endif /* R_POWER_DOMAIN_ID_H */
 
