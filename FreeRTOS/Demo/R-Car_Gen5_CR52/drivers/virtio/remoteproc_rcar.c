@@ -8,7 +8,6 @@
 #include <metal/io.h>
 #include <openamp/remoteproc.h>
 #include "platform_rcar.h"
-#include "mfis.h"
 #include "FreeRTOS.h"
 
 /* prototype */

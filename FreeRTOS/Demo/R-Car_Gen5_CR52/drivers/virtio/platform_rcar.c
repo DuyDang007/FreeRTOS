@@ -10,7 +10,6 @@
 #include "FreeRTOS.h"
 #include "platform_rcar.h"
 #include "rsc_table.h"
-#include "mfis.h"
 #include <stdio.h>
 
 #include <openamp/remoteproc.h>

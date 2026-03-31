@@ -8,7 +8,7 @@
 #include <metal/io.h>
 #include <openamp/remoteproc.h>
 #include "platform_info.h"
-#include "mfis.h"
+#include "mfis/mfis.h"
 #include <stdio.h>
 #include "FreeRTOS.h"
 

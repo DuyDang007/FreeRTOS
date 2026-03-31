@@ -5,24 +5,10 @@
  *
  */
 
-#include "mfis.h"
+#include "mfis/mfis.h"
+#include "mfis_internal.h"
 #include "interrupts.h"
-
-/* MFIS */
-/* Sender: CR52 - Receiver: CA720 */
-#define MFIS_BASE   (0x18800000)
-#define IICR(i)     (MFIS_BASE + 0x1000 * (i))        // Common communication control register Sender core to Receiver core ch[i]
-#define EICR(i)     (MFIS_BASE + 0x1000 * (i) + 0x04) // Common communication control register Receiver core to Sender core ch[i]
-#define IMBR(i)     (MFIS_BASE + 0x1000 * (i) + 0x40) // Common communication message register Sender core to Receiver core ch[i]
-#define EMBR(i)     (MFIS_BASE + 0x1000 * (i) + 0x44) // Common communication message register Receiver core to Sender core ch[i]
-
-#define MFIS_UNLOCK_WRITE	(0x189e0900)
-
-/* Interrupt ID of MFIS, i=[0-63] */
-#define INTID_S_R(i)    (0x0056 + i * 2) // Common INTID ch[i] from Sender to Receiver, unused
-#define INTID_R_S(i)    (0x0057 + i * 2) // Common INTID ch[i] from Receiver to Sender
-#define MFIS_INTID(i,type)    (0x0057 + i * 2 - type) // Common INTID ch[i] from Sender to Receiver, unused
-
+#include "rcar_utils.h"
 /*--------------------------- MFIS Driver ---------------------------------*/
 
 /* Get interrupt source number of a channel */
@@ -147,4 +133,70 @@ int mfis_send_message(struct mfis_channel *ch, uint32_t value)
         *(volatile uint32_t *)EMBR(ch->ch) = value;
     }
     return 0;
+}
+
+e_mfis_lock_status_t R_MFIS_LockAcquire(e_mfis_lock_id_t mfis_id, uint32_t timeout)
+{
+    e_mfis_lock_status_t ret;
+    uint32_t timer_feq = R_UTILS_GetTimerFrequency();
+    uint64_t start;
+    uintptr_t mfis_lock_reg;
+
+    if (mfis_id < MFIS_LOCK_ID_0 || mfis_id >= MFIS_LOCK_ID_MAX_NUM) {
+        ret = MFIS_LOCK_ID_UNSUPPORTED;
+        return ret;
+    }
+
+    if (mfis_id < MFIS_LOCK_ID_8) {
+        mfis_lock_reg = MFIS_LOCK_0_7_BASE + mfis_id*4;
+    }
+    else {
+        mfis_lock_reg = MFIS_LOCK_8_63_BASE + mfis_id*4;
+    }
+
+    start = R_UTILS_GetTimerCounter();
+    while(1) {
+        if ( *(volatile uint32_t*)mfis_lock_reg == MFIS_LOCK_IS_ACQUIRED ) {
+            if ( (timeout == 0) ||
+                ((R_UTILS_GetTimerCounter() - start)*1000/timer_feq < timeout) )
+            {
+                continue;
+            }
+            else
+            {
+                ret = MFIS_LOCK_TIMEOUT;
+                break;
+            }
+        }
+        else {
+            ret = MFIS_LOCK_SUCCESS;
+            break;
+        }
+    }
+
+    return ret;
+}
+
+e_mfis_lock_status_t R_MFIS_LockRelease(e_mfis_lock_id_t mfis_id)
+{
+    e_mfis_lock_status_t ret;
+    uintptr_t mfis_lock_reg;
+
+    if (mfis_id < MFIS_LOCK_ID_0 || mfis_id >= MFIS_LOCK_ID_MAX_NUM) {
+        ret = MFIS_LOCK_ID_UNSUPPORTED;
+        return ret;
+    }
+
+    if (mfis_id < MFIS_LOCK_ID_8) {
+        mfis_lock_reg = MFIS_LOCK_0_7_BASE + mfis_id*4;
+    }
+    else {
+        mfis_lock_reg = MFIS_LOCK_8_63_BASE + mfis_id*4;
+    }
+
+    *(volatile uint32_t*)MFIS_UNLOCK_WRITE = 0xACCE0001;
+    *(volatile uint32_t*)mfis_lock_reg = MFIS_LOCK_RELEASE;
+    *(volatile uint32_t*)MFIS_UNLOCK_WRITE = 0xACC00000;
+
+    return MFIS_LOCK_SUCCESS;
 }

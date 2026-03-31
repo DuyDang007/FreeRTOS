@@ -11,7 +11,7 @@
 #include "FreeRTOS.h"
 #include "platform_info.h"
 #include "rsc_table.h"
-#include "mfis.h"
+#include "mfis/mfis.h"
 
 #define LPRINTF(format, ...) printf(format, ##__VA_ARGS__); vTaskDelay(10);
 

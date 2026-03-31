@@ -13,7 +13,7 @@
 #include <openamp/remoteproc.h>
 #include <openamp/virtio.h>
 #include <openamp/rpmsg.h>
-#include "mfis.h"
+#include "mfis/mfis.h"
 
 /* Cortex R52 memory attributes */
 #define DEVICE_SHARED       ((uint32_t)0x00000001U) /* device, shareable */
