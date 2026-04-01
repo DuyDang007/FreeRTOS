@@ -25,7 +25,9 @@ extern "C" {
  * Includes
  **********************************************************************************************************************/
 #include <stdint.h>
+#include <stdbool.h>
 #include "board.h"
+#include "mfis/mfis.h"
 
 /***********************************************************************************************************************
  * Macro definitions
@@ -122,6 +124,18 @@ int32_t R_SERIAL_Close();
  * @return int32_t 0 if success
  */
 int32_t R_SERIAL_SetLogState(e_log_state_t state);
+
+/**
+ * @brief Control synchronization for shared serial logging in AMP system.
+ *
+ * It's only effective when all cores using same port calling it.
+ *
+ * @param[in] lock_id   MFIS lock identifier.
+ * @param[in] sync      Enable or disable synchronization.
+ *
+ * @retval None
+ */
+void R_SERIAL_AMP_LogSync(e_mfis_lock_id_t lock_id, bool sync);
 
 #ifdef __cplusplus
 }

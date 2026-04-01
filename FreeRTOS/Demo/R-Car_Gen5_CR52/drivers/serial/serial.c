@@ -7,6 +7,7 @@
  
 #include <stdarg.h>
 #include <string.h>
+#include <stdbool.h>
 
 #include "FreeRTOS.h"
 #include "task.h"
@@ -15,7 +16,7 @@
 #include "CMSIS_5/cmsis_rcar_gen5.h"
 #include "scif.h"
 #include "serial/r_serial.h"
-
+#include "mfis/mfis.h"
 #include "pfc/r_pfc_api.h"
 
 #if (BOARD == X5H_VDK || BOARD == X5H_IRONHIDE || BOARD == X5H_RFS2)
@@ -70,25 +71,54 @@ static void uart_rcar_pfc_init(void);
 
 static int uart_set_pfc(e_serial_devices_t device);
 
+static bool log_sync = false;
+static e_mfis_lock_id_t mfis_lock_id = MFIS_LOCK_ID_MAX_NUM;
+
+#define UART_TIMEOUT 100
+
 int32_t R_SERIAL_PortInit(e_serial_devices_t device)
 {
 	int ret = 0;
-	if (!portInitialized)
-	{
-		//uart_rcar_pfc_init();
 
-		if(console_init(device) == 0)
-		{
-			portInitialized = true;
-		}
-		else
-		{
-			ret = -1;
-		}
-		
-	}
+    if (log_sync)
+    {
+        if (R_MFIS_LockAcquire(mfis_lock_id, UART_TIMEOUT) == MFIS_LOCK_SUCCESS) {
+            if (!portInitialized)
+            {
+                if(console_init(device) == 0)
+                {
+                    portInitialized = true;
+                }
+                else
+                {
+                    ret = -1;
+                }
+            }
 
-	ret = uart_set_pfc(device);
+            ret = uart_set_pfc(device);
+
+            R_MFIS_LockRelease(mfis_lock_id);
+        }
+        else {
+            ret = -1;
+        }
+    }
+    else
+    {
+        if (!portInitialized)
+        {
+            if(console_init(device) == 0)
+            {
+                portInitialized = true;
+            }
+            else
+            {
+                ret = -1;
+            }
+        }
+
+        ret = uart_set_pfc(device);
+    }
 
 	return ret;
 }
@@ -149,14 +179,33 @@ int32_t R_SERIAL_PutString(const unsigned char *buffer, unsigned short length)
 	if (!portInitialized)
         return -1;
 
-	/* Send each character in the string, one at a time. */
-	while (length--) {
-        if (*buffer == '\n')
-            console_putc('\r');
-        console_putc(*buffer);
-        buffer++;
-	}
+    if (log_sync)
+    {
+        if (R_MFIS_LockAcquire(mfis_lock_id, UART_TIMEOUT) == MFIS_LOCK_SUCCESS)
+        {
+            /* Send each character in the string, one at a time. */
+            while (length--) {
+                if (*buffer == '\n')
+                    console_putc('\r');
+                console_putc(*buffer);
+                buffer++;
+            }
 
+            R_MFIS_LockRelease(mfis_lock_id);
+        }
+        else {
+            return -1;
+        }
+    }
+    else
+    {
+        while (length--) {
+            if (*buffer == '\n')
+                console_putc('\r');
+            console_putc(*buffer);
+            buffer++;
+        }
+    }
 	return 0;
 }
 
@@ -170,8 +219,22 @@ int32_t R_SERIAL_GetChar(unsigned char *recv_char)
 
 int32_t R_SERIAL_PutChar(unsigned char send_char)
 {
-	console_putc(send_char);
-	return 0;
+    if (log_sync)
+    {
+        if (R_MFIS_LockAcquire(mfis_lock_id, UART_TIMEOUT) == MFIS_LOCK_SUCCESS)
+        {
+            console_putc(send_char);
+            R_MFIS_LockRelease(mfis_lock_id);
+        }
+        else {
+            return -1;
+        }
+    }
+    else
+    {
+        console_putc(send_char);
+    }
+    return 0;
 }
 
 int32_t R_SERIAL_Close(void)
@@ -186,15 +249,34 @@ int32_t R_SERIAL_SetLogState(e_log_state_t state)
 	return 0;
 }
 
+void R_SERIAL_AMP_LogSync(e_mfis_lock_id_t lock_id, bool sync)
+{
+    mfis_lock_id = lock_id;
+    log_sync = sync;
+}
+
 /* Override std C lib output for printf, fprintf */
 int _write(int file, char *ptr, int len)
 {
 	int i;
     (void) file;
 
-	for (i = 0; i < len; i++) {
-		outbyte(*ptr++);
-	}
+    if (log_sync)
+    {
+        if (R_MFIS_LockAcquire(mfis_lock_id, UART_TIMEOUT) == MFIS_LOCK_SUCCESS) {
+            for (i = 0; i < len; i++) {
+                outbyte(*ptr++);
+            }
+
+            R_MFIS_LockRelease(mfis_lock_id);
+        }
+    }
+    else
+    {
+        for (i = 0; i < len; i++) {
+            outbyte(*ptr++);
+        }
+    }
 
 	return len;
 }
@@ -228,9 +310,6 @@ int printf_delay(const char *format, ...)
 
 static void outbyte(char c)
 {
-	if (!portInitialized)
-		R_SERIAL_PortInit(UART_ID);
-
 	/* Standard practice to convert \n to \r\n */
 	if (c == '\n')
 		console_putc('\r');
