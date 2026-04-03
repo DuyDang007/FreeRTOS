@@ -117,7 +117,6 @@ int main( void )
         printf("Semaphore creation failed!\n");
     }
     else {
-        printf("UART Interrupt is ready - Please type to RX terminal for testing\n");
         xTaskCreate(UartIrqTriggerTask, "UartIrqTriggerTask", configMINIMAL_STACK_SIZE, NULL, configMAX_PRIORITIES - 1, NULL);
     }
 
@@ -153,8 +152,52 @@ static void prvLogTask( void *pvParameters )
     ( void ) pvParameters;
     unsigned char buffer[24] = "prvLogTask ...\n";
 
+    // --- TC 1: Support Log Test ---
+    printf("**********************************************\r\n");
+    printf("TEST CASE 1: Support log test\n");
+    printf(">>> TC1 PASS if you see this logs. <<<\r\n\n");
+
+    // --- TC 2: Disable Log Test ---
+    printf("**********************************************\r\n");
+    printf("TEST CASE 2: Silent console test\n");
+    printf("MSG: Unexpect log out below (Silent for 8s)\n");
+    
+    R_SERIAL_SetLogState(LOG_OFF);
+    for (int i = 0; i < 4; i++)
+    {
+        printf("This message should NOT appear. Test FAILED if you see this logs!\n");
+        vTaskDelay(2000);
+    }
+    R_SERIAL_SetLogState(LOG_ON);
+    printf(">>> Logs re-enabled. TC2 PASS if no messages leaked during silence time. <<<\n\n");
+
+    // --- TC 3: Multi-channel Test ---
+    printf("**********************************************\r\n");
+    printf("TEST CASE 3: Test multi channel\n");
+    printf("Switching to HSCIF0. Please update Terminal to 115200 baudrate on NEW COM\n");
+    
+    if (R_SERIAL_ReConfigure(HSCIF0) == 0) 
+    {
+        for (int i = 0; i < 12; i++) /* Loop provides sufficient time for user to switch COM port connection */
+        {
+            printf(">>> TC3 PASS if you see this logs. <<<\n");
+            vTaskDelay(1000);
+        }
+    }
+    else
+    {
+        for (int i = 0; i < 10; i++) /* Loop provides sufficient time for user to switch COM port connection */
+        {
+            printf(">>> TC3 failed. <<<\n");
+            vTaskDelay(1000);
+        }
+    }
+
+    R_SERIAL_ReConfigure(UART_ID); /* Restore console to default port for the main loop (SCIF1) */
+    printf("=== All Test Cases Completed. Returning to Default Console (SCIF1) ===\n");
     for( ;; )
     {
+        printf("\nUART Interrupt is ready - Please type to RX terminal for testing\n");
         R_SERIAL_PutString(buffer, sizeof(buffer));
         vTaskDelay(3000);
     }
