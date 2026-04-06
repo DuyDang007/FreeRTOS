@@ -269,6 +269,7 @@ typedef struct {
 } st_driver_group_t;
 
 static const st_driver_group_t all_drv_groups[] = {
+    {.module_id = MODULE_HSCIF0, .group = ADD_GROUP(hscif0_grp)},
     {.module_id = MODULE_SCIF0, .group = ADD_GROUP(scif0_grp)},
     {.module_id = MODULE_SCIF1, .group = ADD_GROUP(scif1_grp)},
     {.module_id = MODULE_I2C0,  .group = ADD_GROUP(i2c0_grp)},
@@ -632,6 +633,11 @@ int pfcInitModule(st_module_config_t module)
     uint8_t indx, grp, pin, fid;
     reg_pfc_t reg;
     const int * p_drv_grp = findGroupByModule(module);
+
+    if (p_drv_grp == NULL) {
+        printf("%s: no group found for module_id=%d\n", __func__, module.module_id);
+        return -1;
+    }
 
     for (indx = 0;;indx++)
     {
