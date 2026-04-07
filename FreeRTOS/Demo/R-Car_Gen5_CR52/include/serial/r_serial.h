@@ -137,6 +137,16 @@ int32_t R_SERIAL_SetLogState(e_log_state_t state);
  */
 void R_SERIAL_AMP_LogSync(e_mfis_lock_id_t lock_id, bool sync);
 
+/**
+ * @brief Reconfigures the serial hardware
+ * Directly updates console and PFC settings to allow dynamic port switching 
+ * (e.g., SCIF1 to HSCIF0) during runtime.
+ * 
+ * @param device Target serial device channel.
+ * @return int32_t 0 if successful.
+ */
+int32_t R_SERIAL_ReConfigure(e_serial_devices_t device);
+
 #ifdef __cplusplus
 }
 #endif

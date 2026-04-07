@@ -123,6 +123,17 @@ int32_t R_SERIAL_PortInit(e_serial_devices_t device)
 	return ret;
 }
 
+int32_t R_SERIAL_ReConfigure(e_serial_devices_t device)
+{
+	int ret = 0;
+
+	ret = console_init(device);
+	if (ret != 0) return ret;
+	
+	ret = uart_set_pfc(device);
+	return ret;
+}
+
 #if (BOARD == X5H_IRONHIDE)
 static int uart_set_pfc(e_serial_devices_t device)
 {
