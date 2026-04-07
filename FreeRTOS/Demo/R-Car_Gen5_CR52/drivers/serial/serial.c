@@ -82,42 +82,28 @@ int32_t R_SERIAL_PortInit(e_serial_devices_t device)
 
     if (log_sync)
     {
-        if (R_MFIS_LockAcquire(mfis_lock_id, UART_TIMEOUT) == MFIS_LOCK_SUCCESS) {
-            if (!portInitialized)
-            {
-                if(console_init(device) == 0)
-                {
-                    portInitialized = true;
-                }
-                else
-                {
-                    ret = -1;
-                }
-            }
-
-            ret = uart_set_pfc(device);
-
-            R_MFIS_LockRelease(mfis_lock_id);
+        if (R_MFIS_LockAcquire(mfis_lock_id, UART_TIMEOUT) != MFIS_LOCK_SUCCESS) {
+            return -1;
         }
-        else {
+    }
+
+    if (!portInitialized)
+    {
+        if(console_init(device) == 0)
+        {
+            portInitialized = true;
+        }
+        else
+        {
             ret = -1;
         }
     }
-    else
-    {
-        if (!portInitialized)
-        {
-            if(console_init(device) == 0)
-            {
-                portInitialized = true;
-            }
-            else
-            {
-                ret = -1;
-            }
-        }
 
-        ret = uart_set_pfc(device);
+    ret = uart_set_pfc(device);
+
+    if (log_sync)
+    {
+        R_MFIS_LockRelease(mfis_lock_id);
     }
 
 	return ret;
@@ -192,31 +178,25 @@ int32_t R_SERIAL_PutString(const unsigned char *buffer, unsigned short length)
 
     if (log_sync)
     {
-        if (R_MFIS_LockAcquire(mfis_lock_id, UART_TIMEOUT) == MFIS_LOCK_SUCCESS)
+        if (R_MFIS_LockAcquire(mfis_lock_id, UART_TIMEOUT) != MFIS_LOCK_SUCCESS)
         {
-            /* Send each character in the string, one at a time. */
-            while (length--) {
-                if (*buffer == '\n')
-                    console_putc('\r');
-                console_putc(*buffer);
-                buffer++;
-            }
-
-            R_MFIS_LockRelease(mfis_lock_id);
-        }
-        else {
             return -1;
         }
     }
-    else
-    {
-        while (length--) {
-            if (*buffer == '\n')
-                console_putc('\r');
-            console_putc(*buffer);
-            buffer++;
-        }
+
+    /* Send each character in the string, one at a time. */
+    while (length--) {
+        if (*buffer == '\n')
+            console_putc('\r');
+        console_putc(*buffer);
+        buffer++;
     }
+
+    if (log_sync)
+    {
+        R_MFIS_LockRelease(mfis_lock_id);
+    }
+
 	return 0;
 }
 
@@ -232,19 +212,19 @@ int32_t R_SERIAL_PutChar(unsigned char send_char)
 {
     if (log_sync)
     {
-        if (R_MFIS_LockAcquire(mfis_lock_id, UART_TIMEOUT) == MFIS_LOCK_SUCCESS)
+        if (R_MFIS_LockAcquire(mfis_lock_id, UART_TIMEOUT) != MFIS_LOCK_SUCCESS)
         {
-            console_putc(send_char);
-            R_MFIS_LockRelease(mfis_lock_id);
-        }
-        else {
             return -1;
         }
     }
-    else
+
+    console_putc(send_char);
+
+    if (log_sync)
     {
-        console_putc(send_char);
+        R_MFIS_LockRelease(mfis_lock_id);
     }
+
     return 0;
 }
 
@@ -274,22 +254,21 @@ int _write(int file, char *ptr, int len)
 
     if (log_sync)
     {
-        if (R_MFIS_LockAcquire(mfis_lock_id, UART_TIMEOUT) == MFIS_LOCK_SUCCESS) {
-            for (i = 0; i < len; i++) {
-                outbyte(*ptr++);
-            }
-
-            R_MFIS_LockRelease(mfis_lock_id);
+        if (R_MFIS_LockAcquire(mfis_lock_id, UART_TIMEOUT) != MFIS_LOCK_SUCCESS) {
+            return -1;
         }
     }
-    else
+
+    for (i = 0; i < len; i++) {
+        outbyte(*ptr++);
+    }
+
+    if (log_sync)
     {
-        for (i = 0; i < len; i++) {
-            outbyte(*ptr++);
-        }
+        R_MFIS_LockRelease(mfis_lock_id);
     }
 
-	return len;
+    return len;
 }
 
 int printf_raw(const char *format, ...)
