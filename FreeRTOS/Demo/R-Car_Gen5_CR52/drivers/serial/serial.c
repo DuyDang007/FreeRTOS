@@ -16,7 +16,6 @@
 #include "CMSIS_5/cmsis_rcar_gen5.h"
 #include "scif.h"
 #include "serial/r_serial.h"
-#include "mfis/mfis.h"
 #include "pfc/r_pfc_api.h"
 
 #if (BOARD == X5H_VDK || BOARD == X5H_IRONHIDE || BOARD == X5H_RFS2)

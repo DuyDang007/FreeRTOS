@@ -27,7 +27,7 @@ extern "C" {
 #include <stdint.h>
 #include <stdbool.h>
 #include "board.h"
-#include "mfis/mfis.h"
+#include "mfis/mfis_lock.h"
 
 /***********************************************************************************************************************
  * Macro definitions

@@ -6,6 +6,7 @@
  */
 
 #include "mfis/mfis.h"
+#include "mfis/mfis_lock.h"
 #include "mfis_internal.h"
 #include "interrupts.h"
 #include "rcar_utils.h"
