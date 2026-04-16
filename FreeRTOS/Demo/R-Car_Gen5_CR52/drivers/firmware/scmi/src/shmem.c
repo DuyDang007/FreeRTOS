@@ -87,7 +87,7 @@ int scmi_shmem_read_message(const struct scmi_dev *shmem,
 		return -EINVAL;
 	}
 
-	if (cfg->size < (sizeof(*layout) + msg->len)) {
+	if (cfg->size < msg->len) {
 		SCMI_LOG_ERR("message doesn't fit in shmem area");
 		return -EINVAL;
 	}
