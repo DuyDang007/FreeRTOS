@@ -34,7 +34,8 @@ static int rpmsg_endpoint_cb(struct rpmsg_endpoint *ept, void *data, size_t len,
                               uint32_t src, void *priv)
 {
     int32_t ret = RPMSG_SUCCESS;
-    const char *msg = data;
+    /* cppcheck-suppress misra-c2012-11.5 */
+    const char *msg = (const char *)data;
 
     (void)priv;
     (void)src;
