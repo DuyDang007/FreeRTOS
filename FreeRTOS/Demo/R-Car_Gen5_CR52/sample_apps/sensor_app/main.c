@@ -213,17 +213,30 @@ static void sensorAppExample(void)
 
     /* SENSOR_CONFIG_SET */
     sensor_id = 0;
-    uint32_t sensor_config = 0x0001;
+    uint32_t sensor_config = 1;
     error_flag = 0;
+    struct scmi_sensor_config sensor_config_get = {0};
+    // sensor_config = SENSOR_CONFIG_SET_STATE_MASK | SENSOR_CONFIG_SET_TIMESTAMP_MASK | ( 0x23000000 & SENSOR_CONFIG_SET_SEC_MASK);
     SENSOR_LOG("*******TC%d: SCMI Sensor config setting starting*******", ++tc_number);
     for (uint8_t i = 0; i < protocol_attr.num_sensors; i ++){
+        sensor_config_get.enabled = 0;
+        sensor_config_get.timestamped = 0;
+        sensor_config_get.update_interval.sec = 0;
+        sensor_config_get.update_interval.exponent = 0;
         sensor_id = i;
         ret = scmi_sensor_config_set(sensor_id, sensor_config);
         if (ret != SCMI_SUCCESS) {
-            SENSOR_LOG("Error: Failed to set SCMI Sensor config.");
+            SENSOR_LOG("Error: Failed to set SCMI Sensor config. return error is %d", ret);
             error_flag++;
         } else{
             SENSOR_LOG("SCMI Sensor %d setting: 0x%x ",i, ret);
+            ret = scmi_sensor_config_get(sensor_id, &sensor_config_get);
+            if (ret != SCMI_SUCCESS){
+                SENSOR_LOG("Error: Failed to retrieve SCMI Sensor config after setting.");
+                error_flag++;
+            } else{
+                SENSOR_LOG("SCMI Sensor %d configuration is: 0x%x ",i, sensor_config_get);
+            }
         }
     }
     if (error_flag != 0){
@@ -238,13 +251,12 @@ static void sensorAppExample(void)
     uint8_t async_read = 0;
     struct scmi_sensor_reading_desc out_desc = {0};
     size_t out_cap1 = 10;
-    struct scmi_sensor_reading_get_info info = {0};
     error_flag = 0;
     int32_t temp_mc = 0;
     SENSOR_LOG("*******TC%d: SCMI Sensor reading starting*******", ++tc_number);
     for (uint8_t i = 0; i < protocol_attr.num_sensors; i ++){
         sensor_id = i;
-        ret = scmi_sensor_reading_get(i, async_read, &out_desc, out_cap1, &info);
+        ret = scmi_sensor_reading_get(i, async_read, &out_desc, out_cap1); // &info);
         if (ret != SCMI_SUCCESS) {
             SENSOR_LOG("Error: Failed to read SCMI Sensor.\r\n");
             error_flag++;
@@ -253,7 +265,6 @@ static void sensorAppExample(void)
             SENSOR_LOG("SCMI Sensor %d, sensor_value_high: 0x%x ", sensor_id, out_desc.sensor_value_high);
             SENSOR_LOG("SCMI Sensor %d, timestamp_low: 0x%x ", sensor_id, out_desc.timestamp_low);
             SENSOR_LOG("SCMI Sensor %d, timestamp_high: 0x%x ", sensor_id, out_desc.timestamp_high);
-            SENSOR_LOG("SCMI Sensor %d, readings_copied: 0x%x ", sensor_id, info.readings_copied);
             /* Self read thermal sensor to compare sensor value */
             temp_mc = 0;
             ret = read_thermal_sensor(sensor_id, &temp_mc);

@@ -5,6 +5,9 @@
  * SPDX-License-Identifier: MIT
  */
 
+/*********************************************/
+/* Include */
+/*********************************************/
 #include <string.h>
 #include "scmi/inc/protocol.h"
 #include "scmi/inc/util.h"
@@ -15,38 +18,39 @@
 
 SCMI_PROTOCOL_DEFINE_NODEV(SCMI_PROTOCOL_SENSOR, NULL);
 
-#define SCMI_SENSOR_TP_ID_SHIFT   4u
-#define SCMI_SENSOR_TP_ID_MASK    (0xFFu << SCMI_SENSOR_TP_ID_SHIFT) /* bits[11:4] */
-#define SCMI_SENSOR_TP_EV_MASK    0x3u                               /* bits[1:0] */
+/*********************************************/
+/* Macro */
+/*********************************************/
+/* Definitions for SENSOR_TRIP_POINT_CONFIG */
+#define SCMI_SENSOR_TP_ID_SHIFT   4u /* Position of trip_point_id */
+#define SCMI_SENSOR_TP_ID_MASK    (0xFFu << SCMI_SENSOR_TP_ID_SHIFT) /* Mask of trip_point_id */
+#define SCMI_SENSOR_TP_EV_MASK    0x3u                               /* Mask of event control for the trip-point */
 
-#define SCMI_SENSOR_CONFIG_ENABLE_BIT        (1u << 0)  /* bit[0] */
-#define SCMI_SENSOR_CONFIG_TIMESTAMP_BIT     (1u << 1)  /* bit[1] */
+/* Definitions for SENSOR_CONFIG_GET */
+#define SCMI_SENSOR_CONFIG_UPD_SHIFT         11u /* Position of sensor_update_interval */
+#define SCMI_SENSOR_CONFIG_UPD_MASK          (0xFFFFFu << SCMI_SENSOR_CONFIG_UPD_SHIFT) /* Mask of sensor_update_interval */
+#define SCMI_SENSOR_CONFIG_ENABLE_BIT        (1u << 0)  /* Position of Sensor State */
+#define SCMI_SENSOR_CONFIG_TIMESTAMP_BIT     (1u << 1)  /* Position of Timestamp reporting */
 
-#define SCMI_SENSOR_CONFIG_UPD_SHIFT         11u
-#define SCMI_SENSOR_CONFIG_UPD_MASK          (0xFFFFFu << SCMI_SENSOR_CONFIG_UPD_SHIFT) /* bits[31:11] */
+/* Definitions for SENSOR_CONFIG_SET */
+#define SCMI_SENSOR_CONFIG_RESERVED_MASK     (0x7Fu << 2) /* Mask of reserved bits in sensor_config */
 
-/* sensor_config bits per spec */
-#define SCMI_SENSOR_CONFIG_ENABLE_BIT        (1u << 0)  /* bit[0] */
-#define SCMI_SENSOR_CONFIG_TIMESTAMP_BIT     (1u << 1)  /* bit[1] */
+/* Definitions for SENSOR_READING_GET */
+#define SCMI_SENSOR_READING_GET_ASYNC_BIT   (1u << 0) /* Position of Async flag */
 
-/* Update interval bits[31:11] */
-#define SCMI_SENSOR_CONFIG_UPD_SHIFT         11u
-#define SCMI_SENSOR_CONFIG_UPD_MASK          (0xFFFFFu << SCMI_SENSOR_CONFIG_UPD_SHIFT)
+/* Definitions for SENSOR_ DESCRIPTION_GET */
+#define SCMI_SENS_ATTR_LOW_EXT_ATTRS_BIT      (1u << 8) /* Position of Extended attributes support in sensor_attributes_low */
+#define SCMI_SENS_ATTR_HIGH_AXIS_SUPP_BIT     (1u << 8) /* Position of Axis support in sensor_attributes_high */
 
-#define SCMI_SENSOR_CONFIG_RESERVED_MASK     (0x7Fu << 2) /* bits[8:2] */
-
-#define SCMI_SENSOR_READING_GET_ASYNC_BIT   (1u << 0)
-
-/* attr_low bit definitions */
-#define SCMI_SENS_ATTR_LOW_EXT_ATTRS_BIT      (1u << 8)
-
-/* attr_high bit definitions */
-#define SCMI_SENS_ATTR_HIGH_AXIS_SUPP_BIT     (1u << 8)
-
+/*********************************************/
+/* Struct */
+/*********************************************/
+/* Message response structure, only contains status */
 struct scmi_msg_resp_status_only {
     int32_t status;
 };
 
+/* Message response structure of PROTOCOL_ATTRIBUTES */
 struct scmi_msg_resp_sensor_protocol_attributes {
     int32_t  status;
     uint32_t attributes;
@@ -55,50 +59,56 @@ struct scmi_msg_resp_sensor_protocol_attributes {
     uint32_t sensor_reg_len;
 };
 
+/* Message response structure of PROTOCOL_MESSAGE_ATTRIBUTES */
 struct scmi_msg_resp_protocol_message_attributes {
     int32_t  status;
     uint32_t attributes;
 };
 
+/* Message response structure of SENSOR_ DESCRIPTION_GET */
 struct scmi_msg_resp_sensor_description_get_hdr {
     int32_t  status;
     uint32_t num_sensor_flags;
     /* Followed by SENSOR_DESC desc[N] */
 };
 
-struct scmi_sensor_axis_desc_get_info {
-    uint8_t  num_returned;      /* num_axis_flags[5:0] */
-    uint8_t  num_remaining;     /* num_axis_flags[31:26] */
-    size_t   desc_bytes_copied; /* bytes copied to desc_buf */
-};
-
-struct scmi_msg_resp_sensor_axis_description_get_hdr {
-    int32_t  status;
-    uint32_t num_axis_flags;
-    /* Followed by SENSOR_AXIS_DESC desc[N] */
-};
-
+/* Message response structure of SENSOR_CONFIG_GET */
 struct scmi_msg_resp_sensor_config_get {
     int32_t  status;
     uint32_t sensor_config;
 };
 
+/* Message response structure of SENSOR_READING_GET */
 struct scmi_msg_resp_sensor_reading_get_hdr {
     int32_t status;
     /* Followed by SENSOR_READING readings[N] */
 };
 
+/*********************************************/
+/* Local declaration */
+/*********************************************/
+/* Get uint32_t value as little-endian at given address */
 static inline uint32_t scmi_get_le32(const void *p);
-static inline int scmi_s5_to_s32(uint32_t v5);
+
+/* Check Extended attributes support in SENSOR_ DESCRIPTION_GET */
 static inline uint8_t scmi_sensor_desc_ext_attrs_supported(uint32_t attr_low);
+
+/* Check Axis support in SENSOR_ DESCRIPTION_GET */
 static inline uint8_t scmi_sensor_desc_axis_supported(uint32_t attr_high);
-static inline int8_t scmi_twos_comp_s5(uint32_t v5);
+
+/* Decode sensor_update_interval in SENSOR_CONFIG_GET*/
 static inline struct scmi_sensor_update_interval scmi_sensor_interval_decode(uint32_t raw);
+
+/* Pack trip_point_ev_ctrl in SENSOR_TRIP_POINT_CONFIG */
 static inline uint32_t scmi_sensor_tp_ev_ctrl_pack(uint8_t trip_point_id,
                            enum scmi_sensor_trip_point_event_ctrl ctrl);
-static inline void scmi_sensor_config_decode(uint32_t raw, struct scmi_sensor_config *out);
-static inline int scmi_sensor_config_set_validate(uint32_t sensor_config);
 
+/* Decode sensor_config in SENSOR_CONFIG_GET */
+static inline void scmi_sensor_config_decode(uint32_t raw, struct scmi_sensor_config *out);
+
+/*********************************************/
+/* Public function */
+/*********************************************/
 int scmi_sensor_protocol_version_get(uint32_t *version)
 {
     struct scmi_protocol *proto = &SCMI_PROTOCOL_NAME(SCMI_PROTOCOL_SENSOR);
@@ -251,8 +261,8 @@ int scmi_sensor_description_get(uint32_t desc_index,
     uint32_t req;
     int ret;
     uint8_t desc_size = 52; /* descriptor size: base 28 + power 4 + (resolution 4 + min 8 + max 8) = 52 */
-    uint32_t max_cap = 0;
     const uint32_t sizeof_scmi_shmem_layout = 28;
+    const uint32_t max_cap = X5H_SCMI_SHMEM_SIZE - sizeof_scmi_shmem_layout;
 
     if (!out || out_cap == 0u || !page) {
         return -EINVAL;
@@ -271,9 +281,8 @@ int scmi_sensor_description_get(uint32_t desc_index,
     size_t rx_len = sizeof(struct scmi_msg_resp_sensor_description_get_hdr) +
                     (desc_size * out_cap);
 
-    max_cap = X5H_SCMI_SHMEM_SIZE - sizeof_scmi_shmem_layout;
-    if (rx_len > X5H_SCMI_SHMEM_SIZE) {
-        rx_len = X5H_SCMI_SHMEM_SIZE;
+    if (rx_len > max_cap) {
+        rx_len = max_cap;
     }
     uint8_t *rx = (uint8_t *)pvPortMalloc(rx_len);
     if (!rx) {
@@ -369,7 +378,7 @@ int scmi_sensor_description_get(uint32_t desc_index,
                 uint32_t exp5 = (sensor_resolution >> 27) & 0x1Fu;
                 uint32_t res  = (sensor_resolution & 0x07FFFFFFu);
 
-                out[i].resolution_exponent = scmi_s5_to_s32(exp5);
+                out[i].resolution_exponent = (uint8_t) exp5;
                 out[i].resolution_res = res;
                 out[i].resolution_valid = (res != 0u) ? 1u : 0u;
 
@@ -412,74 +421,6 @@ int scmi_sensor_description_get(uint32_t desc_index,
     }
 
     vPortFree(rx);
-    return ret;
-}
-
-int scmi_sensor_axis_description_get_raw(uint32_t sensor_id,
-                     uint32_t axis_desc_index,
-                     void *desc_buf, size_t desc_buf_len,
-                     struct scmi_sensor_axis_desc_get_info *info)
-{
-    struct scmi_protocol *proto = &SCMI_PROTOCOL_NAME(SCMI_PROTOCOL_SENSOR);
-    struct scmi_message msg, reply;
-    int ret = RET_OK;
-
-    if (!info) {
-        ret = -EINVAL;
-    }
-    if (ret == RET_OK) {
-        if (!desc_buf || desc_buf_len < sizeof(struct scmi_msg_resp_sensor_axis_description_get_hdr)) {
-            ret = -EINVAL;
-        }
-    }
-    if (ret == RET_OK) {
-        if (proto->id != SCMI_PROTOCOL_SENSOR) {
-            ret = -EINVAL;
-        }
-    }
-
-    if (ret == RET_OK) {
-        struct {
-            uint32_t sensor_id;
-            uint32_t axis_desc_index;
-        } req;
-
-        req.sensor_id = sensor_id;
-        req.axis_desc_index = axis_desc_index;
-
-        msg.hdr = SCMI_MESSAGE_HDR_MAKE(SCMI_SENSOR_MSG_SENSOR_AXIS_DESCRIPTION_GET,
-                           SCMI_COMMAND, proto->id, 0x0);
-        msg.len = sizeof(req);
-        msg.content = &req;
-
-        reply.hdr = msg.hdr;
-        reply.len = desc_buf_len;
-        reply.content = desc_buf;
-
-        ret = scmi_send_message(proto, &msg, &reply);
-        if (ret != RET_OK) {
-            /* Do nothing */
-        } else {
-            const struct scmi_msg_resp_sensor_axis_description_get_hdr *hdr =
-                (const struct scmi_msg_resp_sensor_axis_description_get_hdr *)desc_buf;
-
-            if (hdr->status != SCMI_SUCCESS) {
-                ret = scmi_status_to_errno(hdr->status);
-            } else {
-                uint32_t f = hdr->num_axis_flags;
-
-                info->num_returned = (uint8_t)(f & 0x3Fu);
-                info->num_remaining = (uint8_t)((f >> 26) & 0x3Fu);
-
-                if (reply.len < sizeof(*hdr)) {
-                    ret = -EIO;
-                } else {
-                    info->desc_bytes_copied = (size_t)(reply.len - sizeof(*hdr));
-                }
-            }
-        }
-    }
-
     return ret;
 }
 
@@ -604,11 +545,6 @@ int scmi_sensor_config_set(uint32_t sensor_id, uint32_t sensor_config)
         return -EINVAL;
     }
 
-    ret = scmi_sensor_config_set_validate(sensor_config);
-    if (ret != RET_OK) {
-        return ret;
-    }
-
     req.sensor_id = sensor_id;
     req.sensor_config = sensor_config;
 
@@ -635,16 +571,12 @@ int scmi_sensor_config_set(uint32_t sensor_id, uint32_t sensor_config)
 
 int scmi_sensor_reading_get(uint32_t sensor_id,
                 uint8_t async_read,
-                struct scmi_sensor_reading_desc *out, size_t out_cap,
-                struct scmi_sensor_reading_get_info *info)
+                struct scmi_sensor_reading_desc *out, size_t out_cap)
 {
     struct scmi_protocol *proto = &SCMI_PROTOCOL_NAME(SCMI_PROTOCOL_SENSOR);
     struct scmi_message msg, reply;
     int ret = RET_OK;
 
-    if (!info) {
-        ret = -EINVAL;
-    }
     if (ret == RET_OK) {
         if (!out || out_cap == 0u) {
             ret = -EINVAL;
@@ -700,7 +632,7 @@ int scmi_sensor_reading_get(uint32_t sensor_id,
                      * Spec: errors during actual read come via delayed response.
                      */
                     if (async_read) {
-                        info->readings_copied = 0u;
+                        /* Do nothing */
                     } else {
                         /* Copy up to out_cap entries, as reply doesn't carry N explicitly.
                          * We rely on caller to pass correct out_cap (N) based on sensor desc.
@@ -717,7 +649,6 @@ int scmi_sensor_reading_get(uint32_t sensor_id,
 
                             memcpy(out, rx + sizeof(*hdr),
                                    n * sizeof(struct scmi_sensor_reading_desc));
-                            info->readings_copied = n;
                         }
                     }
                 }
@@ -730,7 +661,9 @@ int scmi_sensor_reading_get(uint32_t sensor_id,
     return ret;
 }
 
-/* SCMI payload is little-endian */
+/*********************************************/
+/* Local function */
+/*********************************************/
 static inline uint32_t scmi_get_le32(const void *p)
 {
     const uint8_t *b = (const uint8_t *)p;
@@ -738,16 +671,6 @@ static inline uint32_t scmi_get_le32(const void *p)
            ((uint32_t)b[1] << 8) |
            ((uint32_t)b[2] << 16) |
            ((uint32_t)b[3] << 24);
-}
-
-static inline int scmi_s5_to_s32(uint32_t v5)
-{
-    /* v5 is 5-bit two's complement */
-    v5 &= 0x1Fu;
-    if (v5 & 0x10u) {
-        return (int)((int32_t)(v5 | 0xFFFFFFE0u));
-    }
-    return (int)v5;
 }
 
 static inline uint8_t scmi_sensor_desc_ext_attrs_supported(uint32_t attr_low)
@@ -760,21 +683,11 @@ static inline uint8_t scmi_sensor_desc_axis_supported(uint32_t attr_high)
     return (attr_high & SCMI_SENS_ATTR_HIGH_AXIS_SUPP_BIT) ? 1u : 0u;
 }
 
-static inline int8_t scmi_twos_comp_s5(uint32_t v5)
-{
-    int8_t v = (int8_t)(v5 & 0x1Fu);
-    if (v & 0x10) {
-        v = (int8_t)(v | (int8_t)0xE0);
-    }
-    return v;
-}
-
-/* Encoded as: seconds = sec * 10^exponent */
 static inline struct scmi_sensor_update_interval scmi_sensor_interval_decode(uint32_t raw)
 {
     struct scmi_sensor_update_interval out;
     out.sec = (raw >> 5) & 0xFFFFu;
-    out.exponent = scmi_twos_comp_s5(raw);
+    out.exponent = raw & 0x001Fu;
     return out;
 }
 
@@ -787,7 +700,7 @@ static inline uint32_t scmi_sensor_tp_ev_ctrl_pack(uint8_t trip_point_id,
 
 static inline void scmi_sensor_config_decode(uint32_t raw, struct scmi_sensor_config *out)
 {
-    uint32_t upd21;
+    uint32_t upd21; /* 21-bit upper in a 32-bit */
 
     out->sensor_config = raw;
 
@@ -795,23 +708,7 @@ static inline void scmi_sensor_config_decode(uint32_t raw, struct scmi_sensor_co
     out->timestamped = (uint8_t)((raw & SCMI_SENSOR_CONFIG_TIMESTAMP_BIT) ? 1u : 0u);
 
     upd21 = (raw & SCMI_SENSOR_CONFIG_UPD_MASK) >> SCMI_SENSOR_CONFIG_UPD_SHIFT;
-    out->update_interval_valid = (uint8_t)((upd21 != 0u) ? 1u : 0u);
 
     /* Use existing helper in your source */
     out->update_interval = scmi_sensor_interval_decode(upd21);
-}
-
-/* Optional: strict validation that reserved bits are 0, interval field fits, etc. */
-static inline int scmi_sensor_config_set_validate(uint32_t sensor_config)
-{
-    /* Bits[8:2] must be zero */
-    if ((sensor_config & SCMI_SENSOR_CONFIG_RESERVED_MASK) != 0u) {
-        return -EINVAL;
-    }
-
-    /* Interval must fit in bits[31:11] already by type, but keep check for callers */
-    /* (No extra check needed here unless you want to validate exponent range, etc.) */
-
-    /* If rnd_auto==1, bit9 is ignored (no need to fail) */
-    return RET_OK;
 }
