@@ -175,6 +175,7 @@ set(bsp_source
     ${BSP_DIR}/drivers/watchdog/r_wwdt_reg.c
     ${BSP_DIR}/common/ARM_CR52/port.c
     ${BSP_DIR}/common/rcar_utils.c
+    ${BSP_DIR}/sample_apps/sensor_app/ulti_sensor/sensor_internal.c
 
     ${SCMI_SRC_LIST}
     ${BSP_DIR}/drivers/state-manager/state_manager.c
@@ -377,6 +378,7 @@ add_subdirectory(sample_apps/wcrc_app)
 add_subdirectory(sample_apps/utils_app)
 add_subdirectory(sample_apps/taud_app)
 add_subdirectory(sample_apps/ecm_app)
+add_subdirectory(sample_apps/sensor_app)
 add_subdirectory(sample_apps/dummy_app)
 if(ENABLE_OPENAMP)
     add_subdirectory(sample_apps/rpmsg_sample)
