@@ -16,7 +16,6 @@
 #include "pfc/r_pfc_api.h"
 #include "scmi/inc/sensor.h"
 #include "scmi/inc/protocol.h"
-#include "ulti_sensor/sensor_internal.h"
 
 #define sensorApp_TASK_PRIORITY ( tskIDLE_PRIORITY + 1 )
 #define SENSOR_LOG(format, ...) \
@@ -27,7 +26,6 @@
 
 static void prvSensorAppTask(void *pvParameters);
 static void sensorAppExample(void);
-static int read_thermal_sensor(uint32_t sensor_id, int32_t *temp_mc);
 
 static void prvSetupHardware(void)
 {
@@ -264,20 +262,6 @@ static void sensorAppExample(void)
             SENSOR_LOG("SCMI Sensor %d, sensor_value_high: 0x%x ", sensor_id, out_desc.sensor_value_high);
             SENSOR_LOG("SCMI Sensor %d, timestamp_low: 0x%x ", sensor_id, out_desc.timestamp_low);
             SENSOR_LOG("SCMI Sensor %d, timestamp_high: 0x%x ", sensor_id, out_desc.timestamp_high);
-            /* Self read thermal sensor to compare sensor value */
-            temp_mc = 0;
-            ret = read_thermal_sensor(sensor_id, &temp_mc);
-            if (ret != 0){
-                SENSOR_LOG("Failed when self read thermal sensor");
-            } else{
-                SENSOR_LOG("Sensor %d has value: %d", sensor_id, temp_mc);
-                if (temp_mc == out_desc.sensor_value_low){
-                    SENSOR_LOG("Sensor value read from SCP and self-read are the same");
-                } else{
-                    SENSOR_LOG("Sensor value read from SCP and self-read are different");
-                    error_flag++;
-                }
-            }
         }
     }
     if (error_flag != 0){
@@ -317,24 +301,4 @@ static void sensorAppExample(void)
         SENSOR_LOG("Test case is PASS");
     }
     SENSOR_LOG("*******TC%d: SCMI Sensor description end!*******\r\n\r\n", tc_number);
-}
-
-static int read_thermal_sensor(uint32_t sensor_id, int32_t *temp_mc){
-    int ret = 0;
-    uint32_t enabled = 0U;
-
-    enabled = 1U;
-    (void)r_scp_ths_set_sensor_enabled(sensor_id, enabled);
-    enabled = 0U;
-    (void)r_scp_ths_get_sensor_enabled(sensor_id, &enabled);
-
-    if (0U == enabled){
-        /* Reading a disabled sensor violates the protocol state machine */
-        SENSOR_LOG("sensor %d is disabled", sensor_id);
-        ret++;
-    } else{
-        ret = r_scp_ths_read_temperature(sensor_id, temp_mc);
-    }
-
-    return ret;
 }

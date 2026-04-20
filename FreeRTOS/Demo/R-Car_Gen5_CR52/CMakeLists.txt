@@ -175,7 +175,6 @@ set(bsp_source
     ${BSP_DIR}/drivers/watchdog/r_wwdt_reg.c
     ${BSP_DIR}/common/ARM_CR52/port.c
     ${BSP_DIR}/common/rcar_utils.c
-    ${BSP_DIR}/sample_apps/sensor_app/ulti_sensor/sensor_internal.c
 
     ${SCMI_SRC_LIST}
     ${BSP_DIR}/drivers/state-manager/state_manager.c
