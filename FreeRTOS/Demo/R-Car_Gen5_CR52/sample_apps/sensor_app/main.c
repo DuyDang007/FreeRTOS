@@ -162,33 +162,8 @@ static void sensorAppExample(void)
     }
     SENSOR_LOG("*******TC%d: SCMI Sensor message attributes not supported end!*******\r\n\r\n", tc_number);
 
-    /* SENSOR_TRIP_POINT_CONFIG */
-    uint32_t sensor_id = 0;
-    uint8_t trip_point_id = 0;
-    enum scmi_sensor_trip_point_event_ctrl ctrl = SCMI_SENSOR_TP_EVENT_DISABLE;
-    uint32_t trip_point_val_low = 0;
-    uint32_t trip_point_val_high = 0;
-    error_flag = 0;
-    SENSOR_LOG("*******TC%d: SCMI Sensor trip point config starting*******", ++tc_number);
-    for (uint8_t i = 0; i < protocol_attr.num_sensors; i ++){
-        ret = scmi_sensor_trip_point_config(i, trip_point_id, ctrl, trip_point_val_low, trip_point_val_high);
-        if (ret != SCMI_SUCCESS) {
-            SENSOR_LOG("Error: Failed to config SCMI Sensor trip point.");
-            error_flag++;
-        } else{
-            SENSOR_LOG("SCMI Sensor trip point config of sensor %d: 0x%x", i, ret);
-        }
-    }
-    if (error_flag != 0){
-        SENSOR_LOG("Test case is FAIL");
-    } else{
-        SENSOR_LOG("Test case is PASS");
-    }
-
-    SENSOR_LOG("*******TC%d: SCMI Sensor trip point config end!*******\r\n\r\n", tc_number);
-
     /* SENSOR_CONFIG_GET */
-    sensor_id = 0;
+    uint32_t sensor_id = 0;
     struct scmi_sensor_config out_config = {0};
     error_flag = 0;
     SENSOR_LOG("*******TC%d: SCMI Sensor config getting starting*******", ++tc_number);
@@ -245,6 +220,30 @@ static void sensorAppExample(void)
         SENSOR_LOG("Test case is PASS");
     }
     SENSOR_LOG("*******TC%d: SCMI Sensor setting end!*******\r\n\r\n", tc_number);
+
+    /* SENSOR_TRIP_POINT_CONFIG */
+    sensor_id = 0;
+    uint8_t trip_point_id = 0;
+    enum scmi_sensor_trip_point_event_ctrl ctrl = SCMI_SENSOR_TP_EVENT_DISABLE;
+    uint32_t trip_point_val_low = 0;
+    uint32_t trip_point_val_high = 0;
+    error_flag = 0;
+    SENSOR_LOG("*******TC%d: SCMI Sensor trip point config starting*******", ++tc_number);
+    for (uint8_t i = 0; i < protocol_attr.num_sensors; i ++){
+        ret = scmi_sensor_trip_point_config(i, trip_point_id, ctrl, trip_point_val_low, trip_point_val_high);
+        if (ret != SCMI_SUCCESS) {
+            SENSOR_LOG("Error: Failed to config SCMI Sensor trip point.");
+            error_flag++;
+        } else{
+            SENSOR_LOG("SCMI Sensor trip point config of sensor %d: 0x%x", i, ret);
+        }
+    }
+    if (error_flag != 0){
+        SENSOR_LOG("Test case is FAIL");
+    } else{
+        SENSOR_LOG("Test case is PASS");
+    }
+    SENSOR_LOG("*******TC%d: SCMI Sensor trip point config end!*******\r\n\r\n", tc_number);
 
     /* SENSOR_READING_GET */
     sensor_id = 0;
