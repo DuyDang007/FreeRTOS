@@ -16,8 +16,13 @@
 #include "cmsis_rcar_gen5.h"
 
 #define COUNT_PER_TICK  (GENERIC_TIMER_CLK / configTICK_RATE_HZ)
+
+/* This tick value is initialized from timer start, not equal to FreeRTOS tick */
+static uint32_t tick = 0;
+
 void TickInterruptHandler(void) {
-    CNTP_CVAL_WRITE(CNTPCT_READ() + COUNT_PER_TICK);
+    tick++;
+    CNTP_CVAL_WRITE(COUNT_PER_TICK * tick + COUNT_PER_TICK);
     FreeRTOS_Tick_Handler();
 }
 
@@ -29,8 +34,10 @@ void vConfigureTickInterrupt(void)
 
     Irq_SetPriority(R_OS_BSP_GENERIC_ARM_TIMER_IRQNUM, IPRIORITY(24));
 
-    /* set timer expiration from current counter value */
-    CNTP_CVAL_WRITE(CNTPCT_READ() + COUNT_PER_TICK);
+    /* Set timer expiration to the next 2 ticks from current counter value to avoid missing
+    an interrupt when time to next tick is too short */
+    tick = CNTPCT_READ() / COUNT_PER_TICK;
+    CNTP_CVAL_WRITE((tick + 2) * COUNT_PER_TICK);
 
     /* configure CNTP_CTL to enable timer interrupts */
     CNTP_CTL_WRITE(1);
